@@ -38,3 +38,7 @@ def is_instance_in_the_page(page, instance):
         if isinstance(control, instance):
             return True
     return False
+
+def set_theme_from_bgcolor(page, bgcolor):
+    page.bgcolor = bgcolor
+    # here we can implement more options for setting theme

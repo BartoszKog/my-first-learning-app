@@ -2,7 +2,7 @@ import flet as ft
 from TilesContainer import TilesContainer
 from CreateSetMenu import CreateSetMenu
 from AppDrawer import AppDrawer
-from page_functions import quit_main_menu, is_instance_in_the_page
+from page_functions import quit_main_menu, is_instance_in_the_page, set_theme_from_bgcolor
 from Greetings import Greetings
 from SearchControl import SearchControl
 from PageProperties import PageProperties # need in on_resized in isinstance
@@ -47,10 +47,10 @@ def main(page: ft.Page):
     # set theme mode and background color from client storage
     if page.client_storage.get("theme_mode") == ft.ThemeMode.LIGHT.value:
         page.theme_mode = ft.ThemeMode.LIGHT
-        page.bgcolor = page.client_storage.get("light_theme_bgcolor")
+        set_theme_from_bgcolor(page, page.client_storage.get("light_theme_bgcolor"))
     else:
         page.theme_mode = ft.ThemeMode.DARK
-        page.bgcolor = page.client_storage.get("dark_theme_bgcolor")
+        set_theme_from_bgcolor(page, page.client_storage.get("dark_theme_bgcolor"))
     
     PageProperties.set_slider_and_bgcolor_values_from_page(page)
     PageProperties.set_theme_from_page(page)

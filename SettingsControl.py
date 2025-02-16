@@ -1,5 +1,6 @@
 import flet as ft
 from PageProperties import PageProperties
+from page_functions import set_theme_from_bgcolor
 import os
 
 class BackgroundShadeSlider(ft.Column):
@@ -38,7 +39,7 @@ class BackgroundShadeSlider(ft.Column):
         else:
             color = self.LIGHT_THEME_COLORS[value - 1]      
         PageProperties.set_bgcolor(PageProperties.theme_mode, color)
-        self.page.bgcolor = color
+        set_theme_from_bgcolor(self.page, color)
         self.page.client_storage.set(f"{PageProperties.theme_mode.value}_theme_slider_value", value)
         self.page.client_storage.set(f"{PageProperties.theme_mode.value}_theme_bgcolor", color)
         self.page.update()
@@ -112,7 +113,8 @@ class SettingsControl(ft.Column):
             self.page.client_storage.set("theme_mode", ft.ThemeMode.LIGHT.value)
             
         PageProperties.set_theme_from_page(self.page)
-        self.page.bgcolor = PageProperties.get_bgcolor()
+        bgcolor = PageProperties.get_bgcolor()
+        set_theme_from_bgcolor(self.page, bgcolor)
         self.page.update()
         self.background_shade_slider.update_slider_position()
     

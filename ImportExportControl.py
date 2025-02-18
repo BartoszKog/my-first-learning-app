@@ -6,7 +6,7 @@ from SearchControl import SearchControl
  
 class ImportExportControl(ft.Container):
     SCALE_IMPORT_BUTTON = 1.25
-    DEFAULT_BOTTOM_APPBAR_HEIGHT = 80
+    DEFAULT_BOTTOM_APP_BAR_HEIGHT = 80
     MINIMAL_BOTTOM_APP_BAR_HEIGHT = 50
     
     def __init__(self):
@@ -87,7 +87,12 @@ class ImportExportControl(ft.Container):
             "chosen_file_title": "Enter the title and optionally a subtitle.\nYou can also cancel the operation or select a different file.",
         }
         
-        self.text_tip = ft.Text(self.file_selection_tips["choose_file"], text_align=ft.TextAlign.CENTER)
+        self.text_tip = ft.Text(
+            spans=[
+                ft.TextSpan(text=self.file_selection_tips["choose_file"])
+            ],
+            text_align=ft.TextAlign.CENTER
+        )
         
         self.buttons = ft.Row(
             [
@@ -135,8 +140,20 @@ class ImportExportControl(ft.Container):
         self.csv_file_selector.id = self.path_picker_csv_id
         
     
-    def __make_layout_for_chosen_file(self):
-        self.text_tip.value = self.file_selection_tips["chosen_file_title"]
+    def __make_layout_for_chosen_file(self, selected_file: str = None):
+        # If an argument is passed, save it; otherwise, use the previously set attribute.
+        if selected_file is not None:
+            self.chosen_file = selected_file
+        else:
+            selected_file = self.chosen_file
+        # Clear existing values in self.text_tip.spans
+        self.text_tip.spans.clear()
+        # Update the content of self.text_tip using the spans attribute
+        self.text_tip.spans = [
+            ft.TextSpan(text=self.file_selection_tips["chosen_file_title"]),
+            ft.TextSpan(text="\nSelected file: ", style=ft.TextStyle(italic=True)),
+            ft.TextSpan(text=selected_file, style=ft.TextStyle(color=ft.colors.TEAL))
+        ]
         self.title_field.visible = True
         self.subtitle_field.visible = True
         self.add_set_button.visible = True
@@ -146,7 +163,9 @@ class ImportExportControl(ft.Container):
         self.update()
     
     def __make_layout_before_chosen_file(self):
-        self.text_tip.value = self.file_selection_tips["choose_file"]
+        self.text_tip.spans = [
+            ft.TextSpan(text=self.file_selection_tips["choose_file"])
+        ]
         self.title_field.visible = False
         self.subtitle_field.visible = False
         self.add_set_button.visible = False
@@ -212,7 +231,7 @@ class ImportExportControl(ft.Container):
         if e.files:
             print(e.files[0].name)
             print(e.files[0].path)
-            self.__make_layout_for_chosen_file()
+            self.__make_layout_for_chosen_file(e.files[0].name)
         elif self.__user_has_chosen_file():
             self.__make_layout_for_chosen_file()
         else:
@@ -284,8 +303,16 @@ class ImportExportControl(ft.Container):
         self.page.update()
         
     def __make_default_bottom_appbar_height(self):
-        self.page.bottom_appbar.height = ImportExportControl.DEFAULT_BOTTOM_APPBAR_HEIGHT
+        self.page.bottom_appbar.height = ImportExportControl.DEFAULT_BOTTOM_APP_BAR_HEIGHT
         self.page.update()
+        
+    def __hide_first_span_in_text_tip(self):
+        self.text_tip.spans[0].visible = False
+        self.update()
+        
+    def __show_first_span_in_text_tip(self):
+        self.text_tip.spans[0].visible = True
+        self.update()
         
     def __android_center_import_controls_alignment(self):
         if PageProperties.platform == ft.PagePlatform.ANDROID:
@@ -294,6 +321,7 @@ class ImportExportControl(ft.Container):
             self.import_controls.spacing = 25
             self.__make_default_bottom_appbar_height()
             self.choose_file_button.visible = True
+            self.__show_first_span_in_text_tip()
             self.update()
             
     def __android_start_import_controls_alignment(self):
@@ -303,6 +331,7 @@ class ImportExportControl(ft.Container):
             self.import_controls.spacing = 10
             self.__make_compact_bottom_appbar_height()
             self.choose_file_button.visible = False
+            self.__hide_first_span_in_text_tip()
             self.update()
         
     def __on_focus_field(self, e = None):

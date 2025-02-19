@@ -1,6 +1,8 @@
 import pandas as pd
 from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Errors, MAX_ROWS
 from AppData import load_set
+from PageProperties import PageProperties
+from flet import PagePlatform
 
 class CSVProcessor:
     @staticmethod
@@ -90,7 +92,10 @@ class CSVProcessor:
                     data_type = convention
                     if not validate_columns(expected_columns, df.columns, missing_columns_error):
                         is_valid = False
-                    name_suggestion = file_path.split(suffix)[0].split('\\')[-1] # android can be different
+                        
+                    file_separator = '\\' if PageProperties.platform == PagePlatform.WINDOWS else '/'
+                        
+                    name_suggestion = file_path.split(suffix)[0].split(file_separator)[-1] # android can be different
                     break
             else:
                 # Check if columns match either words or definitions

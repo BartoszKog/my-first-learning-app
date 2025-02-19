@@ -1,7 +1,6 @@
 import pandas as pd
-from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings
+from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Errors, MAX_ROWS
 from AppData import load_set
-import os
 
 class CSVProcessor:
     @staticmethod
@@ -15,16 +14,59 @@ class CSVProcessor:
         name_suggestion = ""
         data_type = ""
 
+        data_conventions = [
+            ("words", "_words.csv", PartsOfSpeech, Errors.MISSING_COLUMNS_WORDS, Warnings.FILE_NAME_PATTERN_WORDS),
+            ("definitions", "_definitions.csv", WordDefinitions, Errors.MISSING_COLUMNS_DEFINITIONS, Warnings.FILE_NAME_PATTERN_DEFINITIONS)
+        ]
+
+        # Assertions to ensure the integrity of data_conventions entries
+        for convention in data_conventions:
+            assert len(convention) == 5, "Each data convention must have exactly 5 elements."
+            assert isinstance(convention[0], str), "The first element of each data convention must be a string (data type)."
+            assert isinstance(convention[1], str), "The second element of each data convention must be a string (file suffix)."
+            assert hasattr(convention[2], '__members__'), "The third element of each data convention must be an Enum (columns enum)."
+            assert isinstance(convention[3], Errors), "The fourth element of each data convention must be an Errors enum member."
+            assert isinstance(convention[4], Warnings), "The fifth element of each data convention must be a Warnings enum member."
+
+        def validate_columns(expected_columns, df_columns, error_message):
+            if not expected_columns.issubset(df_columns):
+                errors.append(error_message.value)
+                return False
+            unnecessary_columns = set(df_columns) - expected_columns - {col.value for col in StatsColumns}
+            if unnecessary_columns:
+                warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
+                requires_specific_actions = True
+            return True
+
+        def check_missing_data(typical_columns, df):
+            if data_type == "words":
+                insufficient_non_empty_rows = df[typical_columns].isnull().sum(axis=1) >= (len(typical_columns) - 1)
+                if insufficient_non_empty_rows.all():
+                    errors.append(Errors.INSUFFICIENT_NON_EMPTY_VALUES_IN_WORDS.value)
+                    return False
+                elif insufficient_non_empty_rows.any():
+                    warnings.append(Warnings.INSUFFICIENT_NON_EMPTY_VALUES.value)
+                    requires_specific_actions = True
+            elif data_type == "definitions":
+                rows_with_empty_values = df[typical_columns].isnull().any(axis=1)
+                if rows_with_empty_values.all():
+                    errors.append(Errors.EMPTY_VALUES_IN_DEFINITIONS.value)
+                    return False
+                elif rows_with_empty_values.any():
+                    warnings.append(Warnings.INSUFFICIENT_NON_EMPTY_VALUES.value)
+                    requires_specific_actions = True
+            return True
+
         # Check if the file is a CSV
         if not file_path.endswith('.csv'):
-            errors.append(Warnings.NOT_A_CSV.value)
+            errors.append(Errors.NOT_A_CSV.value)
             is_valid = False
         else:
             # Try to load the file with pandas
             try:
                 df = pd.read_csv(file_path)
             except Exception as e:
-                errors.append(Warnings.ERROR_LOADING_FILE.value)
+                errors.append(Errors.ERROR_LOADING_FILE.value)
                 is_valid = False
 
         # Check if the first column is an index
@@ -32,34 +74,24 @@ class CSVProcessor:
             warnings.append(Warnings.FIRST_COLUMN_NOT_INDEX.value)
             requires_specific_actions = True
         else:
-            df.set_index("Unnamed: 0", inplace=True)
+            if is_valid:
+                df.set_index("Unnamed: 0", inplace=True)
+
+        # Check if the number of rows exceeds the maximum allowed
+        if is_valid and len(df) > MAX_ROWS:
+            errors.append(Errors.TOO_MANY_ROWS.value)
+            is_valid = False
 
         # Validate column names based on file name
         if is_valid:
-            if file_path.endswith('_words.csv'):
-                expected_columns = {col.value for col in PartsOfSpeech}
-                data_type = "words"
-                if not expected_columns.issubset(df.columns):
-                    errors.append(Warnings.MISSING_COLUMNS_WORDS.value)
-                    is_valid = False
-                else:
-                    unnecessary_columns = set(df.columns) - expected_columns - {col.value for col in StatsColumns}
-                    if unnecessary_columns:
-                        warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
-                        requires_specific_actions = True
-                name_suggestion = file_path.split('_words.csv')[0].split('/')[-1]
-            elif file_path.endswith('_definitions.csv'):
-                expected_columns = {col.value for col in WordDefinitions}
-                data_type = "definitions"
-                if not expected_columns.issubset(df.columns):
-                    errors.append(Warnings.MISSING_COLUMNS_DEFINITIONS.value)
-                    is_valid = False
-                else:
-                    unnecessary_columns = set(df.columns) - expected_columns - {col.value for col in StatsColumns}
-                    if unnecessary_columns:
-                        warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
-                        requires_specific_actions = True
-                name_suggestion = file_path.split('_definitions.csv')[0].split('/')[-1]
+            for convention, suffix, columns_enum, missing_columns_error, pattern_warning in data_conventions:
+                if file_path.endswith(suffix):
+                    expected_columns = {col.value for col in columns_enum}
+                    data_type = convention
+                    if not validate_columns(expected_columns, df.columns, missing_columns_error):
+                        is_valid = False
+                    name_suggestion = file_path.split(suffix)[0].split('\\')[-1] # android can be different
+                    break
             else:
                 # Check if columns match either words or definitions
                 words_columns = {col.value for col in PartsOfSpeech}
@@ -67,16 +99,12 @@ class CSVProcessor:
                 if words_columns.issubset(df.columns):
                     warnings.append(Warnings.FILE_NAME_PATTERN_WORDS.value)
                     requires_specific_actions = True
-                    unnecessary_columns = set(df.columns) - words_columns - {col.value for col in StatsColumns}
-                    if unnecessary_columns:
-                        warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
+                    validate_columns(words_columns, df.columns, Errors.MISSING_COLUMNS_WORDS)
                     data_type = "words"
                 elif definitions_columns.issubset(df.columns):
                     warnings.append(Warnings.FILE_NAME_PATTERN_DEFINITIONS.value)
                     requires_specific_actions = True
-                    unnecessary_columns = set(df.columns) - definitions_columns - {col.value for col in StatsColumns}
-                    if unnecessary_columns:
-                        warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
+                    validate_columns(definitions_columns, df.columns, Errors.MISSING_COLUMNS_DEFINITIONS)
                     data_type = "definitions"
                 else:
                     errors.append("File does not match any expected column patterns.")
@@ -97,6 +125,12 @@ class CSVProcessor:
                         warnings.append(Warnings.COLUMN_NOT_BOOLEAN.value)
                         has_statistics = False
 
+        # Check for empty values in typical columns based on data type
+        if is_valid:
+            typical_columns = [col.value for col in PartsOfSpeech] if data_type == "words" else [col.value for col in WordDefinitions]
+            if not check_missing_data(typical_columns, df):
+                is_valid = False
+
         # Check for empty values in statistics columns
         if is_valid and has_statistics:
             if df[list(stats_columns)].isnull().values.any():
@@ -116,75 +150,3 @@ class CSVProcessor:
             "data_type": data_type
         }
 
-# for testing
-if __name__ == "__main__":
-    # Existing files
-    files_to_test = ["data_words.csv", "dataCopy_words.csv"]
-
-    # Create test files
-    test_files = {
-        "test_words.csv": pd.DataFrame({
-            "verb": ["run", "jump"],
-            "person": ["teacher", "student"],
-            "thing": ["book", "pen"],
-            "adjective": ["quick", "slow"],
-            "adverb": ["quickly", "slowly"],
-            "correct_answers": [1, 2],
-            "good_answers_in_a_row": [True, False],
-            "good_answer": [True, False],
-            "word_to_learn": [False, True]
-        }),
-        "test_definitions.csv": pd.DataFrame({
-            "definition": ["a place where people live", "a large vehicle for transporting goods"],
-            "word": ["house", "truck"],
-            "correct_answers": [3, 4],
-            "good_answers_in_a_row": [True, True],
-            "good_answer": [True, True],
-            "word_to_learn": [False, False]
-        }),
-        # Test file with missing required columns for words file
-        "test_missing_columns_words.csv": pd.DataFrame({
-            "verb": ["run", "jump"],
-            "person": ["teacher", "student"]
-        }),
-        # Test file with unnecessary columns
-        "test_unnecessary_columns.csv": pd.DataFrame({
-            "verb": ["run", "jump"],
-            "person": ["teacher", "student"],
-            "thing": ["book", "pen"],
-            "adjective": ["quick", "slow"],
-            "adverb": ["quickly", "slowly"],
-            "correct_answers": [1, 2],
-            "good_answers_in_a_row": [True, False],
-            "good_answer": [True, False],
-            "word_to_learn": [False, True],
-            "extra_column": ["extra1", "extra2"]
-        }),
-        # Test file with incorrect column types
-        "test_incorrect_column_types.csv": pd.DataFrame({
-            "verb": ["run", "jump"],
-            "person": ["teacher", "student"],
-            "thing": ["book", "pen"],
-            "adjective": ["quick", "slow"],
-            "adverb": ["quickly", "slowly"],
-            "correct_answers": ["one", "two"],  # Should be integers
-            "good_answers_in_a_row": ["yes", "no"],  # Should be booleans
-            "good_answer": ["yes", "no"],  # Should be booleans
-            "word_to_learn": ["yes", "no"]  # Should be booleans
-        })
-    }
-
-    for file_name, df in test_files.items():
-        df.to_csv(file_name, index=False)
-        files_to_test.append(file_name)
-
-    # Validate files
-    for file in files_to_test:
-        print(f"Validating {file}:")
-        result = CSVProcessor.validate_file(file)
-        print(result)
-        print()
-
-    # Clean up test files
-    for file_name in test_files.keys():
-        os.remove(file_name)

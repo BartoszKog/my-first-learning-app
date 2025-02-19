@@ -232,6 +232,10 @@ class ImportExportControl(ft.Container):
         if e.files:
             print(e.files[0].name)
             print(e.files[0].path)
+            
+            validation_result = CSVProcessor.validate_file(e.files[0].path)
+            print(validation_result)
+            
             self.__make_layout_for_chosen_file(e.files[0].name)
         elif self.__user_has_chosen_file():
             self.__make_layout_for_chosen_file()

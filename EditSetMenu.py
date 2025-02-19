@@ -2,12 +2,12 @@ import flet as ft
 import pandas as pd
 from EditCards import EditCardWords, EditCardDefinitions
 from AppData import save_set, load_set, create_empty_set
-from constants import PartsOfSpeech, StatsColumns, WordDefinitions
+from constants import PartsOfSpeech, StatsColumns, WordDefinitions, MAX_ROWS
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
 
 class EditSetMenu(ft.Column):
-    MAX_CARDS = 40
+    MAX_CARDS = MAX_ROWS
 
     def __init__(self, file_name: str, width=340, title=None, subtitle=None):
         super().__init__()

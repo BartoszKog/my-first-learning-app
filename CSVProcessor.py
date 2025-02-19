@@ -67,6 +67,9 @@ class CSVProcessor:
             # Try to load the file with pandas
             try:
                 df = pd.read_csv(file_path)
+            except FileNotFoundError:
+                errors.append(Errors.FILE_NOT_FOUND.value)
+                is_valid = False
             except Exception as e:
                 errors.append(Errors.ERROR_LOADING_FILE.value)
                 is_valid = False

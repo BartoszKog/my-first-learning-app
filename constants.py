@@ -38,6 +38,7 @@ MAX_ROWS = 40
 class Errors(Enum):
     NOT_A_CSV = "File is not a CSV."
     ERROR_LOADING_FILE = "Error loading file with pandas."
+    FILE_NOT_FOUND = "File not found."
     MISSING_COLUMNS_WORDS = "Missing required columns for words file."
     MISSING_COLUMNS_DEFINITIONS = "Missing required columns for definitions file."
     TOO_MANY_ROWS = f"File contains more than {MAX_ROWS} rows."

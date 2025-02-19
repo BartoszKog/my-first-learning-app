@@ -3,6 +3,7 @@ from PageProperties import PageProperties
 from page_functions import create_alert_dialog, is_instance_in_the_page
 from TilesContainer import TilesContainer
 from SearchControl import SearchControl
+from CSVProcessor import CSVProcessor
  
 class ImportExportControl(ft.Container):
     SCALE_IMPORT_BUTTON = 1.25

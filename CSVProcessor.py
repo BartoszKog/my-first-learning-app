@@ -6,6 +6,22 @@ from flet import PagePlatform
 
 class CSVProcessor:
     @staticmethod
+    def save_set_with_no_specific_actions(file_name: str, title: str, subtitle: str) -> None:
+        pass
+    
+    @staticmethod
+    def save_set_with_specific_actions(
+        file_name: str,
+        title: str,
+        subtitle: str,
+        data_type: str,
+        has_statistics: bool,
+        warnings: list,
+    ) -> None:
+        pass
+    
+    
+    @staticmethod
     def validate_file(file_path: str) -> dict:
         # Function for validating the file of the given path
         errors = []

@@ -140,6 +140,12 @@ class ImportExportControl(ft.Container):
         # set id to path picker to be able to find it in the page
         self.csv_file_selector.id = self.path_picker_csv_id
         
+        # attributes involved in validation
+        self.validation_warnings = None
+        self.validation_requires_specific_actions = None
+        self.validation_has_statistics = None
+        self.validation_data_type = None
+        
     
     def __make_layout_for_chosen_file(self, selected_file: str = None):
         # If an argument is passed, save it; otherwise, use the previously set attribute.
@@ -155,6 +161,9 @@ class ImportExportControl(ft.Container):
             ft.TextSpan(text="\nSelected file: ", style=ft.TextStyle(italic=True)),
             ft.TextSpan(text=selected_file, style=ft.TextStyle(color=ft.colors.TEAL))
         ]
+        # if there is some error text in title_field remove it
+        self.title_field.error_text = ""
+        
         self.title_field.visible = True
         self.subtitle_field.visible = True
         self.add_set_button.visible = True
@@ -173,6 +182,7 @@ class ImportExportControl(ft.Container):
         self.cancel_button.visible = False
         self.__upscale_import_button()
         self.__set_import_button_default()
+        self.__remove_validation_properties()
         self.update()
     
     def __disable_all_import_controls(self):
@@ -203,7 +213,12 @@ class ImportExportControl(ft.Container):
         self.__disable_all_import_controls()
         
     def __on_add_set_click(self, e):
-        pass
+        if not self.title_field.value.strip():
+            self.title_field.error_text = "Title cannot be empty."
+            self.update()
+        else:
+            # Add your logic here for when the title field is not empty
+            pass
     
     def __upscale_import_button(self):
         self.choose_file_button.scale = ImportExportControl.SCALE_IMPORT_BUTTON
@@ -228,15 +243,35 @@ class ImportExportControl(ft.Container):
     def __user_has_chosen_file(self):
         return self.title_field.visible
     
+    def __set_validation_properties(self, validation_result):
+        self.validation_warnings = validation_result["warnings"]
+        self.validation_requires_specific_actions = validation_result["requires_specific_actions"]
+        self.validation_has_statistics = validation_result["has_statistics"]
+        self.validation_data_type = validation_result["data_type"]
+        
+    def __remove_validation_properties(self):
+        self.validation_warnings = None
+        self.validation_requires_specific_actions = None
+        self.validation_has_statistics = None
+        self.validation_data_type = None
+    
     def __on_csv_file_selector_result(self, e: ft.FilePickerResultEvent):
         if e.files:
-            print(e.files[0].name)
-            print(e.files[0].path)
-            
             validation_result = CSVProcessor.validate_file(e.files[0].path)
-            print(validation_result)
             
-            self.__make_layout_for_chosen_file(e.files[0].name)
+            if validation_result["is_valid"]:
+                self.title_field.value = validation_result["name_suggestion"]
+                self.__make_layout_for_chosen_file(e.files[0].name)
+                self.__set_validation_properties(validation_result)
+            
+                if validation_result["warnings"]:
+                    warning_title = "Warnings" if len(validation_result["warnings"]) > 1 else "Warning"
+                    create_alert_dialog(self.page, warning_title, "\n".join(validation_result["warnings"]))
+            else:
+                if validation_result["errors"]:
+                    error_title = "Errors" if len(validation_result["errors"]) > 1 else "Error"
+                    create_alert_dialog(self.page, error_title, "\n".join(validation_result["errors"]))
+
         elif self.__user_has_chosen_file():
             self.__make_layout_for_chosen_file()
         else:

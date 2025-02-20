@@ -168,6 +168,7 @@ test_*.py
 
 # temporary files
 copy_code.txt
+layout_import_export.py
 
 # vs code workspace
 *.code-workspace 

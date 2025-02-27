@@ -16,7 +16,21 @@ class CSVProcessor:
     
     @staticmethod
     def __reset_statistics_columns(df: pd.DataFrame) -> pd.DataFrame:
-        pass
+        df = df.drop(columns=[col.value for col in StatsColumns])
+        df = CSVProcessor.__add_statistics_columns(df)
+        return df
+    
+    @staticmethod
+    def __create_appropriate_file_name(imported_file_name: str) -> str:
+        # check if the file name is occupied by another file, if so, add a number to the file name
+        file_names_in_app_data = get_file_names()
+        if imported_file_name in file_names_in_app_data:
+            i = 1
+            while f"{i}{imported_file_name}" in file_names_in_app_data:
+                i += 1
+            imported_file_name = f"{i}{imported_file_name}"
+        return imported_file_name    
+        
     
     @staticmethod
     def save_set_with_no_specific_actions(
@@ -33,16 +47,9 @@ class CSVProcessor:
             df = CSVProcessor.__add_statistics_columns(df)
         else:
             if not keep_statistics:
-                df = df.drop(columns=[col.value for col in StatsColumns])
-                df = CSVProcessor.__add_statistics_columns(df) # add default values
+                df = CSVProcessor.__reset_statistics_columns(df)
         
-        # check if the file name is occupied by another file, if so, add a number to the file name
-        file_names_in_app_data = get_file_names()
-        if file_name in file_names_in_app_data:
-            i = 1
-            while f"{i}{file_name}" in file_names_in_app_data:
-                i += 1
-            file_name = f"{i}{file_name}"
+        file_name = CSVProcessor.__create_appropriate_file_name(file_name)
         add_new_file(file_name, title, subtitle)
         save_set(df, file_name)
         

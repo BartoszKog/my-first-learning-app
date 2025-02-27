@@ -1,5 +1,5 @@
 import flet as ft 
-import pandas as pd
+from AppData import get_file_names
 from EditSetMenu import EditSetMenu
 from constants import FilesColumns
 from page_functions import create_alert_dialog
@@ -62,8 +62,9 @@ class CreateSetMenu(ft.Column):
             )
         else:
             # load list of file_names to create new file_name
-            files_df = pd.read_csv("files.csv") 
-            filenames = files_df[FilesColumns.FILE_NAME.value].tolist()
+            # files_df = pd.read_csv("files.csv") 
+            # filenames = files_df[FilesColumns.FILE_NAME.value].tolist()
+            filenames = get_file_names()
             
             kind = self.kind_dropdown.value.lower()
             

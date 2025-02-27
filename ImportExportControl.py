@@ -147,10 +147,15 @@ class ImportExportControl(ft.Container):
         self.validation_data_type = None
         
     
-    def __make_layout_for_chosen_file(self, selected_file: str = None):
+    def __make_layout_for_chosen_file(self, selected_file: str = None, selected_file_path: str = None):
+        # assert that shows invalid call of the method
+        # when selected_file is not None, selected_file_path must be not None too
+        assert selected_file is None or selected_file_path is not None, "selected_file_path must be not None when selected_file is not None"
+        
         # If an argument is passed, save it; otherwise, use the previously set attribute.
         if selected_file is not None:
             self.chosen_file = selected_file
+            self.chosen_file_path = selected_file_path
         else:
             selected_file = self.chosen_file
         # Clear existing values in self.text_tip.spans
@@ -212,13 +217,71 @@ class ImportExportControl(ft.Container):
         
         self.__disable_all_import_controls()
         
+    def __layout_after_adding_set(self):
+        self.chosen_file = None
+        self.chosen_file_path = None
+        self.__make_layout_before_chosen_file()
+        self.__android_center_import_controls_alignment()
+        self.page.open(ft.SnackBar(ft.Text("Set has been added successfully.")))
+        
     def __on_add_set_click(self, e):
         if not self.title_field.value.strip():
             self.title_field.error_text = "Title cannot be empty."
             self.update()
         else:
-            # Add your logic here for when the title field is not empty
-            pass
+            # asserts too make sure that attributes with file name and path are set
+            assert self.chosen_file is not None, "chosen_file must be not None"
+            assert self.chosen_file_path is not None, "chosen_file_path must be not None"
+            
+            # Logic for adding a set
+            if not self.validation_requires_specific_actions:
+                # if there are no specific actions required
+                if self.validation_has_statistics:
+                    
+                    def action_function_for_dialog(e): # user checked "Yes"
+                        CSVProcessor.save_set_with_no_specific_actions(
+                            self.chosen_file_path,
+                            self.chosen_file,
+                            self.title_field.value,
+                            self.subtitle_field.value,
+                            True,
+                            True,
+                        )
+                        self.__layout_after_adding_set()
+                    
+                    def close_action_function_for_dialog(e): # user checked "No"
+                        CSVProcessor.save_set_with_no_specific_actions(
+                            self.chosen_file_path,
+                            self.chosen_file,
+                            self.title_field.value,
+                            self.subtitle_field.value,
+                            False,
+                        )
+                        self.__layout_after_adding_set()
+                    
+                    create_alert_dialog(
+                        self.page,
+                        title="Statistics",
+                        content="Do you want to keep progress information?",
+                        close_button_text="No",
+                        action_button_text="Yes",
+                        action_function=action_function_for_dialog,
+                        close_action_function=close_action_function_for_dialog
+                    )
+                else:
+                    CSVProcessor.save_set_with_no_specific_actions(
+                        self.chosen_file_path,
+                        self.chosen_file,
+                        self.title_field.value,
+                        self.subtitle_field.value,
+                        False,
+                    )
+                    self.__layout_after_adding_set()
+                        
+            else:
+                # if there are specific actions required
+                pass
+        
     
     def __upscale_import_button(self):
         self.choose_file_button.scale = ImportExportControl.SCALE_IMPORT_BUTTON
@@ -261,7 +324,8 @@ class ImportExportControl(ft.Container):
             
             if validation_result["is_valid"]:
                 self.title_field.value = validation_result["name_suggestion"]
-                self.__make_layout_for_chosen_file(e.files[0].name)
+                self.subtitle_field.value = "" # it will be set by default
+                self.__make_layout_for_chosen_file(e.files[0].name, e.files[0].path)
                 self.__set_validation_properties(validation_result)
             
                 if validation_result["warnings"]:
@@ -283,7 +347,7 @@ class ImportExportControl(ft.Container):
         dialog = self.csv_file_selector                
         # delete dialog selector from overlay if exists
         for p in self.page.overlay:
-            if p.id == dialog.id:
+            if hasattr(p, 'id') and p.id == dialog.id:
                 self.page.overlay.remove(p)
                 break
             

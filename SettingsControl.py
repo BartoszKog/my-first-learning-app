@@ -1,7 +1,6 @@
 import flet as ft
 from PageProperties import PageProperties
 from page_functions import set_theme_from_bgcolor
-import os
 
 class BackgroundShadeSlider(ft.Column):
     DARK_THEME_COLORS = [

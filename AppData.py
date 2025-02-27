@@ -22,6 +22,14 @@ def get_file_names_and_titles() -> dict:
         
     return df_files.to_dict(orient="records")
 
+def get_file_names() -> list:
+    if os.path.exists("files.csv"):
+        df_files = pd.read_csv("files.csv")
+        return df_files[FilesColumns.FILE_NAME.value].tolist()
+    else:
+        generate_empty_files_data()
+        return []
+
 def generate_empty_files_data():
     df_files = pd.DataFrame({
             FilesColumns.FILE_NAME.value: [],
@@ -57,6 +65,17 @@ def delate_set(file_name: str, file_not_exist=False):
     
     if not file_not_exist:
         os.remove(file_name)
+        
+def add_new_file(file_name: str, title: str, subtitle: str = ""):
+    if not os.path.exists("files.csv"):
+        generate_empty_files_data()
+    df_files = pd.read_csv("files.csv")
+    df_files = pd.concat([df_files, pd.DataFrame({
+        FilesColumns.FILE_NAME.value: [file_name],
+        FilesColumns.TITLE.value: [title],
+        FilesColumns.SUBTITLE.value: [subtitle]
+    })])
+    df_files.to_csv("files.csv", index=False)
     
 def create_empty_set(kind: str):
     assert kind in ["words", "definitions"], "The kind must be 'words' or 'definitions'."
@@ -357,12 +376,13 @@ class AppData:
         save_set(df, file_name)
         
         # add a new row to the files.csv
-        df_files = pd.read_csv("files.csv")
-        df_files = pd.concat([df_files, pd.DataFrame({
-            FilesColumns.FILE_NAME.value: [file_name],
-            FilesColumns.TITLE.value: [title],
-            FilesColumns.SUBTITLE.value: [subtitle]
-        })])
+        # df_files = pd.read_csv("files.csv")
+        # df_files = pd.concat([df_files, pd.DataFrame({
+        #     FilesColumns.FILE_NAME.value: [file_name],
+        #     FilesColumns.TITLE.value: [title],
+        #     FilesColumns.SUBTITLE.value: [subtitle]
+        # })])
 
-        df_files.to_csv("files.csv", index=False)
+        # df_files.to_csv("files.csv", index=False)
+        add_new_file(file_name, title, subtitle)
         

@@ -7,8 +7,10 @@ def quit_main_menu(e):
     e.page.floating_action_button.visible = False
     e.page.update()
     
-def create_alert_dialog(page, title, content, close_button_text="OK", action_button_text=None, action_function=None):
+def create_alert_dialog(page, title, content, close_button_text="OK", action_button_text=None, action_function=None, close_action_function=None):
     def close_action(e):
+        if close_action_function:
+            close_action_function(e)
         e.page.close(alert_dialog)
         e.page.overlay.remove(alert_dialog) # Remove the dialog from the overlay
         

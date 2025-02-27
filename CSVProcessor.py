@@ -1,22 +1,62 @@
 import pandas as pd
 from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Errors, MAX_ROWS
-from AppData import load_set
+from AppData import load_set, add_new_file, save_set, get_file_names
 from PageProperties import PageProperties
 from flet import PagePlatform
 
 class CSVProcessor:
     @staticmethod
-    def save_set_with_no_specific_actions(file_name: str, title: str, subtitle: str) -> None:
+    def __add_statistics_columns(df: pd.DataFrame) -> pd.DataFrame:
+        # Add statistics columns to the DataFrame
+        df[StatsColumns.CORRECT_ANSWERS.value] = 0
+        df[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] = False
+        df[StatsColumns.GOOD_ANSWER.value] = False
+        df[StatsColumns.WORD_TO_LEARN.value] = False
+        return df
+    
+    @staticmethod
+    def __reset_statistics_columns(df: pd.DataFrame) -> pd.DataFrame:
         pass
     
     @staticmethod
+    def save_set_with_no_specific_actions(
+        file_path: str,
+        file_name: str, 
+        title: str, 
+        subtitle: str, 
+        has_statistics: bool,
+        keep_statistics: bool = False,
+    ) -> None:
+        df = load_set(file_path)
+        
+        if not has_statistics:
+            df = CSVProcessor.__add_statistics_columns(df)
+        else:
+            if not keep_statistics:
+                df = df.drop(columns=[col.value for col in StatsColumns])
+                df = CSVProcessor.__add_statistics_columns(df) # add default values
+        
+        # check if the file name is occupied by another file, if so, add a number to the file name
+        file_names_in_app_data = get_file_names()
+        if file_name in file_names_in_app_data:
+            i = 1
+            while f"{i}{file_name}" in file_names_in_app_data:
+                i += 1
+            file_name = f"{i}{file_name}"
+        add_new_file(file_name, title, subtitle)
+        save_set(df, file_name)
+        
+    
+    @staticmethod
     def save_set_with_specific_actions(
+        file_path: str,
         file_name: str,
         title: str,
         subtitle: str,
         data_type: str,
         has_statistics: bool,
         warnings: list,
+        keep_statistics: bool = False,
     ) -> None:
         pass
     

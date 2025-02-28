@@ -1,5 +1,5 @@
 import flet as ft 
-from AppData import get_file_names
+from AppData import get_file_names, sanitize_file_name
 from EditSetMenu import EditSetMenu
 from constants import FilesColumns
 from page_functions import create_alert_dialog
@@ -62,8 +62,6 @@ class CreateSetMenu(ft.Column):
             )
         else:
             # load list of file_names to create new file_name
-            # files_df = pd.read_csv("files.csv") 
-            # filenames = files_df[FilesColumns.FILE_NAME.value].tolist()
             filenames = get_file_names()
             
             kind = self.kind_dropdown.value.lower()
@@ -71,15 +69,17 @@ class CreateSetMenu(ft.Column):
             if kind == "word formations":
                 kind = "words"
 
-            # crate name for new file
-            new_file_name = f"{self.title_field.value}_{kind}.csv".lower()
+            # create sanitized file name
+            sanitized_title = sanitize_file_name(self.title_field.value, kind)
             
             # check if file_name already exists
             checking = True
             counter = 1
+            new_file_name = sanitized_title
             while checking:
                 if new_file_name in filenames:
-                    new_file_name = f"{self.title_field.value}{counter}_{kind}.csv".lower()
+                    base_name = sanitized_title.replace(f"_{kind}.csv", "")
+                    new_file_name = sanitize_file_name(f"{base_name}{counter}", kind)
                     counter += 1
                 else:
                     checking = False

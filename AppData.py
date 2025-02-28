@@ -13,11 +13,6 @@ def sanitize_file_name(file_name: str, kind: str) -> str:
     # deletes special characters that are not allowed in the file name
     # and limits the length to 20 characters (excluding the suffix)
     file_name = "".join([c for c in file_name if c.isalnum()]).rstrip()
-    
-    # truncate to ensure entire filename with suffix won't exceed 20 chars
-    max_base_length = 20 - len(f"_{kind}.csv")
-    file_name = file_name[:max_base_length]
-    
     file_name = f"{file_name}_{kind}.csv"
     return file_name
 

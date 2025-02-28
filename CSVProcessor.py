@@ -25,10 +25,6 @@ class CSVProcessor:
         # remove suffix from the file name
         file_name = file_name[:-len(suffix)]
         file_name = "".join([char for char in file_name if char.isalnum()])
-        # Calculate maximum length for the base name
-        max_base_length = 20 - len(suffix)
-        # Limit the file name to ensure total length (with suffix) doesn't exceed 20 characters
-        file_name = file_name[:max_base_length]
         # add suffix to the file name
         file_name += suffix
         return file_name

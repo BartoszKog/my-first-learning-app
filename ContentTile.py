@@ -4,6 +4,8 @@ from WordDefinitionField import WordDefinitionField
 from AppData import delate_set, set_default_progress
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
+# imports for export method
+import os
 
 class ContentTile(ft.Card):
     def __init__(self, file_name: str, title: str, subtitle: str = "", parent_container=None, key=None, export_mode = False):
@@ -170,8 +172,54 @@ class ContentTile(ft.Card):
         self.content.update()
     
     def export(self, e):
-        if self.__file_exist():
-            print("Exporting set: " + self.title)
-            pass
-        else:
+        if not self.__file_exist():
             self.file_not_found_dialog(e)
+            return
+        
+        # Create or get file picker
+        try:
+            picker = PageProperties.get_export_csv_picker()
+        except AssertionError:
+            picker = PageProperties.create_export_csv_picker(e.page)
+        
+        # Set callback to handle picker result
+        def export_callback(picker_result):
+            if not picker_result.path:
+                return  # Selection canceled
+            
+            def copy2(src: str, dst: str):
+                with open(src, 'rb') as fsrc:
+                    with open(dst, 'wb') as fdst:
+                        fdst.write(fsrc.read())
+                
+            # Prepare destination file name
+            destination_path = picker_result.path
+            
+            try:
+                # Copy file to selected location
+                copy2(self.file_name, destination_path)
+                
+                # Show success message
+                create_alert_dialog(
+                    page=e.page,
+                    title="Export completed",
+                    content=f"Successfully exported set '{self.title}' to:\n{destination_path}",
+                    close_button_text="OK"
+                )
+            except Exception as ex:
+                # Error handling
+                create_alert_dialog(
+                    page=e.page,
+                    title="Export error",
+                    content=f"Failed to export file:\n{str(ex)}",
+                    close_button_text="OK"
+                )
+        
+        # Assign callback and launch picker
+        PageProperties.set_export_callback(export_callback)
+        picker.save_file(
+            dialog_title="Choose export location",
+            file_name=os.path.basename(self.file_name),
+            allowed_extensions=["csv"]
+        )
+        e.page.update()

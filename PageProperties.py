@@ -1,4 +1,4 @@
-from flet import Page, Padding, ThemeMode
+from flet import Page, Padding, ThemeMode, FilePicker
 
 class PageProperties:
     width = 500
@@ -10,6 +10,32 @@ class PageProperties:
     light_theme_slider_value = 2
     dark_theme_bgcolor = None
     light_theme_bgcolor = None
+    export_picker_csv = None
+    
+    @classmethod
+    def create_export_csv_picker(cls, page):
+        if not cls.export_picker_csv:
+            cls.export_picker_csv = FilePicker(
+                on_result=cls._on_export_picker_result
+            )
+            page.overlay.append(cls.export_picker_csv)
+            page.update()
+        return cls.export_picker_csv
+
+    @classmethod
+    def _on_export_picker_result(cls, e):
+        # Ten callback będzie uzupełniany przez ContentTile przy eksporcie
+        if hasattr(cls, "export_callback") and cls.export_callback:
+            cls.export_callback(e)
+
+    @classmethod
+    def set_export_callback(cls, callback):
+        cls.export_callback = callback
+
+    @classmethod
+    def get_export_csv_picker(cls):
+        assert cls.export_picker_csv is not None, "Export CSV picker is not set"
+        return cls.export_picker_csv
     
     @classmethod
     def set_width_height_from_page(cls, page: Page):

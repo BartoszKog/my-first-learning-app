@@ -3,6 +3,7 @@ from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Er
 from AppData import load_set, add_new_file, save_set, get_file_names
 from PageProperties import PageProperties
 from flet import PagePlatform
+import os
 
 class CSVProcessor:
     @staticmethod
@@ -327,9 +328,7 @@ class CSVProcessor:
                     if not validate_columns(expected_columns, df.columns, missing_columns_error):
                         is_valid = False
                         
-                    file_separator = '\\' if PageProperties.platform == PagePlatform.WINDOWS else '/'
-                        
-                    name_suggestion = file_path.split(suffix)[0].split(file_separator)[-1] # android can be different
+                    name_suggestion = os.path.basename(file_path.split(suffix)[0])
                     break
             else:
                 # Check if columns match either words or definitions

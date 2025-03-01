@@ -278,9 +278,72 @@ class ImportExportControl(ft.Container):
                     )
                     self.__layout_after_adding_set()
                         
-            else:
-                # if there are specific actions required
-                pass
+            else:  # if there are specific actions required
+                if self.validation_has_statistics:
+                    def action_function_for_dialog(e):  # user checked "Yes"
+                        information = CSVProcessor.save_set_with_specific_actions(
+                            self.chosen_file_path,
+                            self.chosen_file,
+                            self.title_field.value,
+                            self.subtitle_field.value,
+                            self.validation_data_type,
+                            True,  # has_statistics
+                            self.validation_warnings,
+                            True,  # keep_statistics
+                        )
+                        if information:
+                            create_alert_dialog(
+                                self.page,
+                                title="Information",
+                                content=information
+                            )
+                        self.__layout_after_adding_set()
+                    
+                    def close_action_function_for_dialog(e):  # user checked "No"
+                        information = CSVProcessor.save_set_with_specific_actions(
+                            self.chosen_file_path,
+                            self.chosen_file,
+                            self.title_field.value,
+                            self.subtitle_field.value,
+                            self.validation_data_type,
+                            True,  # has_statistics
+                            self.validation_warnings,
+                            False,  # don't keep_statistics
+                        )
+                        if information:
+                            create_alert_dialog(
+                                self.page,
+                                title="Information",
+                                content=information
+                            )
+                        self.__layout_after_adding_set()
+                    
+                    create_alert_dialog(
+                        self.page,
+                        title="Statistics",
+                        content="Do you want to keep progress information?",
+                        close_button_text="No",
+                        action_button_text="Yes",
+                        action_function=action_function_for_dialog,
+                        close_action_function=close_action_function_for_dialog
+                    )
+                else:
+                    information = CSVProcessor.save_set_with_specific_actions(
+                        self.chosen_file_path,
+                        self.chosen_file,
+                        self.title_field.value,
+                        self.subtitle_field.value,
+                        self.validation_data_type,
+                        False,  # has_statistics
+                        self.validation_warnings,
+                    )
+                    if information:
+                        create_alert_dialog(
+                            self.page,
+                            title="Information",
+                            content=information
+                        )
+                    self.__layout_after_adding_set()
         
     
     def __upscale_import_button(self):

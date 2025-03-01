@@ -30,6 +30,8 @@ class Warnings(Enum):
     COLUMN_NOT_BOOLEAN = "One or more statistics columns are not of type boolean."
     EMPTY_VALUES_STATISTICS = "The file contains empty values in statistics columns."
     COLUMN_NOT_INTEGER = "The 'correct_answers' column is not of type integer."
+    INCONSISTENT_STATISTICS_COMBINATION = "Inconsistent combinations of statistics found."
+    NEGATIVE_CORRECT_ANSWERS = "Negative values found in correct_answers column."
     INSUFFICIENT_NON_EMPTY_VALUES = "Some rows have insufficient non-empty values in typical columns."
 
 # constant value form maximum number of rows in set

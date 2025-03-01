@@ -60,6 +60,12 @@ class CSVProcessor:
         
     
     @staticmethod
+    def __make_index_from_zero_increasing_by_one(df: pd.DataFrame) -> pd.DataFrame:
+        df.index = range(len(df))
+        return df
+        
+    
+    @staticmethod
     def save_set_with_no_specific_actions(
         file_path: str,
         file_name: str, 
@@ -81,6 +87,9 @@ class CSVProcessor:
         else:
             if not keep_statistics:
                 df = CSVProcessor.__reset_statistics_columns(df)
+        
+        # correct the index
+        df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)
         
         file_name = CSVProcessor.__create_appropriate_file_name(file_name)
         add_new_file(file_name, title, subtitle)
@@ -146,8 +155,11 @@ class CSVProcessor:
         statistics_warnings = [
             Warnings.COLUMN_NOT_BOOLEAN.value,
             Warnings.COLUMN_NOT_INTEGER.value,
-            Warnings.EMPTY_VALUES_STATISTICS.value
+            Warnings.EMPTY_VALUES_STATISTICS.value,
+            Warnings.INCONSISTENT_STATISTICS_COMBINATION.value,
+            Warnings.NEGATIVE_CORRECT_ANSWERS.value
         ]
+        
         if any(warning in warnings for warning in statistics_warnings):
             information_after_processing += "Statistics columns have errors, so progress information cannot be added. The set will be added to the application without progress data."
             if has_statistics:
@@ -202,6 +214,9 @@ class CSVProcessor:
             file_name += f"_{data_type}.csv"
             file_name = CSVProcessor.__create_appropriate_file_name(file_name)
             
+        # correct the index
+        df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)    
+        
         add_new_file(file_name, title, subtitle)
         save_set(df, file_name)
         return information_after_processing
@@ -370,6 +385,23 @@ class CSVProcessor:
                 warnings.append(Warnings.EMPTY_VALUES_STATISTICS.value)
                 requires_specific_actions = True
                 has_statistics = False
+                
+        # Check for inconsistent combinations of statistics and negative values in correct_answers
+        if is_valid and has_statistics:
+            # check for inconsistent combinations of statistics
+            inconsistent_stats_mask = (
+                (df[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == True) & 
+                (df[StatsColumns.GOOD_ANSWER.value] == False)
+            )
+            
+            if inconsistent_stats_mask.any():
+                warnings.append(Warnings.INCONSISTENT_STATISTICS_COMBINATION.value)
+                requires_specific_actions = True
+                
+            # check for invalid numerical values
+            if (df[StatsColumns.CORRECT_ANSWERS.value] < 0).any():
+                warnings.append(Warnings.NEGATIVE_CORRECT_ANSWERS.value)
+                requires_specific_actions = True
 
         # Remove duplicate warnings
         warnings = list(set(warnings))

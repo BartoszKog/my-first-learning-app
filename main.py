@@ -11,12 +11,11 @@ from EditSetMenu import EditSetMenu # need in on_resized in isinstance
 from ImportExportControl import ImportExportControl # check if it is instance of ImportExportControl in logic of search button
 # dictionary with colors
 colors = {
-    "floating_action_button_bg": ft.colors.TEAL_800,
-    "appbar_bg": ft.colors.TEAL_800,
-    "bottom_appbar_bg": ft.colors.TEAL_900,
-    "icon_color": ft.colors.WHITE,
-    "font_color": ft.colors.WHITE,
-    "icon_color": ft.colors.WHITE,
+    "floating_action_button_bg": ft.Colors.TEAL_800,
+    "appbar_bg": ft.Colors.TEAL_800,
+    "bottom_appbar_bg": ft.Colors.TEAL_900,
+    "icon_color": ft.Colors.WHITE,
+    "font_color": ft.Colors.WHITE,
 }
 
 
@@ -36,10 +35,10 @@ def main(page: ft.Page):
     
     # set default background color and theme to client storage if it is not set
     if not page.client_storage.contains_key("light_theme_bgcolor"):
-        page.client_storage.set("light_theme_bgcolor", ft.colors.BACKGROUND)
+        page.client_storage.set("light_theme_bgcolor", ft.Colors.SURFACE)
         page.client_storage.set("light_theme_slider_value", 2) # 2 corresponds to position of slider for default light theme
     if not page.client_storage.contains_key("dark_theme_bgcolor"):
-        page.client_storage.set("dark_theme_bgcolor", ft.colors.BACKGROUND)
+        page.client_storage.set("dark_theme_bgcolor", ft.Colors.SURFACE)
         page.client_storage.set("dark_theme_slider_value", 2) # 2 corresponds to position of slider for default dark theme
     if not page.client_storage.contains_key("theme_mode"):
         # default theme mode
@@ -107,7 +106,7 @@ def main(page: ft.Page):
             
 
     page.floating_action_button = ft.FloatingActionButton(
-        icon=ft.icons.ADD,
+        icon=ft.Icons.ADD,
         on_click=on_add_click, 
         bgcolor=colors["floating_action_button_bg"],
         foreground_color=colors["icon_color"],
@@ -126,9 +125,9 @@ def main(page: ft.Page):
         shape=ft.NotchShape.CIRCULAR,
         content=ft.Row(
             controls=[
-                ft.IconButton(icon=ft.icons.MENU, icon_color=colors["icon_color"], on_click=on_menu_click),
+                ft.IconButton(icon=ft.Icons.MENU, icon_color=colors["icon_color"], on_click=on_menu_click),
                 ft.Container(expand=True),
-                ft.IconButton(icon=ft.icons.SEARCH, icon_color=colors["icon_color"], on_click=on_search_click),
+                ft.IconButton(icon=ft.Icons.SEARCH, icon_color=colors["icon_color"], on_click=on_search_click),
             ]
         ),
     )

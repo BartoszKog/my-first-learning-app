@@ -23,13 +23,13 @@ class ContentTile(ft.Card):
         self.file_name = file_name
         self.kind = kind
         
-        leadingIcon = ft.Icon(ft.icons.BOOK)
+        leadingIcon = ft.Icon(ft.Icons.BOOK)
         
         if kind == "definitions":
-            leadingIcon = ft.Icon(ft.icons.HELP)
+            leadingIcon = ft.Icon(ft.Icons.HELP)
 
         self.popUpButton = ft.PopupMenuButton(
-            icon=ft.icons.MORE_VERT,
+            icon=ft.Icons.MORE_VERT,
             items=[
                 ft.PopupMenuItem(text="Edit", on_click=self.edit),
                 ft.PopupMenuItem(text="Set default progress", on_click=self.show_set_default_progress_dialog),
@@ -133,10 +133,10 @@ class ContentTile(ft.Card):
         title_text = self.title
         pattern_lower = pattern.lower()
         title_lower = title_text.lower()
-        bgcolor = ft.colors.YELLOW
+        bgcolor = ft.Colors.YELLOW
         if main_color:
-            bgcolor = ft.colors.LIGHT_BLUE
-        color = ft.colors.BLACK
+            bgcolor = ft.Colors.LIGHT_BLUE
+        color = ft.Colors.BLACK
         
         start = 0
         spans = []

@@ -20,17 +20,17 @@ class WordField(ft.TextField):
         return self.value
     
     def set_green_border(self):
-        self.border_color = ft.colors.GREEN
+        self.border_color = ft.Colors.GREEN
         self.border_width = self.width_border_indicator
         self.update()
         
     def set_red_border(self):
-        self.border_color = ft.colors.RED
+        self.border_color = ft.Colors.RED
         self.border_width = self.width_border_indicator
         self.update()
         
     def reset(self):
-        self.border_color = ft.colors.BLACK
+        self.border_color = ft.Colors.BLACK
         self.value = ""
         self.disabled = False
         self.read_only = False
@@ -89,8 +89,8 @@ class ProgressBar(ft.Column):
         
         self.pb = ft.ProgressBar(value=self.current_qty / self.max_qty, 
                                  width=width, 
-                                 color=ft.colors.ORANGE_ACCENT,
-                                 bgcolor=ft.colors.BLACK)
+                                 color=ft.Colors.ORANGE_ACCENT,
+                                 bgcolor=ft.Colors.BLACK)
         self.controls = [self.text, self.pb]
     
     def __change_text(self):

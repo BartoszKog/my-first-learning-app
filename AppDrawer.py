@@ -15,21 +15,21 @@ class AppDrawer(ft.NavigationDrawer):
             ft.Container(height=24),
             ft.NavigationDrawerDestination(
                 label="Learning sets",
-                icon=ft.icons.BOOK,
+                icon=ft.Icons.BOOK,
             ),
             ft.Divider(thickness=2),
             ft.NavigationDrawerDestination(
                 label="Importing and exporting",
-                icon=ft.icons.IMPORT_EXPORT,
+                icon=ft.Icons.IMPORT_EXPORT,
             ),
             ft.NavigationDrawerDestination(
                 label="Settings",
-                icon=ft.icons.SETTINGS,
+                icon=ft.Icons.SETTINGS,
             ),
             ft.Divider(thickness=2),
             ft.NavigationDrawerDestination(
                 label="Info",
-                icon=ft.icons.INFO,
+                icon=ft.Icons.INFO,
             ),
         ]
 

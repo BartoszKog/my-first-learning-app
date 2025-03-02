@@ -7,8 +7,8 @@ class EditCardBase(ft.Card):
         super().__init__()
         self.margin = 10
         self.index = None  # to check index from file
-        self.font_text_field_color_dark_theme = ft.colors.TEAL_200
-        self.font_text_field_color_light_theme = ft.colors.BLUE_ACCENT_700
+        self.font_text_field_color_dark_theme = ft.Colors.TEAL_200
+        self.font_text_field_color_light_theme = ft.Colors.BLUE_ACCENT_700
 
         self.dict_word_fields = {label: field for label, field in fields.items()}
 
@@ -49,7 +49,7 @@ class EditCardBase(ft.Card):
 
             e.page.snack_bar = ft.SnackBar(
                 ft.Text(f"{snackbar_word.capitalize()} deleted"),
-                bgcolor=ft.colors.TEAL_600
+                bgcolor=ft.Colors.TEAL_600
             )
             e.page.snack_bar.open = True
 
@@ -60,7 +60,7 @@ class EditCardBase(ft.Card):
             if self.index is not None:
                 lv_parent.deleted_indexes.append(self.index)
 
-        self.delete_button = ft.ElevatedButton(text="Delete", on_click=on_delete_click, icon=ft.icons.DELETE)
+        self.delete_button = ft.ElevatedButton(text="Delete", on_click=on_delete_click, icon=ft.Icons.DELETE)
 
         controls_column = ft.Column(
             controls=[
@@ -90,7 +90,6 @@ class EditCardBase(ft.Card):
 
         for label, field in self.dict_word_fields.items():
             if field.value.strip():
-                #field.color = ft.colors.TEAL_200
                 if PageProperties.dark_mode:
                     field.color = self.font_text_field_color_dark_theme
                 else:

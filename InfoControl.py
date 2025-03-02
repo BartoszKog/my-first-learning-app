@@ -8,9 +8,9 @@ class InfoControl(ft.Container):
         
         # menu button
         self.menu_button = ft.IconButton(
-            icon=ft.icons.MENU,
+            icon=ft.Icons.MENU,
             on_click=self.on_menu_click,
-            icon_color=ft.colors.WHITE
+            icon_color=ft.Colors.WHITE
         )
     
     def on_menu_click(self, e):

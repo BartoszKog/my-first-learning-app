@@ -44,7 +44,7 @@ class ImportExportControl(ft.Container):
         self.title_field = ft.TextField(
             label="Title",
             value="",
-            border_color=ft.colors.CYAN,
+            border_color=ft.Colors.CYAN,
             on_focus=self.__on_focus_field,
             on_blur=self.__on_blur_field,
             visible=False,
@@ -53,7 +53,7 @@ class ImportExportControl(ft.Container):
         self.subtitle_field = ft.TextField(
             label="Subtitle",
             value="",
-            border_color=ft.colors.CYAN,
+            border_color=ft.Colors.CYAN,
             on_focus=self.__on_focus_field,
             on_blur=self.__on_blur_field,
             visible=False,
@@ -62,23 +62,23 @@ class ImportExportControl(ft.Container):
         self.choose_file_button = ft.ElevatedButton(
             text="Choose file",
             on_click=self.__on_choose_file_click,
-            icon=ft.icons.FOLDER,
+            icon=ft.Icons.FOLDER,
             scale=ImportExportControl.SCALE_IMPORT_BUTTON,
         )
         
         self.cancel_button = ft.ElevatedButton(
             text="Cancel",
             on_click=self.__on_cancel_button_click,
-            icon=ft.icons.CLOSE,
-            icon_color=ft.colors.RED_900,
+            icon=ft.Icons.CLOSE,
+            icon_color=ft.Colors.RED_900,
             visible=False,
         )    
         
         self.add_set_button = ft.ElevatedButton(
             text="Add set",
-            icon=ft.icons.ADD,
+            icon=ft.Icons.ADD,
             on_click=self.__on_add_set_click,
-            icon_color=ft.colors.GREEN_100,
+            icon_color=ft.Colors.GREEN_100,
             visible=False,
         )
         
@@ -164,7 +164,7 @@ class ImportExportControl(ft.Container):
         self.text_tip.spans = [
             ft.TextSpan(text=self.file_selection_tips["chosen_file_title"]),
             ft.TextSpan(text="\nSelected file: ", style=ft.TextStyle(italic=True)),
-            ft.TextSpan(text=selected_file, style=ft.TextStyle(color=ft.colors.TEAL))
+            ft.TextSpan(text=selected_file, style=ft.TextStyle(color=ft.Colors.TEAL))
         ]
         # if there is some error text in title_field remove it
         self.title_field.error_text = ""
@@ -354,12 +354,12 @@ class ImportExportControl(ft.Container):
     
     def __change_import_button_to_changing_file(self):
         self.choose_file_button.text = "Change file"
-        self.choose_file_button.icon = ft.icons.DRIVE_FILE_MOVE
+        self.choose_file_button.icon = ft.Icons.DRIVE_FILE_MOVE
         self.update()
         
     def __set_import_button_default(self):
         self.choose_file_button.text = "Choose file"
-        self.choose_file_button.icon = ft.icons.FOLDER
+        self.choose_file_button.icon = ft.Icons.FOLDER
         self.update()
         
     def __on_cancel_button_click(self, e):

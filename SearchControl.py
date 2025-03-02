@@ -3,7 +3,7 @@ from TilesContainer import TilesContainer
 from PageProperties import PageProperties 
 
 class SearchControl(ft.Row):
-    COLOR = ft.colors.CYAN
+    COLOR = ft.Colors.CYAN
     
     def __init__(self, page, tiles_container: TilesContainer):
         super().__init__()
@@ -22,19 +22,19 @@ class SearchControl(ft.Row):
         )
         
         self.next_pattern_button = ft.IconButton(
-            icon=ft.icons.ARROW_CIRCLE_DOWN,
+            icon=ft.Icons.ARROW_CIRCLE_DOWN,
             on_click=self.on_next_pattern_click,
             icon_color=self.COLOR
         )
         
         self.previous_pattern_button = ft.IconButton(
-            icon=ft.icons.ARROW_CIRCLE_UP,
+            icon=ft.Icons.ARROW_CIRCLE_UP,
             on_click=self.on_previous_pattern_click,
             icon_color=self.COLOR
         )
         
         self.close_button = ft.IconButton(
-            icon=ft.icons.CLOSE,
+            icon=ft.Icons.CLOSE,
             on_click=self.on_close_click,
             icon_color=self.COLOR
         )

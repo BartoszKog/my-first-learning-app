@@ -4,17 +4,17 @@ from page_functions import set_theme_from_bgcolor
 
 class BackgroundShadeSlider(ft.Column):
     DARK_THEME_COLORS = [
-        ft.colors.BLACK,
-        ft.colors.BACKGROUND,
-        ft.colors.GREY_900,
-        ft.colors.WHITE10,
+        ft.Colors.BLACK,
+        ft.Colors.SURFACE,
+        ft.Colors.GREY_900,
+        ft.Colors.WHITE10,
     ]
     
     LIGHT_THEME_COLORS = [
-        ft.colors.WHITE,
-        ft.colors.BACKGROUND,
-        ft.colors.BLUE_GREY_50,
-        ft.colors.BLUE_50,
+        ft.Colors.WHITE,
+        ft.Colors.SURFACE,
+        ft.Colors.BLUE_GREY_50,
+        ft.Colors.BLUE_50,
     ]
     
     def __init__(self, label: str, initial_value: int):
@@ -62,9 +62,9 @@ class SettingsControl(ft.Column):
         
         # menu button
         self.menu_button = ft.IconButton(
-            icon=ft.icons.MENU,
+            icon=ft.Icons.MENU,
             on_click=self.on_menu_click,
-            icon_color=ft.colors.WHITE
+            icon_color=ft.Colors.WHITE
         )
         
         # theme dropdown
@@ -74,7 +74,7 @@ class SettingsControl(ft.Column):
                 ft.dropdown.Option(ft.ThemeMode.LIGHT, "Light")
             ],
             value=PageProperties.theme_mode,
-            border_color=ft.colors.TEAL_800,
+            border_color=ft.Colors.TEAL_800,
             on_change=self.on_theme_change
         )
         

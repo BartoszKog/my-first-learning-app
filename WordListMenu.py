@@ -6,17 +6,17 @@ from constants import PartsOfSpeech, WordDefinitions, StatsColumns
 from PageProperties import PageProperties
 
 BORDERS = {
-            "To learn": ft.border.all(1.5, ft.colors.BLUE_GREY_700),
-            "Learned": ft.border.all(1.5, ft.colors.ORANGE_500),
-            "Known": ft.border.all(1.5, ft.colors.GREEN_ACCENT_700),
+            "To learn": ft.border.all(1.5, ft.Colors.BLUE_GREY_700),
+            "Learned": ft.border.all(1.5, ft.Colors.ORANGE_500),
+            "Known": ft.border.all(1.5, ft.Colors.GREEN_ACCENT_700),
         }
 
 COLORS_CHECKS = {
-            "All": ft.colors.RED_ACCENT_700,
-            "Previous session": ft.colors.YELLOW_700,
-            "To learn": ft.colors.LIGHT_BLUE_200,
-            "Learned": ft.colors.ORANGE_500,
-            "Known": ft.colors.GREEN_ACCENT_700,
+            "All": ft.Colors.RED_ACCENT_700,
+            "Previous session": ft.Colors.YELLOW_700,
+            "To learn": ft.Colors.LIGHT_BLUE_200,
+            "Learned": ft.Colors.ORANGE_500,
+            "Known": ft.Colors.GREEN_ACCENT_700,
         }
 
 class WordContainer(ft.Container):
@@ -126,7 +126,7 @@ class WordContainer(ft.Container):
                 Column_with_words.controls.append(
                     ft.Row(
                         [
-                            ft.Text(dict_index_names[word], color=ft.colors.BLUE_GREY_500),
+                            ft.Text(dict_index_names[word], color=ft.Colors.BLUE_GREY_500),
                             ft.Text(words_row[word]),
                         ],
                     )
@@ -228,14 +228,14 @@ class WordListMenu(ft.Column):
                     
         self.start_button = ft.ElevatedButton(
             text="Start",
-            icon=ft.icons.PLAY_ARROW,
+            icon=ft.Icons.PLAY_ARROW,
             on_click=on_button_click
         )
 
         
         self.back_button = ft.ElevatedButton(
             text="Back",
-            icon=ft.icons.ARROW_BACK,
+            icon=ft.Icons.ARROW_BACK,
             on_click=on_button_click
         )
         

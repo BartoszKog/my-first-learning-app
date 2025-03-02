@@ -27,20 +27,20 @@ class EditSetMenu(ft.Column):
             raise Exception("The file_name must match the kind.")
 
         self.addButton = ft.FloatingActionButton(
-            icon=ft.icons.ADD,
-            bgcolor=ft.colors.TEAL_900,
+            icon=ft.Icons.ADD,
+            bgcolor=ft.Colors.TEAL_900,
             on_click=self.on_add_click,
-            foreground_color=ft.colors.WHITE
+            foreground_color=ft.Colors.WHITE
         )
         self.backButton = ft.ElevatedButton(
             text="Back",
             on_click=self.on_back_click,
-            icon=ft.icons.ARROW_BACK
+            icon=ft.Icons.ARROW_BACK
         )
         self.ok_button = ft.ElevatedButton(
             text="OK",
             on_click=self.on_ok_click,
-            icon=ft.icons.CHECK
+            icon=ft.Icons.CHECK
         )
         self.buttons_row = ft.Row(
             controls=[

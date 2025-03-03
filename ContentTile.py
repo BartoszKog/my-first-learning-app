@@ -1,7 +1,7 @@
 import flet as ft
 from WordFields import WordFields
 from WordDefinitionField import WordDefinitionField
-from AppData import delate_set, set_default_progress
+from AppData import delate_set, set_default_progress, get_kind_of_file_and_validate
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
 # imports for export method
@@ -13,12 +13,7 @@ class ContentTile(ft.Card):
         self.parent_container = parent_container
         self.title = title
         
-        if file_name.split("_")[1] == "words.csv":
-            kind = "words"
-        elif file_name.split("_")[1] == "definitions.csv":
-            kind = "definitions"
-        else:         
-            raise Exception("The file_name must match the kind.")
+        kind = get_kind_of_file_and_validate(file_name)
         
         self.file_name = file_name
         self.kind = kind

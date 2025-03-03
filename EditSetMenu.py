@@ -1,7 +1,7 @@
 import flet as ft
 import pandas as pd
 from EditCards import EditCardWords, EditCardDefinitions
-from AppData import save_set, load_set, create_empty_set
+from AppData import save_set, load_set, create_empty_set, get_kind_of_file_and_validate
 from constants import PartsOfSpeech, StatsColumns, WordDefinitions, MAX_ROWS
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
@@ -19,12 +19,8 @@ class EditSetMenu(ft.Column):
         self.title = title
         self.subtitle = subtitle
 
-        if file_name.split("_")[1] == "words.csv":
-            self.kind = "words"
-        elif file_name.split("_")[1] == "definitions.csv":
-            self.kind = "definitions"
-        else:
-            raise Exception("The file_name must match the kind.")
+        # get kind of file and validate based on file_name
+        self.kind = get_kind_of_file_and_validate(file_name)
 
         self.addButton = ft.FloatingActionButton(
             icon=ft.Icons.ADD,

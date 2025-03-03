@@ -1,5 +1,5 @@
 import flet as ft
-from AppData import AppData
+from AppData import AppData, get_kind_of_file_and_validate
 from typing import Dict
 from Controls import ProgressBar
 from constants import PartsOfSpeech, WordDefinitions, StatsColumns
@@ -171,12 +171,7 @@ class WordListMenu(ft.Column):
         self.width = width
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         
-        if file_name.split("_")[1] == "words.csv":
-            self.kind = "words"
-        elif file_name.split("_")[1] == "definitions.csv":
-            self.kind = "definitions"
-        else: 
-            raise Exception("The file_name must match the kind.")
+        self.kind = get_kind_of_file_and_validate(file_name)
         
         self.words = AppData(file_name)
         self.dict_filter_chips: Dict[str, ft.Chip] = {}

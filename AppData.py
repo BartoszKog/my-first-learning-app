@@ -3,6 +3,15 @@ import random as rd
 import os
 from constants import FilesColumns, StatsColumns, PartsOfSpeech, WordDefinitions
 
+def get_kind_of_file_and_validate(file_name: str) -> str:
+    # Returns the kind of file and validates it.
+    if file_name.endswith("_words.csv"):
+        return "words"
+    elif file_name.endswith("_definitions.csv"):
+        return "definitions"
+    else:
+        raise Exception("The file_name must end with _words.csv or _definitions.csv.")
+
 def save_set(data, file_name):
     data.to_csv(file_name, index=True)
 
@@ -148,12 +157,7 @@ class AppData:
         self.current_word_index = 0
         self.current_word_row = self.words.loc[self.current_word_index]
         
-        if file_name.split("_")[1] == "words.csv":
-            self.kind = "words"
-        elif file_name.split("_")[1] == "definitions.csv":
-            self.kind = "definitions"
-        else:         
-            raise Exception("The file_name must match the kind.")
+        self.kind = get_kind_of_file_and_validate(file_name)
         
         self.stats_columns = [
             StatsColumns.CORRECT_ANSWERS.value, 
@@ -165,12 +169,6 @@ class AppData:
         # assert kind in ["words", "definitions"]
         if self.kind not in ["words", "definitions"]:
             raise Exception("The kind must be 'words' or 'definitions'.")
-        
-        # assert file_name matches the kind
-        if self.kind == "words" and file_name.split("_")[1] != "words.csv":
-            raise Exception("The file_name must match the kind.")
-        elif self.kind == "definitions" and file_name.split("_")[1] != "definitions.csv":
-            raise Exception("The file_name must match the kind.")
         
         # assert the the correct columns are in the data
         if self.kind == "words":
@@ -370,26 +368,10 @@ class AppData:
         if not os.path.exists("files.csv"):
             generate_empty_files_data()
             
-        kind = None
-            
-        if file_name.split("_")[1] == "words.csv":
-            kind = "words"
-        elif file_name.split("_")[1] == "definitions.csv":
-            kind = "definitions"
-        else:         
-            raise Exception("The file_name must match the kind.")
+        kind = get_kind_of_file_and_validate(file_name)
         
         df = create_empty_set(kind)
         save_set(df, file_name)
         
-        # add a new row to the files.csv
-        # df_files = pd.read_csv("files.csv")
-        # df_files = pd.concat([df_files, pd.DataFrame({
-        #     FilesColumns.FILE_NAME.value: [file_name],
-        #     FilesColumns.TITLE.value: [title],
-        #     FilesColumns.SUBTITLE.value: [subtitle]
-        # })])
-
-        # df_files.to_csv("files.csv", index=False)
         add_new_file(file_name, title, subtitle)
         

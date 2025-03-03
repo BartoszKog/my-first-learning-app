@@ -13,6 +13,15 @@ class PageProperties:
     export_picker_csv = None
     
     @classmethod
+    def set_page(cls, page: Page):
+        cls.page = page
+        
+    @classmethod
+    def get_page(cls):
+        assert hasattr(cls, "page"), "Page is not set"
+        return cls.page
+    
+    @classmethod
     def create_export_csv_picker(cls, page):
         if not cls.export_picker_csv:
             cls.export_picker_csv = FilePicker(

@@ -29,6 +29,7 @@ def main(page: ft.Page):
     page.window.max_height = 1000
     PageProperties.set_width_height_from_page(page)
     PageProperties.create_export_csv_picker(page)
+    PageProperties.set_page(page)
     
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER

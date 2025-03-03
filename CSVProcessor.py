@@ -1,5 +1,5 @@
 import pandas as pd
-from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Errors, MAX_ROWS
+from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Errors, MAX_ROWS, FilesColumns
 from AppData import load_set, add_new_file, save_set, get_file_names
 from PageProperties import PageProperties
 from flet import PagePlatform
@@ -415,4 +415,191 @@ class CSVProcessor:
             "data_type": data_type
         }
 
+    @staticmethod
+    def validate_files_csv() -> dict:
+        """
+        Validates the files.csv file containing information about all learning sets.
+        
+        Returns:
+            dict: Dictionary with validation results containing errors, warnings, and information
+                whether the file is valid.
+        """
+        errors = []
+        warnings = []
+        is_valid = True
+        files_data = None
+        
+        # Check if files.csv exists
+        if not os.path.exists("files.csv"):
+            # If the file doesn't exist, it's ok, since it will be created later in get_file_names_and_titles
+            is_valid = True
+            return {
+                "errors": errors,
+                "warnings": warnings,
+                "is_valid": is_valid,
+                "files_data": None
+            }
+        
+        # Try to load the file with pandas
+        try:
+            files_data = pd.read_csv("files.csv")
+        except Exception as e:
+            errors.append(f"Error loading files.csv: {str(e)}")
+            is_valid = False
+            return {
+                "errors": errors,
+                "warnings": warnings,
+                "is_valid": is_valid,
+                "files_data": None
+            }
+        
+        # Check required columns
+        required_columns = [FilesColumns.FILE_NAME.value, FilesColumns.TITLE.value, FilesColumns.SUBTITLE.value]
+        missing_columns = [col for col in required_columns if col not in files_data.columns]
+        if missing_columns:
+            errors.append(f"Missing required columns in files.csv: {', '.join(missing_columns)}")
+            is_valid = False
+        
+        if not is_valid:
+            return {
+                "errors": errors,
+                "warnings": warnings,
+                "is_valid": is_valid,
+                "files_data": files_data
+            }
+        
+        # Check for empty values in required fields
+        if files_data[FilesColumns.FILE_NAME.value].isnull().any():
+            errors.append("Found empty file names in files.csv.")
+            is_valid = False
+        
+        if files_data[FilesColumns.TITLE.value].isnull().any():
+            errors.append("Found empty titles in files.csv.")
+            is_valid = False
+        
+        # Check for duplicate file names
+        duplicate_files = files_data[files_data.duplicated(subset=[FilesColumns.FILE_NAME.value], keep=False)]
+        if not duplicate_files.empty:
+            errors.append(f"Found duplicate file names in files.csv: {', '.join(duplicate_files[FilesColumns.FILE_NAME.value].unique())}")
+            is_valid = False
+        
+        # Check file name formats
+        invalid_file_names = []
+        missing_files = []
+        for file_name in files_data[FilesColumns.FILE_NAME.value]:
+            if not (file_name.endswith("_words.csv") or file_name.endswith("_definitions.csv")):
+                invalid_file_names.append(file_name)
+            
+            # Check if the file physically exists
+            if not os.path.exists(file_name):
+                missing_files.append(file_name)
+        
+        if invalid_file_names:
+            errors.append(f"Invalid file names in files.csv (must end with '_words.csv' or '_definitions.csv'): {', '.join(invalid_file_names)}")
+            is_valid = False
+        
+        if missing_files:
+            warnings.append(f"Files listed in files.csv do not exist on disk: {', '.join(missing_files)}")
+        
+        return {
+            "errors": errors,
+            "warnings": warnings,
+            "is_valid": is_valid,
+            "files_data": files_data
+        }
+
+    @staticmethod
+    def repair_files_csv() -> dict:
+        """
+        Attempts to repair the files.csv file by:
+        1. Creating it if it doesn't exist
+        2. Removing invalid entries
+        3. Removing duplicates
+        
+        Returns:
+            dict: Dictionary with repair results
+        """
+        from AppData import generate_empty_files_data
+        
+        validation_result = CSVProcessor.validate_files_csv()
+        repair_actions = []
+        
+        # If the file doesn't exist, create it
+        if "The files.csv file does not exist." in validation_result["errors"]:
+            generate_empty_files_data()
+            repair_actions.append("Created a new empty files.csv file")
+            return {
+                "repair_actions": repair_actions,
+                "success": True
+            }
+        
+        # If the file can't be loaded, recreate it
+        if any("Error loading files.csv" in error for error in validation_result["errors"]):
+            generate_empty_files_data()
+            repair_actions.append("Recreated files.csv due to loading errors")
+            return {
+                "repair_actions": repair_actions,
+                "success": True
+            }
+        
+        # If columns are missing, recreate the file
+        if any("Missing required columns" in error for error in validation_result["errors"]):
+            generate_empty_files_data()
+            repair_actions.append("Recreated files.csv due to missing required columns")
+            return {
+                "repair_actions": repair_actions,
+                "success": True
+            }
+        
+        # If we have data to work with
+        if validation_result["files_data"] is not None:
+            files_data = validation_result["files_data"]
+            original_len = len(files_data)
+            
+            # Remove rows with empty file names or titles
+            if any("Found empty file names" in error for error in validation_result["errors"]):
+                files_data = files_data.dropna(subset=[FilesColumns.FILE_NAME.value])
+                repair_actions.append("Removed entries with empty file names")
+            
+            if any("Found empty titles" in error for error in validation_result["errors"]):
+                files_data = files_data.dropna(subset=[FilesColumns.TITLE.value])
+                repair_actions.append("Removed entries with empty titles")
+            
+            # Fill NaN in subtitle with an empty string
+            if FilesColumns.SUBTITLE.value in files_data.columns:
+                files_data.loc[:, FilesColumns.SUBTITLE.value] = files_data[FilesColumns.SUBTITLE.value].fillna("")
+                repair_actions.append("Filled empty subtitle values with empty strings")
+            
+            # Remove duplicates
+            if any("Found duplicate file names" in error for error in validation_result["errors"]):
+                files_data = files_data.drop_duplicates(subset=[FilesColumns.FILE_NAME.value], keep='first')
+                repair_actions.append("Removed duplicate file entries")
+            
+            # Remove entries with invalid file names
+            invalid_names = [name for name in files_data[FilesColumns.FILE_NAME.value] 
+                        if not (name.endswith("_words.csv") or name.endswith("_definitions.csv"))]
+            if invalid_names:
+                files_data = files_data[~files_data[FilesColumns.FILE_NAME.value].isin(invalid_names)]
+                repair_actions.append(f"Removed {len(invalid_names)} entries with invalid file names")
+            
+            # Remove entries for missing files
+            missing_files = [name for name in files_data[FilesColumns.FILE_NAME.value] if not os.path.exists(name)]
+            if missing_files:
+                files_data = files_data[~files_data[FilesColumns.FILE_NAME.value].isin(missing_files)]
+                repair_actions.append(f"Removed {len(missing_files)} entries for files that don't exist")
+            
+            # Save the cleaned data if changes were made
+            if len(files_data) != original_len or any(["Filled empty" in action for action in repair_actions]):
+                files_data.to_csv("files.csv", index=False)
+                repair_actions.append(f"Saved repaired files.csv with {len(files_data)} entries (originally {original_len})")
+            
+            return {
+                "repair_actions": repair_actions,
+                "success": True if repair_actions else False
+            }
+        
+        return {
+            "repair_actions": ["No repairs were made"],
+            "success": False
+        }
 

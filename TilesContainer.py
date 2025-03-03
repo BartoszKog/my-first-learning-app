@@ -10,8 +10,7 @@ import time
 
 class TilesContainer(ft.Container):
     def __init__(self, page=None, export_mode=False):
-        super().__init__()
-        files_and_titles = get_file_names_and_titles()
+        super().__init__()   
         
         # attributes involved in searching mode
         self.export_mode = export_mode  
@@ -21,21 +20,7 @@ class TilesContainer(ft.Container):
         self.index_of_all_tiles = 0
         self.lock = threading.Lock()
         
-        # check if files exist
-        file_has_been_removed = False
-        for entry in files_and_titles:
-            if not self.__file_exist(entry[FilesColumns.FILE_NAME.value]):
-                create_alert_dialog(
-                    page=page,
-                    title="File not found",
-                    content=f"File {entry[FilesColumns.FILE_NAME.value]} not found. \nIt has been removed from the list.",
-                    close_button_text="OK"
-                )
-                delate_set(entry[FilesColumns.FILE_NAME.value], file_not_exist=True)
-                file_has_been_removed = True
-                
-        if file_has_been_removed:
-            files_and_titles = get_file_names_and_titles()        
+        files_and_titles = self.__validate_and_get_files(PageProperties.get_page()) 
         
         lv = ft.ListView(
             expand=True,
@@ -72,7 +57,7 @@ class TilesContainer(ft.Container):
         e.page.update()
         
     def refresh_content(self):
-        files_and_titles = get_file_names_and_titles()
+        files_and_titles = self.__validate_and_get_files(PageProperties.get_page())
         self.content.controls.clear()
         for entry in files_and_titles:
             self.content.controls.append(
@@ -103,6 +88,102 @@ class TilesContainer(ft.Container):
                 return True
         except FileNotFoundError:
             return False
+        
+    def __validate_and_get_files(self, page=None):
+        """
+        Validates files.csv and handles the repair process.
+        Returns a list of files to be displayed as tiles.
+        """
+        # Check validity of files.csv
+        from CSVProcessor import CSVProcessor
+        files_validation = CSVProcessor.validate_files_csv()
+        
+        # If the file doesn't exist, it will be created by get_file_names_and_titles
+        if not files_validation["is_valid"] and files_validation["errors"]:
+            error_message = "The configuration file files.csv has issues that need to be fixed:\n\n"
+            
+            if files_validation["errors"]:
+                error_message += "Errors:\n"
+                for error in files_validation["errors"]:
+                    error_message += f"- {error}\n"
+            
+            if files_validation["warnings"]:
+                error_message += "\nWarnings:\n"
+                for warning in files_validation["warnings"]:
+                    error_message += f"- {warning}\n"
+            
+            error_message += "\nWould you like to attempt automatic repair? This may remove some invalid entries."
+            
+            if page is not None:
+                create_alert_dialog(
+                    page=page,
+                    title="Configuration File Issues",
+                    content=error_message,
+                    close_button_text="No",
+                    action_button_text="Yes, repair",
+                    action_function=lambda e: self.__repair_files_and_reload(e)
+                )
+                # Return empty list - content will be updated after repair
+                return []
+        
+        # Get list of files
+        files_and_titles = get_file_names_and_titles()
+        
+        # Check if files physically exist
+        file_has_been_removed = False
+        files_to_remove = []
+        
+        for entry in files_and_titles:
+            if not self.__file_exist(entry[FilesColumns.FILE_NAME.value]):
+                if page is not None:
+                    create_alert_dialog(
+                        page=page,
+                        title="File not found",
+                        content=f"File {entry[FilesColumns.FILE_NAME.value]} was not found. \nIt has been removed from the list.",
+                        close_button_text="OK"
+                    )
+                files_to_remove.append(entry[FilesColumns.FILE_NAME.value])
+                file_has_been_removed = True
+        
+        # Remove files that don't physically exist
+        for file_name in files_to_remove:
+            delate_set(file_name, file_not_exist=True)
+        
+        if file_has_been_removed:
+            files_and_titles = get_file_names_and_titles()
+        
+        return files_and_titles
+
+    def __repair_files_and_reload(self, e):
+        """
+        Repairs files.csv and updates the view.
+        """
+        from CSVProcessor import CSVProcessor
+        repair_result = CSVProcessor.repair_files_csv()
+        
+        result_message = "Repair results:\n\n"
+        for action in repair_result["repair_actions"]:
+            result_message += f"- {action}\n"
+        
+        if repair_result["success"]:
+            result_message += "\nConfiguration file has been repaired. The application will now reload."
+            
+            create_alert_dialog(
+                page=e.page,
+                title="Repair completed successfully",
+                content=result_message,
+                close_button_text="OK",
+                close_action_function=lambda e: self.refresh_content()
+            )
+        else:
+            result_message += "\nRepair failed. Please check your configuration file manually."
+            
+            create_alert_dialog(
+                page=e.page,
+                title="Repair failed",
+                content=result_message,
+                close_button_text="OK"
+            )    
     
     # Methods involved in searching mode
     def trigger_searching_mode(self):

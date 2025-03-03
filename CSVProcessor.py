@@ -487,6 +487,7 @@ class CSVProcessor:
         invalid_file_names = []
         missing_files = []
         for file_name in files_data[FilesColumns.FILE_NAME.value]:
+            file_name = str(file_name)
             if not (file_name.endswith("_words.csv") or file_name.endswith("_definitions.csv")):
                 invalid_file_names.append(file_name)
             

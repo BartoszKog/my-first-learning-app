@@ -88,23 +88,59 @@ class ContentTile(ft.Card):
         set_default_progress(self.file_name)
         e.page.update()
         
-    def open_set(self, e):
-        if self.__file_exist():
-            # opening the set of words or definitions
-            e.page.controls.clear()
-            e.page.appbar.visible = False
-            e.page.bottom_appbar.visible = False
-            e.page.floating_action_button.visible = False
-            PageProperties.set_width_height_from_page(e.page)
-            if self.kind == "words":
-                wf = WordFields(self.file_name, page=e.page, width=PageProperties.width*0.8)
-                e.page.add(wf)
-            elif self.kind == "definitions":
-                wdf = WordDefinitionField(self.file_name, page=e.page, width=PageProperties.width*0.8)
-                e.page.add(wdf)
-            e.page.update()
-        else:
+    def __validate_file_before_opening(self, e):
+        from CSVProcessor import CSVProcessor
+        
+        if not self.__file_exist():
             self.file_not_found_dialog(e)
+            return False
+        
+        validation_result = CSVProcessor.validate_file(self.file_name)
+        
+        if not validation_result["is_valid"] or len(validation_result["warnings"]) > 0 or not validation_result["has_statistics"]:
+            error_message = "The file has been modified externally and cannot be opened correctly in the application.\n\n"
+            
+            if validation_result["errors"]:
+                error_message += "Errors:\n"
+                for error in validation_result["errors"]:
+                    error_message += f"- {error}\n"
+            
+            if validation_result["warnings"]:
+                error_message += "\nWarnings:\n"
+                for warning in validation_result["warnings"]:
+                    error_message += f"- {warning}\n"
+            
+            if not validation_result["has_statistics"]:
+                error_message += "\nStatistics columns missing. This file cannot be used for learning without progress tracking.\n"
+            
+            error_message += "\nPlease fix the issues in the file before opening it."
+            
+            create_alert_dialog(
+                page=e.page,
+                title="File validation error",
+                content=error_message,
+                close_button_text="OK"
+            )
+            return False
+        
+        return True
+
+    def open_set(self, e):
+        if not self.__validate_file_before_opening(e):
+            return
+        
+        e.page.controls.clear()
+        e.page.appbar.visible = False
+        e.page.bottom_appbar.visible = False
+        e.page.floating_action_button.visible = False
+        PageProperties.set_width_height_from_page(e.page)
+        if self.kind == "words":
+            wf = WordFields(self.file_name, page=e.page, width=PageProperties.width*0.8)
+            e.page.add(wf)
+        elif self.kind == "definitions":
+            wdf = WordDefinitionField(self.file_name, page=e.page, width=PageProperties.width*0.8)
+            e.page.add(wdf)
+        e.page.update()
         
     def file_not_found_dialog(self, e):
         create_alert_dialog(

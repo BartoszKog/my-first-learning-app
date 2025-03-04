@@ -64,6 +64,16 @@ class ContentTile(ft.Card):
         )
 
     def delete_item(self, e, file_not_exist=False):
+        from CSVProcessor import CSVProcessor
+        if not CSVProcessor.validate_files_csv()["is_valid"]:
+            create_alert_dialog(
+                page=e.page,
+                title="Error",
+                content="files.csv has been changed. \nPlease restore it to its original state.",
+                close_button_text="OK"
+            )
+            return
+        
         delate_set(self.file_name, file_not_exist)
         self.parent_container.refresh_content()
         e.page.update()

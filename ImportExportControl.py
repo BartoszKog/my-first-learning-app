@@ -209,6 +209,9 @@ class ImportExportControl(ft.Container):
         self.update()
     
     def __on_choose_file_click(self, e):
+        if PageProperties.is_navigation_disabled():
+            return
+        
         self.csv_file_selector.pick_files(
             allow_multiple=False,
             allowed_extensions=["csv"],
@@ -225,6 +228,9 @@ class ImportExportControl(ft.Container):
         self.page.open(ft.SnackBar(ft.Text("Set has been added successfully.")))
         
     def __on_add_set_click(self, e):
+        if PageProperties.is_navigation_disabled():
+            return
+        
         if not self.title_field.value.strip():
             self.title_field.error_text = "Title cannot be empty."
             self.update()

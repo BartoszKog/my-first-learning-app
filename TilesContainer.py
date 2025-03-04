@@ -98,7 +98,7 @@ class TilesContainer(ft.Container):
         from CSVProcessor import CSVProcessor
         files_validation = CSVProcessor.validate_files_csv()
         
-        # If the file doesn't exist, it will be created by get_file_names_and_titles
+        # If the file doesn't exist or has errors, show dialog and disable navigation
         if not files_validation["is_valid"] and files_validation["errors"]:
             error_message = "The configuration file files.csv has issues that need to be fixed:\n\n"
             
@@ -115,6 +115,9 @@ class TilesContainer(ft.Container):
             error_message += "\nWould you like to attempt automatic repair? This may remove some invalid entries."
             
             if page is not None:
+                # Disable all navigation controls
+                PageProperties.disable_all_navigation_controls()
+                
                 create_alert_dialog(
                     page=page,
                     title="Configuration File Issues",
@@ -166,6 +169,7 @@ class TilesContainer(ft.Container):
             result_message += f"- {action}\n"
         
         if repair_result["success"]:
+            self.__on_repair_success(e)
             result_message += "\nConfiguration file has been repaired. The application will now reload."
             
             create_alert_dialog(
@@ -173,7 +177,6 @@ class TilesContainer(ft.Container):
                 title="Repair completed successfully",
                 content=result_message,
                 close_button_text="OK",
-                close_action_function=lambda e: self.refresh_content()
             )
         else:
             result_message += "\nRepair failed. Please check your configuration file manually."
@@ -183,7 +186,16 @@ class TilesContainer(ft.Container):
                 title="Repair failed",
                 content=result_message,
                 close_button_text="OK"
-            )    
+            )
+
+    def __on_repair_success(self, e = None):
+        """
+        Handles successful repair of files.csv
+        """
+        # Re-enable navigation controls
+        PageProperties.enable_all_navigation_controls()
+        # Refresh content to load repaired data
+        self.refresh_content()  
     
     # Methods involved in searching mode
     def trigger_searching_mode(self):

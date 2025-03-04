@@ -37,6 +37,10 @@ class AppDrawer(ft.NavigationDrawer):
         return sum([isinstance(control, control_class) for control in self.page.controls]) > 0
 
     def __handle_change(self, e: ft.ControlEvent):
+        # Check if navigation is disabled due to critical file issues
+        if PageProperties.is_navigation_disabled():
+            return
+        
         if self.selected_index == 0: # Learning sets
             if not self.__there_is_instance_of(TilesContainer):
                 self.page.controls.clear()

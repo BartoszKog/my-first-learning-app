@@ -1,4 +1,4 @@
-from flet import Page, Padding, ThemeMode, FilePicker
+from flet import Page, Padding, ThemeMode, FilePicker, IconButton
 
 class PageProperties:
     width = 500
@@ -11,6 +11,66 @@ class PageProperties:
     dark_theme_bgcolor = None
     light_theme_bgcolor = None
     export_picker_csv = None
+    
+    @classmethod
+    def disable_all_navigation_controls(cls):
+        """
+        Disables all navigation controls and interaction elements across the application
+        when a critical issue with files.csv is detected.
+        """
+        page = cls.get_page()
+        
+        # Disable bottom app bar buttons
+        if page.bottom_appbar and page.bottom_appbar.content:
+            for control in page.bottom_appbar.content.controls:
+                if isinstance(control, IconButton):
+                    control.disabled = True
+        
+        # Disable floating action button
+        if page.floating_action_button:
+            page.floating_action_button.disabled = True
+        
+        # Disable drawer navigation
+        if hasattr(cls, "drawer") and cls.drawer:
+            cls.drawer.disabled = True
+        
+        # Set global flag indicating disabled navigation
+        cls.navigation_disabled = True
+        
+        page.update()
+
+    @classmethod
+    def enable_all_navigation_controls(cls):
+        """
+        Re-enables all navigation controls after a critical issue has been resolved.
+        """
+        page = cls.get_page()
+        
+        # Enable bottom app bar buttons
+        if page.bottom_appbar and page.bottom_appbar.content:
+            for control in page.bottom_appbar.content.controls:
+                if isinstance(control, IconButton):
+                    control.disabled = False
+        
+        # Enable floating action button
+        if page.floating_action_button:
+            page.floating_action_button.disabled = False
+        
+        # Enable drawer navigation
+        if hasattr(cls, "drawer") and cls.drawer:
+            cls.drawer.disabled = False
+        
+        # Clear the disabled flag
+        cls.navigation_disabled = False
+        
+        page.update()
+
+    @classmethod
+    def is_navigation_disabled(cls):
+        """
+        Returns whether navigation is currently disabled due to a critical issue.
+        """
+        return getattr(cls, "navigation_disabled", False)
     
     @classmethod
     def set_page(cls, page: Page):

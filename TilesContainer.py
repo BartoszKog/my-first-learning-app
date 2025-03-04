@@ -81,6 +81,12 @@ class TilesContainer(ft.Container):
         self.height = page.height * factor
         self.update()
         
+    def has_content_tiles(self):
+        """
+        Check if the container has any ContentTile controls
+        """
+        return len(self.content.controls) > 0
+        
     @staticmethod    
     def __file_exist(file_name):
         try:

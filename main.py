@@ -93,16 +93,24 @@ def main(page: ft.Page):
 
     def on_search_click(e):
         # Logic for search button
-        page.bottom_appbar.visible = False
-        page.floating_action_button.visible = False
-        page.appbar.visible = False
-        page.padding = 0
+        def hide_appbar_elements():
+            page.bottom_appbar.visible = False
+            page.floating_action_button.visible = False
+            page.appbar.visible = False
+            page.padding = 0
+        
         if is_instance_in_the_page(page, ImportExportControl):
             export_body = PageProperties.get_export_body()
+            if not export_body.has_content_tiles():
+                return
+            hide_appbar_elements()
             export_search_control = SearchControl(page, export_body)
             PageProperties.set_current_search_control_involved_export_mode(export_search_control)
             page.add(export_search_control)
         else: # if it is not instance of ImportExportControl
+            if not body.has_content_tiles():
+                return
+            hide_appbar_elements()
             page.add(SearchControl(page, body))
             
 

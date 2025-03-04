@@ -284,7 +284,7 @@ class TilesContainer(ft.Container):
         assert index < len(self.tiles_with_patterns) and index >= 0
         assert up_or_down == "up" or up_or_down == "down"
         
-        DURATION = 0.0000001
+        DURATION = 0.01
         
         if up_or_down == "down":
             self.index_of_all_tiles = 0

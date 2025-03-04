@@ -228,6 +228,17 @@ class ImportExportControl(ft.Container):
         self.page.open(ft.SnackBar(ft.Text("Set has been added successfully.")))
         
     def __on_add_set_click(self, e):
+        is_valid_files_csv = CSVProcessor.validate_files_csv()["is_valid"]
+        if not is_valid_files_csv:
+            PageProperties.disable_all_navigation_controls()
+            
+            create_alert_dialog(
+                self.page,
+                title="Error",
+                content="Files.csv has been changed.\nPlease, restart the app.",
+                close_button_text="OK",
+            )
+        
         if PageProperties.is_navigation_disabled():
             return
         

@@ -8,6 +8,7 @@ class WordField(ft.TextField):
         self.width = width
         self.read_only = read_only
         self.width_border_indicator = 1
+        self.default_border_color = self.border_color
         
         if autofocus:
             self.autofocus = True
@@ -30,7 +31,7 @@ class WordField(ft.TextField):
         self.update()
         
     def reset(self):
-        self.border_color = ft.Colors.BLACK
+        self.border_color = self.default_border_color
         self.value = ""
         self.disabled = False
         self.read_only = False

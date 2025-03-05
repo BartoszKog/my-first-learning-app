@@ -223,6 +223,9 @@ class ContentTile(ft.Card):
         except AssertionError:
             picker = PageProperties.create_export_csv_picker(e.page)
         
+        # Checking the platform using Flet
+        is_windows = e.page.platform == ft.PagePlatform.WINDOWS
+        
         # Set callback to handle picker result
         def export_callback(picker_result):
             if not picker_result.path:
@@ -232,11 +235,17 @@ class ContentTile(ft.Card):
                 with open(src, 'rb') as fsrc:
                     with open(dst, 'wb') as fdst:
                         fdst.write(fsrc.read())
-                
-            # Prepare destination file name
-            destination_path = picker_result.path
             
             try:
+                if is_windows:
+                    # For Windows - the path points directly to the destination file
+                    destination_path = picker_result.path
+                    if not destination_path.endswith(".csv"): # add extension if not present
+                        destination_path += ".csv"
+                else:
+                    # For other platforms - the path points to the directory, the file name needs to be added
+                    destination_path = os.path.join(picker_result.path, os.path.basename(self.file_name))
+                
                 # Copy file to selected location
                 copy2(self.file_name, destination_path)
                 
@@ -256,11 +265,20 @@ class ContentTile(ft.Card):
                     close_button_text="OK"
                 )
         
-        # Assign callback and launch picker
+        # assign callback to PageProperties
         PageProperties.set_export_callback(export_callback)
-        picker.save_file(
-            dialog_title="Choose export location",
-            file_name=os.path.basename(self.file_name),
-            allowed_extensions=["csv"]
-        )
+        
+        # Launch picker depending on the platform
+        if is_windows:
+            picker.save_file(
+                dialog_title="Choose export location",
+                file_name=os.path.basename(self.file_name),
+                allowed_extensions=["csv"]
+            )
+        else:
+            # On Android and other platforms, we use directory selection
+            picker.get_directory_path(
+                dialog_title="Choose export directory"
+            )
+        
         e.page.update()

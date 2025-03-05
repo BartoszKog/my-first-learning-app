@@ -4,6 +4,7 @@ from AppData import load_set, add_new_file, save_set, get_file_names
 from PageProperties import PageProperties
 from flet import PagePlatform
 import os
+from FilePathManager import FilePathManager
 
 class CSVProcessor:
     @staticmethod
@@ -81,18 +82,21 @@ class CSVProcessor:
         if file_name is None:
             raise ValueError("file_name cannot be None")
         
-        df = load_set(file_path)
-        
-        if not has_statistics:
-            df = CSVProcessor.__add_statistics_columns(df)
+        # Read directly from the provided path, not from the application directory
+        if has_statistics:
+            df = pd.read_csv(file_path, index_col=0)
         else:
-            if not keep_statistics:
-                df = CSVProcessor.__reset_statistics_columns(df)
+            df = pd.read_csv(file_path)
+            df = CSVProcessor.__add_statistics_columns(df)
+        
+        if has_statistics and not keep_statistics:
+            df = CSVProcessor.__reset_statistics_columns(df)
         
         # correct the index
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)
         
         file_name = CSVProcessor.__create_appropriate_file_name(file_name)
+        app_file_path = FilePathManager.get_csv_path(file_name)
         add_new_file(file_name, title, subtitle)
         save_set(df, file_name)
         
@@ -139,7 +143,7 @@ class CSVProcessor:
             raise ValueError(f"data_type {data_type} is not implemented")
          
         
-        # read the file based on index warning
+        # read the file based on index warning - read directly from the provided path
         index_present = not Warnings.FIRST_COLUMN_NOT_INDEX.value in warnings
         if index_present:
             df = pd.read_csv(file_path, index_col=0)
@@ -218,8 +222,9 @@ class CSVProcessor:
         # correct the index
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)    
         
+        app_file_path = FilePathManager.get_csv_path(file_name)
         add_new_file(file_name, title, subtitle)
-        save_set(df, file_name)
+        save_set(df, app_file_path)
         return information_after_processing
                 
     
@@ -430,7 +435,8 @@ class CSVProcessor:
         files_data = None
         
         # Check if files.csv exists
-        if not os.path.exists("files.csv"):
+        files_data_path = FilePathManager.get_files_data_path()
+        if not os.path.exists(files_data_path):
             # If the file doesn't exist, it's ok, since it will be created later in get_file_names_and_titles
             is_valid = True
             return {
@@ -442,7 +448,7 @@ class CSVProcessor:
         
         # Try to load the file with pandas
         try:
-            files_data = pd.read_csv("files.csv")
+            files_data = pd.read_csv(files_data_path)
         except Exception as e:
             errors.append(f"Error loading files.csv: {str(e)}")
             is_valid = False
@@ -492,7 +498,8 @@ class CSVProcessor:
                 invalid_file_names.append(file_name)
             
             # Check if the file physically exists
-            if not os.path.exists(file_name):
+            full_path = FilePathManager.get_csv_path(file_name)
+            if not os.path.exists(full_path):
                 missing_files.append(file_name)
         
         if invalid_file_names:

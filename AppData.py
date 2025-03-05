@@ -2,6 +2,7 @@ import pandas as pd
 import random as rd
 import os
 from constants import FilesColumns, StatsColumns, PartsOfSpeech, WordDefinitions
+from FilePathManager import FilePathManager
 
 def get_kind_of_file_and_validate(file_name: str) -> str:
     # Returns the kind of file and validates it.
@@ -13,10 +14,14 @@ def get_kind_of_file_and_validate(file_name: str) -> str:
         raise Exception("The file_name must end with _words.csv or _definitions.csv.")
 
 def save_set(data, file_name):
-    data.to_csv(file_name, index=True)
+    # Use FilePathManager to get the correct file path
+    full_path = FilePathManager.get_csv_path(file_name)
+    data.to_csv(full_path, index=True)
 
 def load_set(file_name):
-    return pd.read_csv(file_name, index_col=0)
+    # Use FilePathManager to get the correct file path
+    full_path = FilePathManager.get_csv_path(file_name)
+    return pd.read_csv(full_path, index_col=0)
 
 def sanitize_file_name(file_name: str, kind: str) -> str:
     # deletes special characters that are not allowed in the file name
@@ -26,35 +31,46 @@ def sanitize_file_name(file_name: str, kind: str) -> str:
     return file_name
 
 def get_file_names_and_titles() -> dict:
-    # Returns a dictionary with file names and titles.
-    # if does not exist, returns an empty dictionary and creates the files.csv.
-    if os.path.exists("files.csv"):
-        df_files = pd.read_csv("files.csv")
-        # change nan to empty string
-        df_files[FilesColumns.SUBTITLE.value] = df_files[FilesColumns.SUBTITLE.value].apply(lambda x: "" if pd.isna(x) else x)
-        
-    else:
-        df_files = generate_empty_files_data()
-        
-    return df_files.to_dict(orient="records")
+    # Use FilePathManager for the path to files.csv
+    files_data_path = FilePathManager.get_files_data_path()
+    
+    if not os.path.exists(files_data_path):
+        generate_empty_files_data()
+    
+    df_files = pd.read_csv(files_data_path)
+    # change nan to empty string
+    df_files[FilesColumns.SUBTITLE.value] = df_files[FilesColumns.SUBTITLE.value].apply(lambda x: "" if pd.isna(x) else x)
+    
+    # Convert to list of dictionaries with full paths
+    result = []
+    for _, row in df_files.iterrows():
+        entry = {
+            FilesColumns.FILE_NAME.value: FilePathManager.get_csv_path(row[FilesColumns.FILE_NAME.value]),
+            FilesColumns.TITLE.value: row[FilesColumns.TITLE.value],
+            FilesColumns.SUBTITLE.value: row[FilesColumns.SUBTITLE.value]
+        }
+        result.append(entry)
+    return result
 
 def get_file_names() -> list:
-    if os.path.exists("files.csv"):
-        df_files = pd.read_csv("files.csv")
-        return df_files[FilesColumns.FILE_NAME.value].tolist()
-    else:
+    # Use FilePathManager for the path to files.csv
+    files_data_path = FilePathManager.get_files_data_path()
+    
+    if not os.path.exists(files_data_path):
         generate_empty_files_data()
-        return []
+    
+    df_files = pd.read_csv(files_data_path)
+    return df_files[FilesColumns.FILE_NAME.value].tolist()
 
 def generate_empty_files_data():
-    df_files = pd.DataFrame({
-            FilesColumns.FILE_NAME.value: [],
-            FilesColumns.TITLE.value: [],
-            FilesColumns.SUBTITLE.value: []
-        })
-        
-    df_files.to_csv("files.csv", index=False)
-    return df_files
+    # Use FilePathManager for the path to files.csv
+    files_data_path = FilePathManager.get_files_data_path()
+    
+    df = pd.DataFrame(columns=[
+        FilesColumns.FILE_NAME.value,
+        FilesColumns.TITLE.value,
+        FilesColumns.SUBTITLE.value])
+    df.to_csv(files_data_path, index=False)
 
 def set_default_progress(file_name: str):
     # delate information about learned items and sets default values 
@@ -71,28 +87,36 @@ def set_default_progress(file_name: str):
     save_set(data, file_name)
 
 def delate_set(file_name: str, file_not_exist=False):
-    # Deletes the set of words or definitions.
-    if not os.path.exists("files.csv"):
+    # Use FilePathManager for the path to files.csv
+    files_data_path = FilePathManager.get_files_data_path()
+    
+    if not os.path.exists(files_data_path):
         generate_empty_files_data()
     
-    df_files = pd.read_csv("files.csv")
-    df_files = df_files[df_files[FilesColumns.FILE_NAME.value] != file_name]
-    df_files.to_csv("files.csv", index=False)
+    df_files = pd.read_csv(files_data_path)
+    df_files = df_files[df_files[FilesColumns.FILE_NAME.value] != os.path.basename(file_name)]
+    df_files.to_csv(files_data_path, index=False)
     
-    if not file_not_exist:
-        os.remove(file_name)
-        
+    full_path = FilePathManager.get_csv_path(file_name)
+    if not file_not_exist and os.path.exists(full_path):
+        os.remove(full_path)
+
 def add_new_file(file_name: str, title: str, subtitle: str = ""):
-    if not os.path.exists("files.csv"):
-        generate_empty_files_data()
-    df_files = pd.read_csv("files.csv")
-    df_files = pd.concat([df_files, pd.DataFrame({
-        FilesColumns.FILE_NAME.value: [file_name],
-        FilesColumns.TITLE.value: [title],
-        FilesColumns.SUBTITLE.value: [subtitle]
-    })])
-    df_files.to_csv("files.csv", index=False)
+    # Use FilePathManager for the path to files.csv
+    files_data_path = FilePathManager.get_files_data_path()
     
+    if not os.path.exists(files_data_path):
+        generate_empty_files_data()
+    
+    df_files = pd.read_csv(files_data_path)
+    new_row = {
+        FilesColumns.FILE_NAME.value: os.path.basename(file_name),
+        FilesColumns.TITLE.value: title,
+        FilesColumns.SUBTITLE.value: subtitle
+    }
+    df_files = pd.concat([df_files, pd.DataFrame([new_row])], ignore_index=True)
+    df_files.to_csv(files_data_path, index=False)
+
 def create_empty_set(kind: str):
     assert kind in ["words", "definitions"], "The kind must be 'words' or 'definitions'."
     column_types_words = {
@@ -374,4 +398,4 @@ class AppData:
         save_set(df, file_name)
         
         add_new_file(file_name, title, subtitle)
-        
+

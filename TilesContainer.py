@@ -5,6 +5,7 @@ from constants import FilesColumns
 from Greetings import Greetings
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
+from FilePathManager import FilePathManager
 import threading
 import time
 
@@ -89,8 +90,9 @@ class TilesContainer(ft.Container):
         
     @staticmethod    
     def __file_exist(file_name):
+        file_path = FilePathManager.get_csv_path(file_name)
         try:
-            with open(file_name):
+            with open(file_path):
                 return True
         except FileNotFoundError:
             return False
@@ -330,5 +332,4 @@ class TilesContainer(ft.Container):
                 self.__reset_main_color_indication_in_previous_tile(self.index_of_focused_tile+1)
                 self.__set_main_color_indication_in_next_tile(self.index_of_focused_tile)
                 self.__scroll_to_tile(self.index_of_focused_tile, "up")
-    
-    
+

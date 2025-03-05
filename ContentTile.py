@@ -4,6 +4,7 @@ from WordDefinitionField import WordDefinitionField
 from AppData import delate_set, set_default_progress, get_kind_of_file_and_validate
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
+from FilePathManager import FilePathManager
 # imports for export method
 import os
 
@@ -157,8 +158,9 @@ class ContentTile(ft.Card):
         self.delete_item(e, file_not_exist=True)
         
     def __file_exist(self):
+        file_path = FilePathManager.get_csv_path(self.file_name)
         try:
-            with open(self.file_name, "r"):
+            with open(file_path, "r"):
                 pass
         except FileNotFoundError:
             return False
@@ -237,6 +239,9 @@ class ContentTile(ft.Card):
                         fdst.write(fsrc.read())
             
             try:
+                # Use FilePathManager to get full path of source file
+                src_file_path = FilePathManager.get_csv_path(self.file_name)
+                
                 if is_windows:
                     # For Windows - the path points directly to the destination file
                     destination_path = picker_result.path
@@ -247,7 +252,7 @@ class ContentTile(ft.Card):
                     destination_path = os.path.join(picker_result.path, os.path.basename(self.file_name))
                 
                 # Copy file to selected location
-                copy2(self.file_name, destination_path)
+                copy2(src_file_path, destination_path)
                 
                 # Show success message
                 create_alert_dialog(

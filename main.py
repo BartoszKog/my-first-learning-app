@@ -9,6 +9,7 @@ from PageProperties import PageProperties # need in on_resized in isinstance
 from BaseWordField import BaseWordField # need in on_resized in isinstance
 from EditSetMenu import EditSetMenu # need in on_resized in isinstance
 from ImportExportControl import ImportExportControl # check if it is instance of ImportExportControl in logic of search button
+from FilePathManager import FilePathManager
 # dictionary with colors
 colors = {
     "floating_action_button_bg": ft.Colors.TEAL_800,
@@ -20,6 +21,9 @@ colors = {
 
 
 def main(page: ft.Page):
+    # Initialize FilePathManager at the beginning of the application
+    FilePathManager.initialize()
+    
     page.padding = ft.Padding(left=25, right=25, top=0, bottom=0)
     page.window.width = 500
     page.window.height = 900

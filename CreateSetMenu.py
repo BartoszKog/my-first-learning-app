@@ -66,7 +66,7 @@ class CreateSetMenu(ft.Column):
         if not self.title_field.value or not self.kind_dropdown.value:
             create_alert_dialog(
                 page=e.page,
-                title="Validation Error",
+                title="Error",
                 content="Please fill in all fields and select an option \nfrom the dropdown.",
                 close_button_text="OK"
             )

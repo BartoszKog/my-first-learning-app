@@ -389,7 +389,8 @@ class AppData:
     @staticmethod
     def create_data_file_words(file_name: str, title: str, subtitle: str = ""):
         # if file files.csv does not exist, create it.
-        if not os.path.exists("files.csv"):
+        files_data_path = FilePathManager.get_files_data_path()
+        if not os.path.exists(files_data_path):
             generate_empty_files_data()
             
         kind = get_kind_of_file_and_validate(file_name)

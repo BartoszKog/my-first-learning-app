@@ -169,6 +169,11 @@ test_*.py
 # temporary files
 copy_code.txt
 layout_import_export.py
+csv_test_files/
 
 # vs code workspace
 *.code-workspace 
+
+# flet
+build/
+storage/

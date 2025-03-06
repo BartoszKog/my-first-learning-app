@@ -18,7 +18,11 @@ class CSVProcessor:
     
     @staticmethod
     def __reset_statistics_columns(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.drop(columns=[col.value for col in StatsColumns])
+        # Only drop columns that actually exist in the dataframe
+        stat_cols_to_drop = [col.value for col in StatsColumns if col.value in df.columns]
+        if (stat_cols_to_drop):  # Only attempt to drop if there are columns to drop
+            df = df.drop(columns=stat_cols_to_drop)
+        # Add all statistics columns (whether they existed before or not)
         df = CSVProcessor.__add_statistics_columns(df)
         return df
     
@@ -63,6 +67,10 @@ class CSVProcessor:
     
     @staticmethod
     def __make_index_from_zero_increasing_by_one(df: pd.DataFrame) -> pd.DataFrame:
+        # Remove any 'Unnamed: 0' columns if they exist
+        if 'Unnamed: 0' in df.columns:
+            df = df.drop(columns=['Unnamed: 0'])
+        # Reset index
         df.index = range(len(df))
         return df
         
@@ -83,13 +91,20 @@ class CSVProcessor:
             raise ValueError("file_name cannot be None")
         
         # Read directly from the provided path, not from the application directory
-        if has_statistics:
+        try:
+            # First try to load with index_col=0
             df = pd.read_csv(file_path, index_col=0)
-        else:
+        except Exception:
+            # If that fails, load without setting an index
             df = pd.read_csv(file_path)
-            df = CSVProcessor.__add_statistics_columns(df)
         
-        if has_statistics and not keep_statistics:
+        # Remove any 'Unnamed: 0' columns if they exist
+        if 'Unnamed: 0' in df.columns:
+            df = df.drop(columns=['Unnamed: 0'])
+        
+        if not has_statistics:
+            df = CSVProcessor.__add_statistics_columns(df)
+        elif not keep_statistics:
             df = CSVProcessor.__reset_statistics_columns(df)
         
         # correct the index
@@ -145,10 +160,20 @@ class CSVProcessor:
         
         # read the file based on index warning - read directly from the provided path
         index_present = not Warnings.FIRST_COLUMN_NOT_INDEX.value in warnings
-        if index_present:
-            df = pd.read_csv(file_path, index_col=0)
-        else:
+        try:
+            if index_present:
+                df = pd.read_csv(file_path, index_col=0)
+            else:
+                df = pd.read_csv(file_path)
+            
+            # Remove any 'Unnamed: 0' columns if they exist
+            if 'Unnamed: 0' in df.columns:
+                df = df.drop(columns=['Unnamed: 0'])
+        except Exception:
+            # In case of error, try again without setting an index
             df = pd.read_csv(file_path)
+            if 'Unnamed: 0' in df.columns:
+                df = df.drop(columns=['Unnamed: 0'])
         
         # sort out rows with empty values in typical columns
         insufficient_non_empty_values_indexes = Warnings.INSUFFICIENT_NON_EMPTY_VALUES.value in warnings

@@ -263,7 +263,7 @@ class CSVProcessor:
         has_statistics = False
         name_suggestion = ""
         data_type = ""
-
+        
         data_conventions = [
             ("words", "_words.csv", PartsOfSpeech, Errors.MISSING_COLUMNS_WORDS, Warnings.FILE_NAME_PATTERN_WORDS),
             ("definitions", "_definitions.csv", WordDefinitions, Errors.MISSING_COLUMNS_DEFINITIONS, Warnings.FILE_NAME_PATTERN_DEFINITIONS)
@@ -349,35 +349,43 @@ class CSVProcessor:
             errors.append(Errors.TOO_MANY_ROWS.value)
             is_valid = False
 
-        # Validate column names based on file name
         if is_valid:
-            for convention, suffix, columns_enum, missing_columns_error, pattern_warning in data_conventions:
-                if file_path.endswith(suffix):
-                    expected_columns = {col.value for col in columns_enum}
-                    data_type = convention
-                    if not validate_columns(expected_columns, df.columns, missing_columns_error):
-                        is_valid = False
-                        
-                    name_suggestion = os.path.basename(file_path.split(suffix)[0])
-                    break
+            words_columns = {col.value for col in PartsOfSpeech}
+            definitions_columns = {col.value for col in WordDefinitions}
+            
+            if words_columns.issubset(df.columns):
+                data_type = "words"
+                expected_suffix = "_words.csv"
+                validate_columns(words_columns, df.columns, Errors.MISSING_COLUMNS_WORDS)
+            elif definitions_columns.issubset(df.columns):
+                data_type = "definitions"
+                expected_suffix = "_definitions.csv"
+                validate_columns(definitions_columns, df.columns, Errors.MISSING_COLUMNS_DEFINITIONS)
             else:
-                # Check if columns match either words or definitions
-                words_columns = {col.value for col in PartsOfSpeech}
-                definitions_columns = {col.value for col in WordDefinitions}
-                if words_columns.issubset(df.columns):
-                    warnings.append(Warnings.FILE_NAME_PATTERN_WORDS.value)
+                errors.append("File does not match any expected column patterns.")
+                is_valid = False
+                
+            # Now we check if the file name matches the detected data type
+            if data_type:
+                if not file_path.endswith(expected_suffix):
+                    # Add a warning about file name mismatch
+                    if data_type == "words":
+                        warnings.append(Warnings.FILE_NAME_PATTERN_WORDS.value)
+                    else:  # data_type == "definitions"
+                        warnings.append(Warnings.FILE_NAME_PATTERN_DEFINITIONS.value)
                     requires_specific_actions = True
-                    validate_columns(words_columns, df.columns, Errors.MISSING_COLUMNS_WORDS)
-                    data_type = "words"
-                elif definitions_columns.issubset(df.columns):
-                    warnings.append(Warnings.FILE_NAME_PATTERN_DEFINITIONS.value)
-                    requires_specific_actions = True
-                    validate_columns(definitions_columns, df.columns, Errors.MISSING_COLUMNS_DEFINITIONS)
-                    data_type = "definitions"
+                    
+                # Create a file name suggestion
+                if file_path.endswith("_words.csv") or file_path.endswith("_definitions.csv"):
+                    for suffix in ["_words.csv", "_definitions.csv"]:
+                        if file_path.endswith(suffix):
+                            name_suggestion = os.path.basename(file_path.split(suffix)[0])
+                            break
                 else:
-                    errors.append("File does not match any expected column patterns.")
-                    is_valid = False
-
+                    # If there is no standard suffix, use the file name without the extension
+                    base_name = os.path.basename(file_path)
+                    name_suggestion = base_name.rsplit('.', 1)[0]
+                    
         # Check for statistics columns
         if is_valid:
             stats_columns = {col.value for col in StatsColumns}

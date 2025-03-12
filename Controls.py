@@ -49,8 +49,10 @@ class WordField(ft.TextField):
     def contain_word(self, word: str):
         # Checks if the word field contains the word.
         splitted_word = word.split("/") if "/" in word else [word]
+        # making lower characters for comparison
+        splitted_word = [w.lower() for w in splitted_word]
         
-        return self.get_value().strip() in splitted_word
+        return self.get_value().strip().lower() in splitted_word
     
     def indicate_good_answer(self, word: str):
         self.set_green_border()

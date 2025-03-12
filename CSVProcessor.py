@@ -1,10 +1,8 @@
 import pandas as pd
 from constants import PartsOfSpeech, WordDefinitions, StatsColumns, Warnings, Errors, MAX_ROWS, FilesColumns
 from AppData import load_set, add_new_file, save_set, get_file_names
-from PageProperties import PageProperties
-from flet import PagePlatform
-import os
 from FilePathManager import FilePathManager
+import os
 
 class CSVProcessor:
     @staticmethod
@@ -29,7 +27,7 @@ class CSVProcessor:
     @staticmethod
     def __sanitize_file_name(file_name: str, suffix: str) -> str:
         # remove suffix from the file name
-        file_name = file_name[:-len(suffix)]
+        file_name = file_name[:-len(suffix)] if suffix else file_name
         file_name = "".join([char for char in file_name if char.isalnum()])
         # add suffix to the file name
         file_name += suffix
@@ -45,13 +43,7 @@ class CSVProcessor:
         if not any(imported_file_name.endswith(suffix) for suffix in suffixes):
             raise ValueError(f"imported_file_name {imported_file_name} does not end with any of the expected suffixes")
         
-        chosen_suffix = None
-        # remove suffix from the file name
-        for suffix in suffixes:
-            if imported_file_name.endswith(suffix):
-                chosen_suffix = suffix
-                break
-            
+        chosen_suffix = next((suffix for suffix in suffixes if imported_file_name.endswith(suffix)), None)
         base_name = CSVProcessor.__sanitize_file_name(imported_file_name, chosen_suffix)
         
         # check if the file name is occupied by another file, if so, add a number before the suffix
@@ -63,7 +55,6 @@ class CSVProcessor:
                 i += 1
             base_name = f"{base_without_suffix}{i}{chosen_suffix}"
         return base_name    
-        
     
     @staticmethod
     def __make_index_from_zero_increasing_by_one(df: pd.DataFrame) -> pd.DataFrame:
@@ -73,8 +64,49 @@ class CSVProcessor:
         # Reset index
         df.index = range(len(df))
         return df
-        
     
+    @staticmethod
+    def __read_csv_file(file_path: str, index_present: bool = True) -> pd.DataFrame:
+        try:
+            if index_present:
+                df = pd.read_csv(file_path, index_col=0)
+            else:
+                df = pd.read_csv(file_path)
+        except Exception:
+            # If that fails, load without setting an index
+            df = pd.read_csv(file_path)
+            
+        # Remove any 'Unnamed: 0' columns if they exist
+        if 'Unnamed: 0' in df.columns:
+            df = df.drop(columns=['Unnamed: 0'])
+            
+        return df
+        
+    @staticmethod
+    def __indexes_of_rows_with_insufficient_non_empty_values(df: pd.DataFrame, data_type: str) -> list:
+        # raising exception if data_type is not implemented
+        if data_type not in ["words", "definitions"]:
+            raise ValueError(f"data_type {data_type} is not implemented")
+        # get the indexes of rows with insufficient non-empty values
+        if data_type == "words":
+            typical_columns = [col.value for col in PartsOfSpeech]
+        else:  # data_type == "definitions"
+            typical_columns = [col.value for col in WordDefinitions]
+            
+        indexes = df[typical_columns].isnull().sum(axis=1) >= (len(typical_columns) - 1)
+        return indexes.index[indexes].tolist()
+
+    @staticmethod
+    def __keep_necessary_columns(df: pd.DataFrame, data_type: str) -> pd.DataFrame:
+        if data_type == "words":
+            cols_to_keep = [col.value for col in PartsOfSpeech if col.value in df.columns]
+            return df[cols_to_keep]
+        elif data_type == "definitions":
+            cols_to_keep = [col.value for col in WordDefinitions if col.value in df.columns]
+            return df[cols_to_keep]
+        else:
+            raise ValueError(f"data_type {data_type} is not implemented")
+            
     @staticmethod
     def save_set_with_no_specific_actions(
         file_path: str,
@@ -84,23 +116,11 @@ class CSVProcessor:
         has_statistics: bool,
         keep_statistics: bool = False,
     ) -> None:
-        # Replace assertions with proper error handling
-        if file_path is None:
-            raise ValueError("file_path cannot be None")
-        if file_name is None:
-            raise ValueError("file_name cannot be None")
+        if file_path is None or file_name is None:
+            raise ValueError("file_path and file_name cannot be None")
         
-        # Read directly from the provided path, not from the application directory
-        try:
-            # First try to load with index_col=0
-            df = pd.read_csv(file_path, index_col=0)
-        except Exception:
-            # If that fails, load without setting an index
-            df = pd.read_csv(file_path)
-        
-        # Remove any 'Unnamed: 0' columns if they exist
-        if 'Unnamed: 0' in df.columns:
-            df = df.drop(columns=['Unnamed: 0'])
+        # Read directly from the provided path
+        df = CSVProcessor.__read_csv_file(file_path)
         
         if not has_statistics:
             df = CSVProcessor.__add_statistics_columns(df)
@@ -111,27 +131,9 @@ class CSVProcessor:
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)
         
         file_name = CSVProcessor.__create_appropriate_file_name(file_name)
-        app_file_path = FilePathManager.get_csv_path(file_name)
         add_new_file(file_name, title, subtitle)
         save_set(df, file_name)
-        
     
-    @staticmethod
-    def __indexes_of_rows_with_insufficient_non_empty_values(df: pd.DataFrame, data_type: str) -> list:
-        # raising exception if data_type is not implemented
-        if data_type not in ["words", "definitions"]:
-            raise ValueError(f"data_type {data_type} is not implemented")
-        # get the indexes of rows with insufficient non-empty values
-        if data_type == "words":
-            typical_columns = [col.value for col in PartsOfSpeech]
-        elif data_type == "definitions":
-            typical_columns = [col.value for col in WordDefinitions]
-        else:
-            raise ValueError(f"data_type {data_type} is not implemented")
-        indexes = df[typical_columns].isnull().sum(axis=1) >= (len(typical_columns) - 1)
-    
-        return indexes.index[indexes].tolist()
-
     @staticmethod
     def save_set_with_specific_actions(
         file_path: str,
@@ -142,38 +144,17 @@ class CSVProcessor:
         has_statistics: bool,
         warnings: list,
         keep_statistics: bool = False,
-    ) -> None:
-        # Replace assertions with proper error handling
-        if file_path is None:
-            raise ValueError("file_path cannot be None")
-        if file_name is None:
-            raise ValueError("file_name cannot be None")
-        if data_type is None:
-            raise ValueError("data_type cannot be None")
-        
-        information_after_processing = ""
-        
-        # not implemented data_type exception
+    ) -> str:
+        if file_path is None or file_name is None or data_type is None:
+            raise ValueError("file_path, file_name and data_type cannot be None")
         if data_type not in ["words", "definitions"]:
             raise ValueError(f"data_type {data_type} is not implemented")
-         
-        
-        # read the file based on index warning - read directly from the provided path
-        index_present = not Warnings.FIRST_COLUMN_NOT_INDEX.value in warnings
-        try:
-            if index_present:
-                df = pd.read_csv(file_path, index_col=0)
-            else:
-                df = pd.read_csv(file_path)
             
-            # Remove any 'Unnamed: 0' columns if they exist
-            if 'Unnamed: 0' in df.columns:
-                df = df.drop(columns=['Unnamed: 0'])
-        except Exception:
-            # In case of error, try again without setting an index
-            df = pd.read_csv(file_path)
-            if 'Unnamed: 0' in df.columns:
-                df = df.drop(columns=['Unnamed: 0'])
+        information_after_processing = ""
+        
+        # read the file based on index warning
+        index_present = not Warnings.FIRST_COLUMN_NOT_INDEX.value in warnings
+        df = CSVProcessor.__read_csv_file(file_path, index_present)
         
         # sort out rows with empty values in typical columns
         insufficient_non_empty_values_indexes = Warnings.INSUFFICIENT_NON_EMPTY_VALUES.value in warnings
@@ -199,34 +180,23 @@ class CSVProcessor:
                     df = df.drop(columns=stat_cols_to_drop)
                 has_statistics = False
                 
-        # Helper function to keep only necessary columns
-        def keep_necessary_columns(df: pd.DataFrame, data_type: str) -> pd.DataFrame:
-            if data_type == "words":
-                cols_to_keep = [col.value for col in PartsOfSpeech if col.value in df.columns]
-                return df[cols_to_keep]
-            elif data_type == "definitions":
-                cols_to_keep = [col.value for col in WordDefinitions if col.value in df.columns]
-                return df[cols_to_keep]
-            else:
-                raise ValueError(f"data_type {data_type} is not implemented")
-        
         if not has_statistics:
-            df = keep_necessary_columns(df, data_type)    
+            df = CSVProcessor.__keep_necessary_columns(df, data_type)    
             df = CSVProcessor.__add_statistics_columns(df)
         else:
             if not keep_statistics:
-                df = keep_necessary_columns(df, data_type)
+                df = CSVProcessor.__keep_necessary_columns(df, data_type)
                 df = CSVProcessor.__reset_statistics_columns(df)
             else:
                 # Check which statistics columns actually exist before selecting
                 stat_cols = [col.value for col in StatsColumns if col.value in df.columns]
                 if len(stat_cols) == len(StatsColumns):  # Only proceed if all statistics columns exist
                     statistics_df = df[stat_cols]
-                    df = keep_necessary_columns(df, data_type)
+                    df = CSVProcessor.__keep_necessary_columns(df, data_type)
                     df = pd.concat([df, statistics_df], axis=1)
                 else:
                     # If some statistics columns are missing, reset them
-                    df = keep_necessary_columns(df, data_type)
+                    df = CSVProcessor.__keep_necessary_columns(df, data_type)
                     df = CSVProcessor.__add_statistics_columns(df)
                 
         # preparing file name
@@ -247,11 +217,9 @@ class CSVProcessor:
         # correct the index
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)    
         
-        app_file_path = FilePathManager.get_csv_path(file_name)
         add_new_file(file_name, title, subtitle)
-        save_set(df, app_file_path)
+        save_set(df, file_name)
         return information_after_processing
-                
     
     @staticmethod
     def validate_file(file_path: str) -> dict:
@@ -263,26 +231,6 @@ class CSVProcessor:
         has_statistics = False
         name_suggestion = ""
         data_type = ""
-        
-        data_conventions = [
-            ("words", "_words.csv", PartsOfSpeech, Errors.MISSING_COLUMNS_WORDS, Warnings.FILE_NAME_PATTERN_WORDS),
-            ("definitions", "_definitions.csv", WordDefinitions, Errors.MISSING_COLUMNS_DEFINITIONS, Warnings.FILE_NAME_PATTERN_DEFINITIONS)
-        ]
-
-        # Ensure proper validation of data_conventions entries
-        for convention in data_conventions:
-            if len(convention) != 5:
-                raise ValueError("Each data convention must have exactly 5 elements.")
-            if not isinstance(convention[0], str):
-                raise TypeError("The first element of each data convention must be a string (data type).")
-            if not isinstance(convention[1], str):
-                raise TypeError("The second element of each data convention must be a string (file suffix).")
-            if not hasattr(convention[2], '__members__'):
-                raise TypeError("The third element of each data convention must be an Enum (columns enum).")
-            if not isinstance(convention[3], Errors):
-                raise TypeError("The fourth element of each data convention must be an Errors enum member.")
-            if not isinstance(convention[4], Warnings):
-                raise TypeError("The fifth element of each data convention must be a Warnings enum member.")
 
         def validate_columns(expected_columns, df_columns, error_message):
             nonlocal requires_specific_actions

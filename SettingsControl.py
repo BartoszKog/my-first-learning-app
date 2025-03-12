@@ -6,8 +6,8 @@ class BackgroundShadeSlider(ft.Column):
     DARK_THEME_COLORS = [
         ft.Colors.BLACK,
         ft.Colors.SURFACE,
-        ft.Colors.GREY_900,
         ft.Colors.WHITE10,
+        ft.Colors.GREY_900,
     ]
     
     LIGHT_THEME_COLORS = [

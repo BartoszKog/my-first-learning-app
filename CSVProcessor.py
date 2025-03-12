@@ -362,7 +362,7 @@ class CSVProcessor:
                 expected_suffix = "_definitions.csv"
                 validate_columns(definitions_columns, df.columns, Errors.MISSING_COLUMNS_DEFINITIONS)
             else:
-                errors.append("File does not match any expected column patterns.")
+                errors.append(Errors.NO_MATCHING_COLUMN_PATTERN.value)
                 is_valid = False
                 
             # Now we check if the file name matches the detected data type

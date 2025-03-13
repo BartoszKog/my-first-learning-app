@@ -8,6 +8,26 @@ def quit_main_menu(e):
     e.page.update()
     
 def create_alert_dialog(page, title, content, close_button_text="OK", action_button_text=None, action_function=None, close_action_function=None):
+    """
+    Creates and displays an alert dialog using the Flet library.
+    This function creates a customizable alert dialog with a title, content, and action buttons.
+    The dialog is added to the page's overlay and displayed immediately.
+    Parameters:
+        page (ft.Page): The page where the dialog should be displayed.
+        title (str): The title text of the alert dialog.
+        content (str): The main content text of the alert dialog.
+        close_button_text (str, optional): The text for the close button. Defaults to "OK".
+        action_button_text (str, optional): The text for the optional action button. Required if action_function is provided.
+        action_function (callable, optional): A function to be called when the action button is clicked.
+                                             Should accept an event parameter.
+        close_action_function (callable, optional): A function to be called when the close button is clicked,
+                                                   before the dialog is closed. Should accept an event parameter.
+    Returns:
+        None: The function displays the dialog but doesn't return any value.
+    Note:
+        This function automatically handles adding the dialog to the page overlay and removing it
+        when either button is clicked.
+    """
     def close_action(e):
         if close_action_function:
             close_action_function(e)

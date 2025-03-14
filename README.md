@@ -86,10 +86,16 @@ Contain definitions and their corresponding words:
 
 ## 📱 Application Interface
 
-<img src="screens/screen1.png" alt="Screenshot 1" width="300">
-<img src="screens/screen2.png" alt="Screenshot 2" width="300">
-<img src="screens/screen3.png" alt="Screenshot 3" width="300">
-<img src="screens/screen4.png" alt="Screenshot 4" width="300">
+<table>
+    <tr>
+        <td><img src="screens/screen1.png" alt="Screenshot 1" width="300"></td>
+        <td><img src="screens/screen2.png" alt="Screenshot 2" width="300"></td>
+    </tr>
+    <tr>
+        <td><img src="screens/screen3.png" alt="Screenshot 3" width="300"></td>
+        <td><img src="screens/screen4.png" alt="Screenshot 4" width="300"></td>
+    </tr>
+</table>
 
 ## 🔧 Technologies
 

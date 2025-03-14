@@ -85,7 +85,7 @@ Both file types can include statistics columns, which were previously mentioned 
 
 ## Source Code
 
-If you are interested in the source code of this application, please visit our repository on [GitHub](https://github.com/yourusername/learning_app)
+If you are interested in the source code of this application, please visit our repository on [GitHub](https://github.com/BartoszKog/my-first-learning-app)
 
 ---
 

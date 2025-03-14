@@ -24,13 +24,12 @@ The application uses an advanced learning algorithm visualized in the graph belo
 
 ```mermaid
 graph TD
-    A[Unknown] -->|Good answer| B[Unverified]
+    A[Unknown] -->|Good answer| C[Unconfirmed that known]
     A -->|Wrong answer| A
-    B -->|Good answer| C[Unconfirmed that known]
+    B[Unverified] -->|Good answer| C[Unconfirmed that known]
     B -->|Wrong answer| A
     C -->|Good answer| D[Known]
     C -->|Wrong answer| A
-    D -->|Wrong answer| A
 ```
 
 ### Word Learning Queue

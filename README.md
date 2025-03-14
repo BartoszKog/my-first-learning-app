@@ -96,6 +96,7 @@ Contain definitions and their corresponding words:
 The application was created using:
 - **Flet** - a modern framework combining Flutter and Python
 - **Python** - backend programming language
+- **Pandas** - data manipulation library
 - **Flutter** - UI framework
 
 ---

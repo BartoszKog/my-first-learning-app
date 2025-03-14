@@ -177,3 +177,4 @@ csv_test_files/
 # flet
 build/
 storage/
+pyproject.toml

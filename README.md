@@ -22,7 +22,16 @@ This application was designed with effective vocabulary and definition learning 
 
 The application uses an advanced learning algorithm visualized in the graph below:
 
-![Learning Algorithm](assets/graph.png)
+```mermaid
+graph TD
+    A[Unknown] -->|Good answer| B[Unverified]
+    A -->|Wrong answer| A
+    B -->|Good answer| C[Unconfirmed that known]
+    B -->|Wrong answer| A
+    C -->|Good answer| D[Known]
+    C -->|Wrong answer| A
+    D -->|Wrong answer| A
+```
 
 ### Word Learning Queue
 

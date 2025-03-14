@@ -22,7 +22,7 @@ This application was designed with effective vocabulary and definition learning 
 
 The application uses an advanced learning algorithm visualized in the graph below:
 
-![Learning Algorithm](assets/graph.png)
+<img src="assets/graph.png" alt="Learning Algorithm" width="500">
 
 ### Word Learning Queue
 

@@ -86,9 +86,10 @@ Contain definitions and their corresponding words:
 
 ## 📱 Application Interface
 
-![Screenshot 1](assets/screen1.png)
-![Screenshot 2](assets/screen2.png)
-![Screenshot 3](assets/screen3.png)
+<img src="screens/screen1.png" alt="Screenshot 1" width="300">
+<img src="screens/screen2.png" alt="Screenshot 2" width="300">
+<img src="screens/screen3.png" alt="Screenshot 3" width="300">
+<img src="screens/screen4.png" alt="Screenshot 4" width="300">
 
 ## 🔧 Technologies
 

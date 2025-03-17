@@ -18,6 +18,19 @@ This application was designed with effective vocabulary and definition learning 
 - ✅ Intelligently schedule repetitions
 - ✅ Export data and statistics
 
+## 📱 Application Interface
+
+<table>
+    <tr>
+        <td><img src="screens/screen1.png" alt="Screenshot 1" width="300"></td>
+        <td><img src="screens/screen2.png" alt="Screenshot 2" width="300"></td>
+    </tr>
+    <tr>
+        <td><img src="screens/screen3.png" alt="Screenshot 3" width="300"></td>
+        <td><img src="screens/screen4.png" alt="Screenshot 4" width="300"></td>
+    </tr>
+</table>
+
 ## 🧠 Learning Algorithm
 
 The application uses an advanced learning algorithm visualized in the graph below:
@@ -83,19 +96,6 @@ Contain definitions and their corresponding words:
 - Data import/export is available from the app's main menu
 - Words marked as "learned" will appear less frequently
 - The app automatically prioritizes words you find challenging
-
-## 📱 Application Interface
-
-<table>
-    <tr>
-        <td><img src="screens/screen1.png" alt="Screenshot 1" width="300"></td>
-        <td><img src="screens/screen2.png" alt="Screenshot 2" width="300"></td>
-    </tr>
-    <tr>
-        <td><img src="screens/screen3.png" alt="Screenshot 3" width="300"></td>
-        <td><img src="screens/screen4.png" alt="Screenshot 4" width="300"></td>
-    </tr>
-</table>
 
 ## 🔧 Technologies
 

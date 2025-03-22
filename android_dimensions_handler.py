@@ -53,7 +53,7 @@ def ensure_valid_dimensions(page: ft.Page):
     create_alert_dialog(
         page, 
         "Screen Size Issue", 
-        "Unable to detect proper screen dimensions. Please rotate your device to change orientation, then rotate back."
+        "Unable to detect proper screen dimensions. Please rotate your device to change orientation, then rotate back. If you will not do it, application layout might be incorrect."
     )
     
     # Initialize values if they don't exist

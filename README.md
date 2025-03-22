@@ -96,6 +96,7 @@ Contain definitions and their corresponding words:
 - Data import/export is available from the app's main menu
 - Words marked as "learned" will appear less frequently
 - The app automatically prioritizes words you find challenging
+- For definitions with multiple correct answers or word forms, you can use the slash symbol (/) to separate them. For example: "go/goes/went". During a learning session, entering any one of these words will be marked as correct.
 
 ## 🔧 Technologies
 

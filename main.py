@@ -39,8 +39,7 @@ def main(page: ft.Page):
         width, height = ensure_valid_dimensions(page)
         if width and height:
             # Use the recovered dimensions
-            PageProperties.width = width
-            PageProperties.height = height
+            PageProperties.set_width_height_from_page(page, width, height)
         else:
             # Use current page dimensions which should be valid now
             PageProperties.set_width_height_from_page(page)

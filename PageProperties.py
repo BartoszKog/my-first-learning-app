@@ -107,9 +107,19 @@ class PageProperties:
         return cls.export_picker_csv
     
     @classmethod
-    def set_width_height_from_page(cls, page: Page):
-        cls.width = page.width
-        cls.height = page.height
+    def set_width_height_from_page(cls, page: Page, width=None, height=None):
+        """
+        If width and height are not provided, it will use the page's width and height.
+        If width and height are provided, it will use those values.
+        """
+        if width is not None:
+            cls.width = width
+        else:
+            cls.width = page.width
+        if height is not None:
+            cls.height = height
+        else:
+            cls.height = page.height
         cls.padding = page.padding
         cls.platform = page.platform
     

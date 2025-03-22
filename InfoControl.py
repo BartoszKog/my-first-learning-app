@@ -1,8 +1,9 @@
 import flet as ft
 from PageProperties import PageProperties
+from constants import MAX_ROWS
  
 class InfoControl(ft.Container):
-    MD_TEXT = """
+    MD_TEXT = f"""
 # About the App
 
 This app is designed for effective learning of words and definitions. It allows you to import your own study sets, track your progress, and export data.
@@ -62,6 +63,9 @@ These files contain words categorized by parts of speech:
 These files contain definitions and their corresponding words:
 - `definition`: definition
 - `word`: corresponding word
+
+### File Size Limitation
+Each learning set cannot contain more than {MAX_ROWS} items. Files with more rows than this limit cannot be imported, and you cannot create sets larger than this value.
 
 ### Statistics Columns (Optional)
 Both file types can include statistics columns, which were previously mentioned and are used to track learning progress:

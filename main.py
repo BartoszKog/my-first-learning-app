@@ -10,6 +10,8 @@ from BaseWordField import BaseWordField # need in on_resized in isinstance
 from EditSetMenu import EditSetMenu # need in on_resized in isinstance
 from ImportExportControl import ImportExportControl # check if it is instance of ImportExportControl in logic of search button
 from FilePathManager import FilePathManager
+from android_dimensions_handler import ensure_valid_dimensions
+
 # dictionary with colors
 colors = {
     "floating_action_button_bg": ft.Colors.TEAL_800,
@@ -31,8 +33,21 @@ def main(page: ft.Page):
     page.window.min_height = 700
     page.window.max_width = 900
     page.window.max_height = 1000
-    PageProperties.set_width_height_from_page(page)
-    # 
+    
+    # Handle Android screen dimensions if needed
+    if page.platform == ft.PagePlatform.ANDROID:
+        width, height = ensure_valid_dimensions(page)
+        if width and height:
+            # Use the recovered dimensions
+            PageProperties.width = width
+            PageProperties.height = height
+        else:
+            # Use current page dimensions which should be valid now
+            PageProperties.set_width_height_from_page(page)
+    else:
+        PageProperties.set_width_height_from_page(page)
+    
+    # Continue with the rest of the initialization
     PageProperties.create_export_csv_picker(page)
     PageProperties.set_page(page)
     

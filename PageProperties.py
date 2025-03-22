@@ -112,14 +112,33 @@ class PageProperties:
         If width and height are not provided, it will use the page's width and height.
         If width and height are provided, it will use those values.
         """
+        
+        def _set_height_from_page(page: Page, cls):
+            if (page.height < 10) and hasattr(cls, "loaded_height"):
+                cls.height = cls.loaded_height
+            else:
+                cls.height = page.height
+                
+        def _set_width_from_page(page: Page, cls):
+            if (page.width < 10) and hasattr(cls, "loaded_width"):
+                cls.width = cls.loaded_width
+            else:
+                cls.width = page.width
+        
         if width is not None:
             cls.width = width
+            cls.loaded_width = width
+            
         else:
-            cls.width = page.width
+            _set_width_from_page(page, cls)
+            
         if height is not None:
             cls.height = height
+            cls.loaded_height = height
+            
         else:
-            cls.height = page.height
+            _set_height_from_page(page, cls)
+            
         cls.padding = page.padding
         cls.platform = page.platform
     

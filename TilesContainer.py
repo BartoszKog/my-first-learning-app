@@ -78,8 +78,8 @@ class TilesContainer(ft.Container):
         self.refresh_content()
         
     def scale_height_to_page(self, page, factor=0.65):
-        self.width = page.width * 0.87 # 0.87 is the same as in __init__
-        self.height = page.height * factor
+        self.width = PageProperties.width * 0.87 # 0.87 is the same as in __init__
+        self.height = PageProperties.height * factor
         self.update()
         
     def has_content_tiles(self):

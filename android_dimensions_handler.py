@@ -38,7 +38,7 @@ def ensure_valid_dimensions(page: ft.Page):
         page.update()
         time.sleep(0.1)  # Short delay between updates
         
-        if _check_and_save_dimensions(" after retry"):
+        if _check_and_save_dimensions():
             return None, None  # Return None to use page dimensions directly
     
     # If we still don't have valid dimensions, check if we have saved values

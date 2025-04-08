@@ -9,6 +9,15 @@
 flet run [app_directory]
 ```
 
+## 📱 Android Release
+
+You can also download the Android version of the application:
+
+[📥 Download APK file](https://drive.google.com/uc?export=download&id=1wwNZVtlBBn6RWBOjyF5nnoJlwXFYFTkM)
+
+> [!WARNING]
+> The mobile application may not function properly due to issues with the Android build tool in the Flet version used. Some features might work incorrectly or be unavailable on some devices. 
+
 ## 📋 About the Application
 
 This application was designed with effective vocabulary and definition learning in mind. It allows you to:

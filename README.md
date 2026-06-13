@@ -5,8 +5,11 @@
 
 ## 🚀 How to Run the Application
 
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Python 3.11+ is required.
+
 ```bash
-flet run [app_directory]
+uv sync
+uv run flet run .
 ```
 
 ## 📱 Android Release

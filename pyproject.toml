@@ -1,0 +1,9 @@
+[project]
+name = "learning-app"
+version = "0.1.0"
+description = "Word learning application built with Flet"
+requires-python = ">=3.11"
+dependencies = [
+    "flet==0.27.6",
+    "pandas==2.2.3",
+]

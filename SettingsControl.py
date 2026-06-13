@@ -1,12 +1,13 @@
 import flet as ft
 from PageProperties import PageProperties
 from page_functions import set_theme_from_bgcolor
+from preferences import get_shared_preferences
 
 class BackgroundShadeSlider(ft.Column):
     DARK_THEME_COLORS = [
         ft.Colors.BLACK,
         ft.Colors.SURFACE,
-        ft.Colors.WHITE10,
+        ft.Colors.WHITE_10,
         ft.Colors.GREY_900,
     ]
     
@@ -19,6 +20,7 @@ class BackgroundShadeSlider(ft.Column):
     
     def __init__(self, label: str, initial_value: int):
         super().__init__()
+        initial_value = int(initial_value)
         max_value = len(self.DARK_THEME_COLORS)
         self.label = ft.Text(label)
         self.slider = ft.Slider(
@@ -39,9 +41,18 @@ class BackgroundShadeSlider(ft.Column):
             color = self.LIGHT_THEME_COLORS[value - 1]      
         PageProperties.set_bgcolor(PageProperties.theme_mode, color)
         set_theme_from_bgcolor(self.page, color)
-        self.page.client_storage.set(f"{PageProperties.theme_mode.value}_theme_slider_value", value)
-        self.page.client_storage.set(f"{PageProperties.theme_mode.value}_theme_bgcolor", color)
+        self.page.run_task(
+            self._save_slider_settings,
+            PageProperties.theme_mode.value,
+            value,
+            color,
+        )
         self.page.update()
+        
+    async def _save_slider_settings(self, theme_mode_value, value, color):
+        storage = get_shared_preferences()
+        await storage.set(f"{theme_mode_value}_theme_slider_value", value)
+        await storage.set(f"{theme_mode_value}_theme_bgcolor", color.value)
         
     def update_slider_position(self):
         self.slider.value = PageProperties.get_slider_value()
@@ -57,7 +68,7 @@ class SettingsControl(ft.Column):
         super().__init__()
         self.spacing = 60
         
-        self.page = page
+        self._app_page = page
         self.drawer = PageProperties.get_drawer()
         
         # menu button
@@ -67,14 +78,11 @@ class SettingsControl(ft.Column):
             icon_color=ft.Colors.WHITE
         )
         
-        # theme dropdown
-        self.theme_dropdown = ft.Dropdown(
-            options=[
-                ft.dropdown.Option(ft.ThemeMode.DARK, "Dark"),
-                ft.dropdown.Option(ft.ThemeMode.LIGHT, "Light")
-            ],
-            value=PageProperties.theme_mode,
-            border_color=ft.Colors.TEAL_800,
+        # theme switch
+        self.theme_switch = ft.Switch(
+            label="Light theme",
+            label_text_style=ft.TextStyle(size=16),
+            value=PageProperties.theme_mode == ft.ThemeMode.LIGHT,
             on_change=self.on_theme_change
         )
         
@@ -87,47 +95,61 @@ class SettingsControl(ft.Column):
         
         # Add elements in column to container
         self.controls = [
-            self.theme_dropdown,
+            ft.Row(
+                [self.theme_switch],
+                alignment=ft.MainAxisAlignment.START,
+                width=PageProperties.width * 0.7,
+            ),
             self.background_shade_slider
         ]
         
         self.__update_controls_width()
+        
+    def _get_page(self):
+        return self.page or self._app_page
         
                 
     def __update_controls_width(self):
         width = PageProperties.width * 0.7
         for control in self.controls:
             control.width = width
+        self.theme_switch.width = None
     
-    def on_menu_click(self, e):
-        self.page.open(self.drawer)
+    async def on_menu_click(self, e):
+        await self._get_page().show_drawer()
     
     def on_theme_change(self, e):
-        selected_theme = e.control.value
-        if selected_theme == str(ft.ThemeMode.DARK):
-            self.page.theme_mode = ft.ThemeMode.DARK
-            self.page.client_storage.set("theme_mode", ft.ThemeMode.DARK.value)
+        page = self._get_page()
+        if e.control.value:
+            page.theme_mode = ft.ThemeMode.LIGHT
+            theme_mode_value = ft.ThemeMode.LIGHT.value
         else:
-            self.page.theme_mode = ft.ThemeMode.LIGHT
-            self.page.client_storage.set("theme_mode", ft.ThemeMode.LIGHT.value)
+            page.theme_mode = ft.ThemeMode.DARK
+            theme_mode_value = ft.ThemeMode.DARK.value
             
-        PageProperties.set_theme_from_page(self.page)
+        page.run_task(self._save_theme_mode, theme_mode_value)
+        PageProperties.set_theme_from_page(page)
         bgcolor = PageProperties.get_bgcolor()
-        set_theme_from_bgcolor(self.page, bgcolor)
-        self.page.update()
+        set_theme_from_bgcolor(page, bgcolor)
+        page.update()
         self.background_shade_slider.update_slider_position()
+
+    async def _save_theme_mode(self, theme_mode_value):
+        await get_shared_preferences().set("theme_mode", theme_mode_value)
     
     def did_mount(self):
-        appbar = self.page.appbar
+        page = self._get_page()
+        appbar = page.appbar
         appbar.leading = self.menu_button
         appbar.title.value = "Settings"
         
-        self.page.bottom_appbar.visible = False
-        self.page.floating_action_button.visible = False
-        self.page.update()
+        page.bottom_appbar.visible = False
+        page.floating_action_button.visible = False
+        page.update()
         
     def will_unmount(self):
+        page = self._get_page()
         self.__update_controls_width()
-        appbar = self.page.appbar
+        appbar = page.appbar
         appbar.leading = None
-        self.page.update()
+        page.update()

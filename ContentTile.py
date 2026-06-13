@@ -9,10 +9,12 @@ from FilePathManager import FilePathManager
 import os
 
 class ContentTile(ft.Card):
-    def __init__(self, file_name: str, title: str, subtitle: str = "", parent_container=None, key=None, export_mode = False):
+    def __init__(self, file_name: str, title: str, subtitle: str = "", parent_container=None, key=None, export_mode = False, pattern: str = "", main_color: bool = False):
         super().__init__(key=key)
         self.parent_container = parent_container
         self.title = title
+        self.subtitle = subtitle
+        self.export_mode = export_mode
         
         kind = get_kind_of_file_and_validate(file_name)
         
@@ -27,16 +29,16 @@ class ContentTile(ft.Card):
         self.popUpButton = ft.PopupMenuButton(
             icon=ft.Icons.MORE_VERT,
             items=[
-                ft.PopupMenuItem(text="Edit", on_click=self.edit),
-                ft.PopupMenuItem(text="Set default progress", on_click=self.show_set_default_progress_dialog),
-                ft.PopupMenuItem(text="Delete", on_click=self.show_delete_dialog),
+                ft.PopupMenuItem(content="Edit", on_click=self.edit),
+                ft.PopupMenuItem(content="Set default progress", on_click=self.show_set_default_progress_dialog),
+                ft.PopupMenuItem(content="Delete", on_click=self.show_delete_dialog),
             ],
             on_open=lambda e: self.file_not_found_dialog(e) if not self.__file_exist() else None
         )
         
         lt = ft.ListTile(
             leading=leadingIcon,
-            title=ft.Text(title, size=20),
+            title=self.__create_title_control(pattern, main_color),
             subtitle=ft.Text(subtitle) if subtitle else None,
             trailing=self.popUpButton if not export_mode else None,
             on_click=self.open_set if not export_mode else self.export,
@@ -169,21 +171,18 @@ class ContentTile(ft.Card):
     # methods involved with logic of searching
     def contains_pattern(self, pattern: str):
         return pattern.lower() in self.title.lower()
-    
-    def indicate_pattern(self, pattern: str, main_color = False):
-        assert pattern != "", "Pattern must not be empty."
-        
-        title_text = self.title
+
+    def __create_title_control(self, pattern: str = "", main_color: bool = False):
+        if not pattern:
+            return ft.Text(self.title, size=20)
+
+        title_lower = self.title.lower()
         pattern_lower = pattern.lower()
-        title_lower = title_text.lower()
-        bgcolor = ft.Colors.YELLOW
-        if main_color:
-            bgcolor = ft.Colors.LIGHT_BLUE
+        bgcolor = ft.Colors.LIGHT_BLUE if main_color else ft.Colors.YELLOW
         color = ft.Colors.BLACK
-        
         start = 0
         spans = []
-        
+
         while start < len(title_lower):
             start = title_lower.find(pattern_lower, start)
             if start == -1:
@@ -191,99 +190,74 @@ class ContentTile(ft.Card):
             end = start + len(pattern)
             spans.append((start, end))
             start = end
-        
+
         if not spans:
-            return
-        
+            return ft.Text(self.title, size=20)
+
         formatted_text = []
         last_index = 0
-        
         for start, end in spans:
             if last_index < start:
-                formatted_text.append(ft.TextSpan(text=title_text[last_index:start]))
-            formatted_text.append(ft.TextSpan(title_text[start:end], ft.TextStyle(bgcolor=bgcolor, color=color)))
+                formatted_text.append(ft.TextSpan(text=self.title[last_index:start]))
+            formatted_text.append(ft.TextSpan(self.title[start:end], ft.TextStyle(bgcolor=bgcolor, color=color)))
             last_index = end
-        
-        if last_index < len(title_text):
-            formatted_text.append(ft.TextSpan(text=title_text[last_index:]))
-        
-        self.content.title = ft.Text(spans=formatted_text, size=20)
-        self.content.update()
 
-    def reset_indication(self):
-        self.content.title = ft.Text(self.title, size=20)
-        self.content.update()
+        if last_index < len(self.title):
+            formatted_text.append(ft.TextSpan(text=self.title[last_index:]))
+
+        return ft.Text(spans=formatted_text, size=20)
     
     def export(self, e):
         if not self.__file_exist():
             self.file_not_found_dialog(e)
             return
         
-        # Create or get file picker
+        e.page.run_task(self._export_file, e.page)
+        
+    async def _export_file(self, page):
         try:
             picker = PageProperties.get_export_csv_picker()
         except AssertionError:
-            picker = PageProperties.create_export_csv_picker(e.page)
+            picker = PageProperties.create_export_csv_picker(page)
         
-        # Checking the platform using Flet
-        is_windows = e.page.platform == ft.PagePlatform.WINDOWS
+        is_windows = page.platform == ft.PagePlatform.WINDOWS
         
-        # Set callback to handle picker result
-        def export_callback(picker_result):
-            if not picker_result.path:
-                return  # Selection canceled
-            
-            def copy2(src: str, dst: str):
-                with open(src, 'rb') as fsrc:
-                    with open(dst, 'wb') as fdst:
-                        fdst.write(fsrc.read())
-            
-            try:
-                # Use FilePathManager to get full path of source file
-                src_file_path = FilePathManager.get_csv_path(self.file_name)
-                
-                if is_windows:
-                    # For Windows - the path points directly to the destination file
-                    destination_path = picker_result.path
-                    if not destination_path.endswith(".csv"): # add extension if not present
-                        destination_path += ".csv"
-                else:
-                    # For other platforms - the path points to the directory, the file name needs to be added
-                    destination_path = os.path.join(picker_result.path, os.path.basename(self.file_name))
-                
-                # Copy file to selected location
-                copy2(src_file_path, destination_path)
-                
-                # Show success message
-                create_alert_dialog(
-                    page=e.page,
-                    title="Export completed",
-                    content=f"Successfully exported set '{self.title}' to:\n{destination_path}",
-                    close_button_text="OK"
-                )
-            except Exception as ex:
-                # Error handling
-                create_alert_dialog(
-                    page=e.page,
-                    title="Export error",
-                    content=f"Failed to export file:\n{str(ex)}",
-                    close_button_text="OK"
-                )
-        
-        # assign callback to PageProperties
-        PageProperties.set_export_callback(export_callback)
-        
-        # Launch picker depending on the platform
         if is_windows:
-            picker.save_file(
+            destination_path = await picker.save_file(
                 dialog_title="Choose export location",
                 file_name=os.path.basename(self.file_name),
-                allowed_extensions=["csv"]
+                allowed_extensions=["csv"],
+                file_type=ft.FilePickerFileType.CUSTOM,
             )
+            if destination_path and not destination_path.endswith(".csv"):
+                destination_path += ".csv"
         else:
-            # On Android and other platforms, we use directory selection
-            picker.get_directory_path(
-                dialog_title="Choose export directory"
+            directory_path = await picker.get_directory_path(
+                dialog_title="Choose export directory",
             )
+            if not directory_path:
+                return
+            destination_path = os.path.join(directory_path, os.path.basename(self.file_name))
         
-        e.page.update()
+        if not destination_path:
+            return
+        
+        try:
+            src_file_path = FilePathManager.get_csv_path(self.file_name)
+            with open(src_file_path, "rb") as fsrc:
+                with open(destination_path, "wb") as fdst:
+                    fdst.write(fsrc.read())
+            
+            create_alert_dialog(
+                page=page,
+                title="Export completed",
+                content=f"Successfully exported set '{self.title}' to:\n{destination_path}",
+                close_button_text="OK",
+            )
+        except Exception as ex:
+            create_alert_dialog(
+                page=page,
+                title="Export error",
+                content=f"Failed to export file:\n{str(ex)}",
+                close_button_text="OK",
+            )

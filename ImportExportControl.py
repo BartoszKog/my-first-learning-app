@@ -17,29 +17,7 @@ class ImportExportControl(ft.Container):
         self.last_tab_index = 0
         self.height = PageProperties.height * 0.8
         self.width = PageProperties.width * 0.9
-             
-        self.tabs = ft.Tabs(
-            tab_alignment=ft.TabAlignment.FILL,
-            scrollable=False,
-            on_change=self.__on_tab_change,
-            tabs=[
-                ft.Tab(text="Import"),
-                ft.Tab(text="Export"),
-            ]
-        )
-        
-        self.body = ft.Container(
-            padding=ft.Padding(left=30, right=30, top=0, bottom=30),
-            expand=True
-        )
-        
-        self.content = ft.Column(
-            [
-                self.tabs,
-                self.body
-            ]
-        )
-        
+
         # import controls
         self.title_field = ft.TextField(
             label="Title",
@@ -59,23 +37,23 @@ class ImportExportControl(ft.Container):
             visible=False,
         )
         
-        self.choose_file_button = ft.ElevatedButton(
-            text="Choose file",
+        self.choose_file_button = ft.Button(
+            content="Choose file",
             on_click=self.__on_choose_file_click,
             icon=ft.Icons.FOLDER,
             scale=ImportExportControl.SCALE_IMPORT_BUTTON,
         )
         
-        self.cancel_button = ft.ElevatedButton(
-            text="Cancel",
+        self.cancel_button = ft.Button(
+            content="Cancel",
             on_click=self.__on_cancel_button_click,
             icon=ft.Icons.CLOSE,
             icon_color=ft.Colors.RED_900,
             visible=False,
         )    
         
-        self.add_set_button = ft.ElevatedButton(
-            text="Add set",
+        self.add_set_button = ft.Button(
+            content="Add set",
             icon=ft.Icons.ADD,
             on_click=self.__on_add_set_click,
             icon_color=ft.Colors.GREEN_100,
@@ -131,14 +109,56 @@ class ImportExportControl(ft.Container):
             alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
+
+        self.export_tab_column = ft.Column(
+            [self.export_controls],
+            alignment=ft.MainAxisAlignment.START,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        self.import_tab_content = ft.Container(
+            content=self.import_controls,
+            height=PageProperties.height * 0.4,
+            padding=ft.Padding(left=30, right=30, top=0, bottom=30),
+        )
+
+        self.export_tab_content = ft.Container(
+            content=self.export_tab_column,
+            padding=ft.Padding(left=30, right=30, top=0, bottom=30),
+        )
+
+        self.tabs = ft.Tabs(
+            length=2,
+            on_change=self.__on_tab_change,
+            expand=True,
+            content=ft.Column(
+                expand=True,
+                controls=[
+                    ft.TabBar(
+                        scrollable=False,
+                        tab_alignment=ft.TabAlignment.FILL,
+                        tabs=[
+                            ft.Tab(label="Import"),
+                            ft.Tab(label="Export"),
+                        ],
+                    ),                    ft.TabBarView(
+                        expand=True,
+                        controls=[
+                            self.import_tab_content,
+                            self.export_tab_content,
+                        ],
+                    ),
+                ],
+            ),
+        )
+
+        self.content = ft.Column(
+            [self.tabs],
+            expand=True,
+        )
         
         # create select file dialog csv
-        self.path_picker_csv_id = "path_picker_csv"
-        self.csv_file_selector = ft.FilePicker(
-            on_result=self.__on_csv_file_selector_result,
-        )
-        # set id to path picker to be able to find it in the page
-        self.csv_file_selector.id = self.path_picker_csv_id
+        self.csv_file_selector = ft.FilePicker()
         
         # attributes involved in validation
         self.validation_warnings = None
@@ -212,20 +232,47 @@ class ImportExportControl(ft.Container):
         if PageProperties.is_navigation_disabled():
             return
         
-        self.csv_file_selector.pick_files(
-            allow_multiple=False,
-            allowed_extensions=["csv"],
-            dialog_title="Select csv file to import"
-        )
-        
         self.__disable_all_import_controls()
+        e.page.run_task(self.__pick_csv_file)
+        
+    async def __pick_csv_file(self):
+        try:
+            files = await self.csv_file_selector.pick_files(
+                allow_multiple=False,
+                allowed_extensions=["csv"],
+                file_type=ft.FilePickerFileType.CUSTOM,
+                dialog_title="Select csv file to import",
+            )
+            if files and files[0].path:
+                file = files[0]
+                validation_result = CSVProcessor.validate_file(file.path)
+                
+                if validation_result["is_valid"]:
+                    self.title_field.value = validation_result["name_suggestion"]
+                    self.subtitle_field.value = ""
+                    self.__make_layout_for_chosen_file(file.name, file.path)
+                    self.__set_validation_properties(validation_result)
+                
+                    if validation_result["warnings"]:
+                        warning_title = "Warnings" if len(validation_result["warnings"]) > 1 else "Warning"
+                        create_alert_dialog(self.page, warning_title, "\n".join(validation_result["warnings"]))
+                else:
+                    if validation_result["errors"]:
+                        error_title = "Errors" if len(validation_result["errors"]) > 1 else "Error"
+                        create_alert_dialog(self.page, error_title, "\n".join(validation_result["errors"]))
+            elif self.__user_has_chosen_file():
+                self.__make_layout_for_chosen_file()
+            else:
+                self.__make_layout_before_chosen_file()
+        finally:
+            self.__enable_all_import_controls()
         
     def __layout_after_adding_set(self):
         self.chosen_file = None
         self.chosen_file_path = None
         self.__make_layout_before_chosen_file()
         self.__android_center_import_controls_alignment()
-        self.page.open(ft.SnackBar(ft.Text("Set has been added successfully.")))
+        self.page.show_dialog(ft.SnackBar(ft.Text("Set has been added successfully.")))
         
     def __on_add_set_click(self, e):
         is_valid_files_csv = CSVProcessor.validate_files_csv()["is_valid"]
@@ -249,6 +296,12 @@ class ImportExportControl(ft.Container):
             # asserts too make sure that attributes with file name and path are set
             assert self.chosen_file is not None, "chosen_file must be not None"
             assert self.chosen_file_path is not None, "chosen_file_path must be not None"
+            chosen_file_path = self.chosen_file_path
+            chosen_file = self.chosen_file
+            title = self.title_field.value
+            subtitle = self.subtitle_field.value
+            validation_data_type = self.validation_data_type
+            validation_warnings = self.validation_warnings
             
             # Logic for adding a set
             if not self.validation_requires_specific_actions:
@@ -257,10 +310,10 @@ class ImportExportControl(ft.Container):
                     
                     def action_function_for_dialog(e): # user checked "Yes"
                         CSVProcessor.save_set_with_no_specific_actions(
-                            self.chosen_file_path,
-                            self.chosen_file,
-                            self.title_field.value,
-                            self.subtitle_field.value,
+                            chosen_file_path,
+                            chosen_file,
+                            title,
+                            subtitle,
                             True,
                             True,
                         )
@@ -268,10 +321,10 @@ class ImportExportControl(ft.Container):
                     
                     def close_action_function_for_dialog(e): # user checked "No"
                         CSVProcessor.save_set_with_no_specific_actions(
-                            self.chosen_file_path,
-                            self.chosen_file,
-                            self.title_field.value,
-                            self.subtitle_field.value,
+                            chosen_file_path,
+                            chosen_file,
+                            title,
+                            subtitle,
                             False,
                         )
                         self.__layout_after_adding_set()
@@ -287,10 +340,10 @@ class ImportExportControl(ft.Container):
                     )
                 else:
                     CSVProcessor.save_set_with_no_specific_actions(
-                        self.chosen_file_path,
-                        self.chosen_file,
-                        self.title_field.value,
-                        self.subtitle_field.value,
+                        chosen_file_path,
+                        chosen_file,
+                        title,
+                        subtitle,
                         False,
                     )
                     self.__layout_after_adding_set()
@@ -299,13 +352,13 @@ class ImportExportControl(ft.Container):
                 if self.validation_has_statistics:
                     def action_function_for_dialog(e):  # user checked "Yes"
                         information = CSVProcessor.save_set_with_specific_actions(
-                            self.chosen_file_path,
-                            self.chosen_file,
-                            self.title_field.value,
-                            self.subtitle_field.value,
-                            self.validation_data_type,
+                            chosen_file_path,
+                            chosen_file,
+                            title,
+                            subtitle,
+                            validation_data_type,
                             True,  # has_statistics
-                            self.validation_warnings,
+                            validation_warnings,
                             True,  # keep_statistics
                         )
                         if information:
@@ -318,13 +371,13 @@ class ImportExportControl(ft.Container):
                     
                     def close_action_function_for_dialog(e):  # user checked "No"
                         information = CSVProcessor.save_set_with_specific_actions(
-                            self.chosen_file_path,
-                            self.chosen_file,
-                            self.title_field.value,
-                            self.subtitle_field.value,
-                            self.validation_data_type,
+                            chosen_file_path,
+                            chosen_file,
+                            title,
+                            subtitle,
+                            validation_data_type,
                             True,  # has_statistics
-                            self.validation_warnings,
+                            validation_warnings,
                             False,  # don't keep_statistics
                         )
                         if information:
@@ -346,13 +399,13 @@ class ImportExportControl(ft.Container):
                     )
                 else:
                     information = CSVProcessor.save_set_with_specific_actions(
-                        self.chosen_file_path,
-                        self.chosen_file,
-                        self.title_field.value,
-                        self.subtitle_field.value,
-                        self.validation_data_type,
+                        chosen_file_path,
+                        chosen_file,
+                        title,
+                        subtitle,
+                        validation_data_type,
                         False,  # has_statistics
-                        self.validation_warnings,
+                        validation_warnings,
                     )
                     if information:
                         create_alert_dialog(
@@ -370,12 +423,12 @@ class ImportExportControl(ft.Container):
         self.choose_file_button.scale = 1.0
     
     def __change_import_button_to_changing_file(self):
-        self.choose_file_button.text = "Change file"
+        self.choose_file_button.content = "Change file"
         self.choose_file_button.icon = ft.Icons.DRIVE_FILE_MOVE
         self.update()
         
     def __set_import_button_default(self):
-        self.choose_file_button.text = "Choose file"
+        self.choose_file_button.content = "Choose file"
         self.choose_file_button.icon = ft.Icons.FOLDER
         self.update()
         
@@ -398,42 +451,6 @@ class ImportExportControl(ft.Container):
         self.validation_has_statistics = None
         self.validation_data_type = None
     
-    def __on_csv_file_selector_result(self, e: ft.FilePickerResultEvent):
-        if e.files:
-            validation_result = CSVProcessor.validate_file(e.files[0].path)
-            
-            if validation_result["is_valid"]:
-                self.title_field.value = validation_result["name_suggestion"]
-                self.subtitle_field.value = "" # it will be set by default
-                self.__make_layout_for_chosen_file(e.files[0].name, e.files[0].path)
-                self.__set_validation_properties(validation_result)
-            
-                if validation_result["warnings"]:
-                    warning_title = "Warnings" if len(validation_result["warnings"]) > 1 else "Warning"
-                    create_alert_dialog(self.page, warning_title, "\n".join(validation_result["warnings"]))
-            else:
-                if validation_result["errors"]:
-                    error_title = "Errors" if len(validation_result["errors"]) > 1 else "Error"
-                    create_alert_dialog(self.page, error_title, "\n".join(validation_result["errors"]))
-
-        elif self.__user_has_chosen_file():
-            self.__make_layout_for_chosen_file()
-        else:
-            self.__make_layout_before_chosen_file()
-        
-        self.__enable_all_import_controls()
-    
-    def __ensure_csv_selector_in_overlay(self):
-        dialog = self.csv_file_selector                
-        # delete dialog selector from overlay if exists
-        for p in self.page.overlay:
-            if hasattr(p, 'id') and p.id == dialog.id:
-                self.page.overlay.remove(p)
-                break
-            
-        # add dialog selector to overlay
-        self.page.overlay.append(self.csv_file_selector)
-    
     def __on_change_tab_from_import_to_export_delate_search_control(self):
         if self.last_tab_index == 0:
             self.__on_blur_field(None)
@@ -449,24 +466,10 @@ class ImportExportControl(ft.Container):
         self.__on_change_tab_from_import_to_export_delate_search_control()
         self.__on_change_tab_from_export_to_import_delate_search_control()
         if e.control.selected_index == 0:
-            self.__show_import_controls()
+            self.__show_search_button(False)
         else:
-            self.__show_export_controls()
+            self.__show_search_button(True)
         self.last_tab_index = e.control.selected_index
-            
-    def __show_import_controls(self):
-        self.body.content = ft.Container(
-            self.import_controls,
-            height=PageProperties.height * 0.4,
-        )
-        self.__show_search_button(False)
-        self.update()
-    
-    def __show_export_controls(self):
-        self.body.content = self.export_controls
-        self.__show_search_button(True)
-        self.update()
-        
     def __show_search_button(self, choice: bool):
         # making search button in bottom appbar visible or not
         self.page.bottom_appbar.content.controls[2].visible = choice 
@@ -528,14 +531,15 @@ class ImportExportControl(ft.Container):
             
     def add_space_before_export_controls(self):
         if PageProperties.platform == ft.PagePlatform.ANDROID and self.last_tab_index == 1:
-            self.content.controls.insert(0, ft.Container(height=40))
+            self.export_tab_column.controls.insert(0, ft.Container(height=40))
             self.update()
             
     def remove_space_before_export_controls(self):
         if PageProperties.platform == ft.PagePlatform.ANDROID and self.last_tab_index == 1:
-            if isinstance(self.content.controls[0], ft.Container):
-                self.content.controls.pop(0)
-                self.update()
+            if self.export_tab_column.controls and isinstance(self.export_tab_column.controls[0], ft.Container):
+                if getattr(self.export_tab_column.controls[0], "height", None) == 40:
+                    self.export_tab_column.controls.pop(0)
+                    self.update()
                 
     def scale_height_to_page(self, scale_factor: float):
         self.height = self.page.height * scale_factor
@@ -549,11 +553,7 @@ class ImportExportControl(ft.Container):
         self.page.floating_action_button.visible = False
         
         self.__show_search_button(False)
-        # show default tab
-        self.__show_import_controls()
-        
-        self.__ensure_csv_selector_in_overlay()
-        
+
         self.page.update()
  
     def will_unmount(self):

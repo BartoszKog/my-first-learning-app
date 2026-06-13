@@ -21,7 +21,7 @@ class WordFields(BaseWordField):
         self.nounThingWord = WordField(label="Noun (thing)", width=factor*width)
         self.adjWord = WordField(label="Adjective", width=factor*width)
         self.advWord = WordField(label="Adverb", width=factor*width)
-        self.checkButton = ft.ElevatedButton(text="Start", on_click=self.on_check_click)
+        self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
         self.pb = ProgressBar(width=width*factor)
 
         self.dict_word_fields = {

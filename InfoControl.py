@@ -126,8 +126,8 @@ If you are interested in the source code of this application, please visit our r
             auto_scroll=False
         )
     
-    def on_menu_click(self, e):
-        self.page.open(self.drawer)
+    async def on_menu_click(self, e):
+        await self.page.show_drawer()
         
     def did_mount(self):
         appbar = self.page.appbar

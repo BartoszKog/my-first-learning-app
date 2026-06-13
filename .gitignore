@@ -177,3 +177,6 @@ csv_test_files/
 # flet
 build/
 storage/
+
+# cursor
+.cursor/

@@ -8,6 +8,9 @@ from PageProperties import PageProperties
 
 class EditSetMenu(ft.Column):
     MAX_CARDS = MAX_ROWS
+    HEIGHT_FACTOR = 0.8
+    DEFAULT_APPBAR_HEIGHT = 100
+    DEFAULT_BOTTOM_APPBAR_HEIGHT = 80
 
     def __init__(self, file_name: str, width=340, title=None, subtitle=None):
         super().__init__()
@@ -28,13 +31,13 @@ class EditSetMenu(ft.Column):
             on_click=self.on_add_click,
             foreground_color=ft.Colors.WHITE
         )
-        self.backButton = ft.ElevatedButton(
-            text="Back",
+        self.backButton = ft.Button(
+            content="Back",
             on_click=self.on_back_click,
             icon=ft.Icons.ARROW_BACK
         )
-        self.ok_button = ft.ElevatedButton(
-            text="OK",
+        self.ok_button = ft.Button(
+            content="OK",
             on_click=self.on_ok_click,
             icon=ft.Icons.CHECK
         )
@@ -56,7 +59,7 @@ class EditSetMenu(ft.Column):
         self.main_container = ft.Container(
             content=self.lv,
             width=width,
-            height=PageProperties.height * 0.8
+            height=PageProperties.height * self.HEIGHT_FACTOR
         )
 
         if title is None:
@@ -94,6 +97,10 @@ class EditSetMenu(ft.Column):
             self.main_container,
             self.buttons_row
         ]
+
+    def did_mount(self):
+        self.__sync_height_to_page(self.page)
+        self.update()
 
     def on_add_click(self, e):
         if len(self.lv.controls) - 1 >= self.MAX_CARDS:  # -1 because addButton is also in controls
@@ -240,16 +247,48 @@ class EditSetMenu(ft.Column):
         save_set(existing_data, self.file_name)
 
         if dialog:
-            e.page.close(dialog)
+            e.page.pop_dialog()
             
         from TilesContainer import TilesContainer
-        TilesContainer().back_to_main_menu(e)
+        TilesContainer.back_to_main_menu(e)
         e.page.update()
     
     def on_back_click(self, e):
         from TilesContainer import TilesContainer
-        TilesContainer().back_to_main_menu(e)
+        TilesContainer.back_to_main_menu(e)
         
-    def change_height(self, height):
-        self.main_container.height = height
+    def change_height(self, height_or_page):
+        if hasattr(height_or_page, "window"):
+            self.__sync_height_to_page(height_or_page)
+        else:
+            self.main_container.height = height_or_page
         self.update()
+
+    def __sync_height_to_page(self, page):
+        if page is not None:
+            PageProperties.set_width_height_from_page(page)
+        self.main_container.height = self.__get_available_height(page) * self.HEIGHT_FACTOR
+
+    def __get_available_height(self, page=None):
+        if page is None:
+            return PageProperties.height
+
+        window_height = page.window.height if getattr(page, "window", None) and page.window.height else page.height
+        if not window_height:
+            return PageProperties.height
+
+        occupied_height = 0
+        if page.appbar and getattr(page.appbar, "visible", True):
+            occupied_height += (
+                getattr(page.appbar, "toolbar_height", None)
+                or getattr(page.appbar, "height", None)
+                or self.DEFAULT_APPBAR_HEIGHT
+            )
+        if page.bottom_appbar and getattr(page.bottom_appbar, "visible", True):
+            occupied_height += getattr(page.bottom_appbar, "height", None) or self.DEFAULT_BOTTOM_APPBAR_HEIGHT
+
+        padding = page.padding
+        if padding:
+            occupied_height += (padding.top or 0) + (padding.bottom or 0)
+
+        return max(window_height - occupied_height, 0)

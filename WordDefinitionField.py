@@ -16,7 +16,7 @@ class WordDefinitionField(BaseWordField):
         self.word = WordField(label="", width=factor*width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
-        self.checkButton = ft.ElevatedButton(text="Start", on_click=self.on_check_click)
+        self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
         self.pb = ProgressBar(width=width*factor)
         
         if not PageProperties.platform == ft.PagePlatform.WINDOWS:

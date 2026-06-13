@@ -6,9 +6,9 @@ from constants import PartsOfSpeech, WordDefinitions, StatsColumns
 from PageProperties import PageProperties
 
 BORDERS = {
-            "To learn": ft.border.all(1.5, ft.Colors.BLUE_GREY_700),
-            "Learned": ft.border.all(1.5, ft.Colors.ORANGE_500),
-            "Known": ft.border.all(1.5, ft.Colors.GREEN_ACCENT_700),
+            "To learn": ft.Border.all(1.5, ft.Colors.BLUE_GREY_700),
+            "Learned": ft.Border.all(1.5, ft.Colors.ORANGE_500),
+            "Known": ft.Border.all(1.5, ft.Colors.GREEN_ACCENT_700),
         }
 
 COLORS_CHECKS = {
@@ -214,22 +214,22 @@ class WordListMenu(ft.Column):
         )
         
         def on_button_click(e):
-            if e.control.text == "Start":
+            if e.control.content == "Start":
                 on_start()
                 
-            elif e.control.text == "Back":
+            elif e.control.content == "Back":
                 on_back()
-                TilesContainer().back_to_main_menu(e)
+                TilesContainer.back_to_main_menu(e)
                     
-        self.start_button = ft.ElevatedButton(
-            text="Start",
+        self.start_button = ft.Button(
+            content="Start",
             icon=ft.Icons.PLAY_ARROW,
             on_click=on_button_click
         )
 
         
-        self.back_button = ft.ElevatedButton(
-            text="Back",
+        self.back_button = ft.Button(
+            content="Back",
             icon=ft.Icons.ARROW_BACK,
             on_click=on_button_click
         )

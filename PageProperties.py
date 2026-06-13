@@ -1,4 +1,5 @@
 from flet import Page, Padding, ThemeMode, FilePicker, IconButton
+from preferences import get_shared_preferences
 
 class PageProperties:
     width = 500
@@ -84,22 +85,8 @@ class PageProperties:
     @classmethod
     def create_export_csv_picker(cls, page):
         if not cls.export_picker_csv:
-            cls.export_picker_csv = FilePicker(
-                on_result=cls._on_export_picker_result
-            )
-            page.overlay.append(cls.export_picker_csv)
-            page.update()
+            cls.export_picker_csv = FilePicker()
         return cls.export_picker_csv
-
-    @classmethod
-    def _on_export_picker_result(cls, e):
-        # Ten callback będzie uzupełniany przez ContentTile przy eksporcie
-        if hasattr(cls, "export_callback") and cls.export_callback:
-            cls.export_callback(e)
-
-    @classmethod
-    def set_export_callback(cls, callback):
-        cls.export_callback = callback
 
     @classmethod
     def get_export_csv_picker(cls):
@@ -156,6 +143,7 @@ class PageProperties:
 
     @classmethod
     def set_slider_value(cls, theme_mode, value):
+        value = int(value)
         if theme_mode == ThemeMode.DARK:
             cls.dark_theme_slider_value = value
         else:
@@ -189,11 +177,12 @@ class PageProperties:
             return cls.light_theme_bgcolor
         
     @classmethod
-    def set_slider_and_bgcolor_values_from_page(cls, page):
-        cls.dark_theme_slider_value = page.client_storage.get("dark_theme_slider_value")
-        cls.light_theme_slider_value = page.client_storage.get("light_theme_slider_value")
-        cls.dark_theme_bgcolor = page.client_storage.get("dark_theme_bgcolor")
-        cls.light_theme_bgcolor = page.client_storage.get("light_theme_bgcolor")
+    async def set_slider_and_bgcolor_values_from_page(cls, page):
+        storage = get_shared_preferences()
+        cls.dark_theme_slider_value = int(await storage.get("dark_theme_slider_value"))
+        cls.light_theme_slider_value = int(await storage.get("light_theme_slider_value"))
+        cls.dark_theme_bgcolor = await storage.get("dark_theme_bgcolor")
+        cls.light_theme_bgcolor = await storage.get("light_theme_bgcolor")
         
     @classmethod
     def set_current_search_control_involved_export_mode(cls, involved):

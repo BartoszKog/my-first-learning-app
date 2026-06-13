@@ -1,6 +1,7 @@
 import flet as ft
 from constants import PartsOfSpeech, WordDefinitions
 from PageProperties import PageProperties
+import asyncio
 
 class EditCardBase(ft.Card):
     def __init__(self, lv_parent: ft.ListView, width: int, fields: dict, words_row=None):
@@ -35,9 +36,15 @@ class EditCardBase(ft.Card):
             self.error_label.color = "blue"
 
         def on_delete_click(e):
+            async def scroll_after_delete():
+                await lv_parent.scroll_to(delta=30)
+
             lv_parent.auto_scroll = False
             lv_parent.controls.remove(self)
-            lv_parent.scroll_to(delta=30)
+            if hasattr(e.page, "run_task"):
+                e.page.run_task(scroll_after_delete)
+            else:
+                asyncio.create_task(scroll_after_delete())
 
             snackbar_word = self.dict_word_fields[list(fields.keys())[0]].value
             for label in list(fields.keys())[1:]:
@@ -47,12 +54,10 @@ class EditCardBase(ft.Card):
             if snackbar_word == "":
                 snackbar_word = "Card"
 
-            e.page.snack_bar = ft.SnackBar(
-                ft.Text(f"{snackbar_word.capitalize()} deleted"),
-                bgcolor=ft.Colors.TEAL_600
-            )
-            e.page.snack_bar.open = True
-
+            e.page.show_dialog(ft.SnackBar(
+                content=ft.Text(f"{snackbar_word.capitalize()} deleted"),
+                bgcolor=ft.Colors.TEAL_600,
+            ))
             e.page.update()
 
             lv_parent.edited = True
@@ -60,7 +65,7 @@ class EditCardBase(ft.Card):
             if self.index is not None:
                 lv_parent.deleted_indexes.append(self.index)
 
-        self.delete_button = ft.ElevatedButton(text="Delete", on_click=on_delete_click, icon=ft.Icons.DELETE)
+        self.delete_button = ft.Button(content="Delete", on_click=on_delete_click, icon=ft.Icons.DELETE)
 
         controls_column = ft.Column(
             controls=[

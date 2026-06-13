@@ -6,10 +6,17 @@ from Greetings import Greetings
 from page_functions import create_alert_dialog
 from PageProperties import PageProperties
 from FilePathManager import FilePathManager
+import asyncio
 import threading
-import time
 
 class TilesContainer(ft.Container):
+    WIDTH_FACTOR = 0.87
+    HEIGHT_FACTOR = 0.85
+    DEFAULT_APPBAR_HEIGHT = 100
+    DEFAULT_BOTTOM_APPBAR_HEIGHT = 80
+    SCROLL_PIXELS_PER_TILE = 69
+    SCROLL_OFFSET_CORRECTION = -130
+
     def __init__(self, page=None, export_mode=False):
         super().__init__()   
         
@@ -21,66 +28,109 @@ class TilesContainer(ft.Container):
         self.index_of_all_tiles = 0
         self.lock = threading.Lock()
         
-        files_and_titles = self.__validate_and_get_files(PageProperties.get_page()) 
+        self.files_and_titles = self.__validate_and_get_files(PageProperties.get_page()) 
         
         lv = ft.ListView(
             expand=True,
             spacing=10,
             controls=[
-                ContentTile(
-                    entry[FilesColumns.FILE_NAME.value],
-                    entry[FilesColumns.TITLE.value],
-                    entry[FilesColumns.SUBTITLE.value],
-                    parent_container=self,
-                    key=entry[FilesColumns.FILE_NAME.value],
-                    export_mode=export_mode)
-                for entry in files_and_titles
+                self.__create_content_tile(entry)
+                for entry in self.files_and_titles
             ]
         )
         
         self.content = lv
         self.padding = 10
-        self.width = PageProperties.width * 0.87
-        self.height = PageProperties.height * 0.65
+        self.__sync_size_to_page(page)
         
-    def back_to_main_menu(self, e):
-        e.page.controls.clear()
-        e.page.appbar.visible = True
-        e.page.appbar.title.value = Greetings.get_greeting()
-        e.page.bottom_appbar.visible = True
-        e.page.floating_action_button.visible = True
-        e.page.padding = PageProperties.padding
-        body = PageProperties.get_body()
-        e.page.add(body)
-        body.scale_height_to_page(e.page, factor=0.65)
-        body.reset_indications()
-        body.turn_off_searching_mode()
-        e.page.update()
+    @staticmethod
+    def back_to_main_menu(e):
+        page = e.page
+        page.controls.clear()
+        page.appbar.visible = True
+        page.appbar.title.value = Greetings.get_greeting()
+        page.bottom_appbar.visible = True
+        page.floating_action_button.visible = True
+        page.padding = PageProperties.padding
+        PageProperties.set_width_height_from_page(page)
+        body = TilesContainer(page)
+        PageProperties.set_body(body)
+        page.add(body)
         
     def refresh_content(self):
-        files_and_titles = self.__validate_and_get_files(PageProperties.get_page())
+        self.files_and_titles = self.__validate_and_get_files(PageProperties.get_page())
         self.content.controls.clear()
-        for entry in files_and_titles:
-            self.content.controls.append(
-                ContentTile(
-                    entry[FilesColumns.FILE_NAME.value], 
-                    entry[FilesColumns.TITLE.value],
-                    entry[FilesColumns.SUBTITLE.value],
-                    parent_container=self,
-                    key=entry[FilesColumns.FILE_NAME.value],
-                    export_mode=self.export_mode
-                )
-            )
+        for entry in self.files_and_titles:
+            self.content.controls.append(self.__create_content_tile(entry))
+        self.update()
+
+    def __create_content_tile(self, entry, pattern: str = "", main_key=None):
+        key = entry[FilesColumns.FILE_NAME.value]
+        title = entry[FilesColumns.TITLE.value]
+        matching_pattern = pattern if pattern and pattern.lower() in title.lower() else ""
+        return ContentTile(
+            key,
+            title,
+            entry[FilesColumns.SUBTITLE.value],
+            parent_container=self,
+            key=key,
+            export_mode=self.export_mode,
+            pattern=matching_pattern,
+            main_color=key == main_key,
+        )
+
+    def __reload_tiles(self, pattern: str = "", main_key=None):
+        self.content.controls.clear()
+        for entry in self.files_and_titles:
+            self.content.controls.append(self.__create_content_tile(entry, pattern, main_key))
         self.update()
         
     def did_mount(self):
         # update tiles when control is mounted
+        self.__sync_size_to_page(self.page or PageProperties.get_page())
         self.refresh_content()
         
     def scale_height_to_page(self, page, factor=0.65):
-        self.width = page.width * 0.87 # 0.87 is the same as in __init__
-        self.height = page.height * factor
+        self.width = self.__get_layout_width(page) * self.WIDTH_FACTOR
+        self.height = self.__get_available_height(page) * factor
         self.update()
+
+    def __sync_size_to_page(self, page=None):
+        if page is not None:
+            PageProperties.set_width_height_from_page(page)
+        self.width = self.__get_layout_width(page) * self.WIDTH_FACTOR
+        self.height = self.__get_available_height(page) * self.HEIGHT_FACTOR
+
+    def __get_layout_width(self, page=None):
+        if page is not None and page.width:
+            return page.width
+        if page is not None and getattr(page, "window", None) and page.window.width:
+            return page.window.width
+        return PageProperties.width
+
+    def __get_available_height(self, page=None):
+        if page is None:
+            return PageProperties.height
+
+        window_height = page.window.height if getattr(page, "window", None) and page.window.height else page.height
+        if not window_height:
+            return PageProperties.height
+
+        occupied_height = 0
+        if page.appbar and getattr(page.appbar, "visible", True):
+            occupied_height += (
+                getattr(page.appbar, "toolbar_height", None)
+                or getattr(page.appbar, "height", None)
+                or self.DEFAULT_APPBAR_HEIGHT
+            )
+        if page.bottom_appbar and getattr(page.bottom_appbar, "visible", True):
+            occupied_height += getattr(page.bottom_appbar, "height", None) or self.DEFAULT_BOTTOM_APPBAR_HEIGHT
+
+        padding = page.padding
+        if padding:
+            occupied_height += (padding.top or 0) + (padding.bottom or 0)
+
+        return max(window_height - occupied_height, 0)
         
     def has_content_tiles(self):
         """
@@ -210,7 +260,8 @@ class TilesContainer(ft.Container):
         # add all tiles to tiles with patterns
         self.tiles_with_patterns = self.content.controls.copy()
         self.index_of_all_tiles = len(self.content.controls) - 1 # it is used in __scroll_to_tile method
-        self.__scroll_to_tile(0, "up")
+        if len(self.tiles_with_patterns) > 0:
+            self.__scroll_to_tile(0, "up")
     
     def turn_off_searching_mode(self):
         # clear all tiles from tiles with patterns and without patterns
@@ -222,114 +273,80 @@ class TilesContainer(ft.Container):
         
     def reset_indications(self):
         with self.lock:
-            # all tiles
-            for tile in self.content.controls:
-                tile.reset_indication()
+            self.__reload_tiles()
+            self.tiles_with_patterns = self.content.controls.copy()
         
     def indicate_patterns_and_scroll_to_first(self, pattern: str):
         with self.lock:
-            # check if not last pattern is in the beginning of the new pattern
-            if not pattern.lower().startswith(self.last_pattern.lower()):
-                # reset tiles with patterns
-                for tile in self.tiles_with_patterns:
-                    tile.reset_indication()
-                
-                # clear tiles without patterns and add all tiles to tiles with patterns
-                self.tiles_with_patterns.clear()
-                self.tiles_with_patterns = self.content.controls.copy()
-                self.index_of_focused_tile = 0
-                
-
-            new_tiles_with_patterns = []
-
-            for tile in self.tiles_with_patterns:
-                if tile.contains_pattern(pattern):
-                    if pattern != "":
-                        tile.indicate_pattern(pattern)
-
-                    new_tiles_with_patterns.append(tile)
-                else:
-                    tile.reset_indication()
-
-            self.tiles_with_patterns = new_tiles_with_patterns
+            self.index_of_focused_tile = 0
+            matching_keys = [
+                entry[FilesColumns.FILE_NAME.value]
+                for entry in self.files_and_titles
+                if pattern.lower() in entry[FilesColumns.TITLE.value].lower()
+            ]
+            main_key = matching_keys[0] if pattern and matching_keys else None
+            self.__reload_tiles(pattern, main_key)
+            self.tiles_with_patterns = [
+                tile for tile in self.content.controls
+                if tile.key in matching_keys
+            ]
             
             # scroll to the first tile with pattern
             if len(self.tiles_with_patterns) > 0:
-                if self.index_of_all_tiles - self.__index_of_first_tile_with_pattern(pattern) > 0:
-                    self.__scroll_to_tile(0, "up")
-                else:
-                    self.__scroll_to_tile(0, "down")
-                
-                if pattern != "": # from all indicated tiles, set main color in the first one
-                    self.tiles_with_patterns[0].indicate_pattern(pattern, main_color=True)
+                self.__scroll_to_tile(0, "up")
                 self.index_of_focused_tile = 0
             
             self.last_pattern = pattern
         
-    def __index_of_first_tile_with_pattern(self, pattern):
-        if pattern == "":
-            return 0
-        
-        for tile in self.content.controls:
-            if tile.contains_pattern(pattern):
-                return self.content.controls.index(tile)
-    
-    def __reset_main_color_indication_in_previous_tile(self, index):
-        assert index >= 0 and index < len(self.tiles_with_patterns)
-        self.tiles_with_patterns[index].indicate_pattern(self.last_pattern, main_color=False)  
-            
-    def __set_main_color_indication_in_next_tile(self, index):
-        assert index < len(self.tiles_with_patterns) and index >= 0
-        self.tiles_with_patterns[index].indicate_pattern(self.last_pattern, main_color=True) 
+    async def __scroll_to_offset(self, offset):
+        await self.content.scroll_to(offset=offset)
+
+    def __schedule_scroll_to_offset(self, offset):
+        page = self.page or PageProperties.get_page()
+        if hasattr(page, "run_task"):
+            page.run_task(self.__scroll_to_offset, offset)
+        else:
+            asyncio.create_task(self.__scroll_to_offset(offset))
         
     def __scroll_to_tile(self, index, up_or_down): # add argument up_or_down
         assert index < len(self.tiles_with_patterns) and index >= 0
         assert up_or_down == "up" or up_or_down == "down"
         
-        DURATION = 0.01
-        
-        if up_or_down == "down":
-            self.index_of_all_tiles = 0
-            for tile in self.content.controls:
-                if tile.key == self.tiles_with_patterns[index].key:
-                    break
-                
-                time.sleep(DURATION)
-                self.content.scroll_to(key = tile.key)
-                self.index_of_all_tiles += 1
-                
-        elif up_or_down == "up":
-            break_flag = False                
-            self.index_of_all_tiles = len(self.content.controls) - 1
-            for tile in reversed(self.content.controls):
-                if self.index_of_all_tiles < 0:
-                    raise IndexError             
-                
-                time.sleep(DURATION)
-                self.content.scroll_to(key = tile.key)
-                if break_flag:
-                    break
-                
-                self.index_of_all_tiles -= 1
-                
-                if tile.key == self.tiles_with_patterns[index].key:
-                    self.index_of_all_tiles += 1
-                    break_flag = True             
+        target_key = self.tiles_with_patterns[index].key
+        for tile_index, tile in enumerate(self.content.controls):
+            if tile.key == target_key:
+                self.index_of_all_tiles = tile_index
+                offset = max(
+                    tile_index * self.SCROLL_PIXELS_PER_TILE + self.SCROLL_OFFSET_CORRECTION,
+                    0,
+                )
+                self.__schedule_scroll_to_offset(offset)
+                return
+
+        raise IndexError
         
     
     def scroll_to_next(self):
         with self.lock:
             if (self.index_of_focused_tile < len(self.tiles_with_patterns) - 1) and (self.last_pattern != ""):
                 self.index_of_focused_tile += 1
-                self.__reset_main_color_indication_in_previous_tile(self.index_of_focused_tile - 1)
-                self.__set_main_color_indication_in_next_tile(self.index_of_focused_tile)
+                main_key = self.tiles_with_patterns[self.index_of_focused_tile].key
+                self.__reload_tiles(self.last_pattern, main_key)
+                self.tiles_with_patterns = [
+                    tile for tile in self.content.controls
+                    if tile.contains_pattern(self.last_pattern)
+                ]
                 self.__scroll_to_tile(self.index_of_focused_tile, "down")
     
     def scroll_to_previous(self):
         with self.lock:
             if (self.index_of_focused_tile > 0) and (self.last_pattern != ""):
                 self.index_of_focused_tile -= 1
-                self.__reset_main_color_indication_in_previous_tile(self.index_of_focused_tile+1)
-                self.__set_main_color_indication_in_next_tile(self.index_of_focused_tile)
+                main_key = self.tiles_with_patterns[self.index_of_focused_tile].key
+                self.__reload_tiles(self.last_pattern, main_key)
+                self.tiles_with_patterns = [
+                    tile for tile in self.content.controls
+                    if tile.contains_pattern(self.last_pattern)
+                ]
                 self.__scroll_to_tile(self.index_of_focused_tile, "up")
 

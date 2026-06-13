@@ -7,7 +7,7 @@ class SearchControl(ft.Row):
     
     def __init__(self, page, tiles_container: TilesContainer):
         super().__init__()
-        self.page = page
+        self._app_page = page
         self.tiles_container = tiles_container
         
         self.vertical_alignment = ft.CrossAxisAlignment.CENTER
@@ -46,6 +46,9 @@ class SearchControl(ft.Row):
             self.close_button
         ])
         
+    def _get_page(self):
+        return self.page or self._app_page
+        
     def on_next_pattern_click(self, e):
         self.tiles_container.scroll_to_next()
         
@@ -54,7 +57,7 @@ class SearchControl(ft.Row):
         
     def on_close_click(self, e):
         if not self.tiles_container.export_mode:
-            TilesContainer().back_to_main_menu(e)
+            TilesContainer.back_to_main_menu(e)
             self.tiles_container.turn_off_searching_mode()
         else:
             self.close_but_in_export_mode()
@@ -89,20 +92,21 @@ class SearchControl(ft.Row):
         
     def close_but_in_export_mode(self):
         from ImportExportControl import ImportExportControl
+        page = self._get_page()
         assert self.tiles_container.export_mode
-        assert isinstance(self.page.controls[0], ImportExportControl)
-        if self.page.platform == ft.PagePlatform.ANDROID:
-            import_export_control = self.page.controls[0]
+        assert isinstance(page.controls[0], ImportExportControl)
+        if page.platform == ft.PagePlatform.ANDROID:
+            import_export_control = page.controls[0]
             import_export_control.remove_space_before_export_controls()
             import_export_control.scale_height_to_page(0.80)
-        self.page.bottom_appbar.visible = True
-        self.page.appbar.visible = True
-        self.page.padding = PageProperties.padding
+        page.bottom_appbar.visible = True
+        page.appbar.visible = True
+        page.padding = PageProperties.padding
         export_body = PageProperties.get_export_body()
         export_body.reset_indications()
         self.tiles_container.turn_off_searching_mode()
-        self.tiles_container.scale_height_to_page(self.page, 0.65)
-        self.page.remove(self)
+        self.tiles_container.scale_height_to_page(page, 0.65)
+        page.remove(self)
         
         
         

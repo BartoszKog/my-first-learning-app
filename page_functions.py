@@ -28,19 +28,28 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
         This function automatically handles adding the dialog to the page overlay and removing it
         when either button is clicked.
     """
+    action_handled = False
+
+    def run_dialog_action(e, callback=None):
+        nonlocal action_handled
+        if action_handled:
+            return
+        action_handled = True
+        e.page.pop_dialog()
+        if callback:
+            callback(e)
+
     def close_action(e):
         if close_action_function:
-            close_action_function(e)
-        e.page.close(alert_dialog)
-        e.page.overlay.remove(alert_dialog) # Remove the dialog from the overlay
+            run_dialog_action(e, close_action_function)
+        else:
+            run_dialog_action(e)
         
     actions = [ft.TextButton(close_button_text, on_click=close_action)]
     
     if action_function:
         def action(e):
-            action_function(e)
-            e.page.close(alert_dialog)
-            e.page.overlay.remove(alert_dialog)
+            run_dialog_action(e, action_function)
         
         actions.append(ft.TextButton(action_button_text, on_click=action))
     
@@ -51,9 +60,7 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
         actions_alignment=ft.MainAxisAlignment.END,
     )
     
-    page.overlay.append(alert_dialog)
-    alert_dialog.open = True
-    page.update()
+    page.show_dialog(alert_dialog)
     
 def is_instance_in_the_page(page, instance):
     for control in page.controls:

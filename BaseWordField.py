@@ -9,8 +9,30 @@ class BaseWordField(ft.Column):
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         self.words = AppData(file_name)
         self.file_name = file_name
-        self.page = page
+        self._app_page = page
         self.lock = threading.Lock()
+
+    def _get_check_button_text(self):
+        text = getattr(self.checkButton, "text", None)
+        if text:
+            return text
+
+        content = getattr(self.checkButton, "content", None)
+        if isinstance(content, str):
+            return content
+
+        return getattr(content, "value", None)
+
+    def _set_check_button_text(self, text):
+        if hasattr(self.checkButton, "text"):
+            self.checkButton.text = text
+            if isinstance(getattr(self.checkButton, "content", None), str):
+                self.checkButton.content = None
+        else:
+            self.checkButton.content = text
+
+    def _get_page(self):
+        return self.page or self._app_page
 
     def menu(self):
         self.controls.clear()
@@ -25,7 +47,7 @@ class BaseWordField(ft.Column):
 
     def show_all_words_learned_dialog(self):
         create_alert_dialog(
-            page=self.page,
+            page=self._get_page(),
             title="Congratulations, all words learned!",
             content="If you want to start again, set the progress to 0.",
             close_button_text="Close",
@@ -42,7 +64,7 @@ class BaseWordField(ft.Column):
             self.controls.extend(self.active_controls)
             self.update()
             self.pb.reset()
-            self.checkButton.text = "Check"
+            self._set_check_button_text("Check")
             length = self.words.draw_index_group(save_indexes_in_class_art=True)
             self.pb.set_max_qty(length)
             self.set_next_word()
@@ -51,7 +73,7 @@ class BaseWordField(ft.Column):
 
     def on_check_click(self, e):
         with self.lock:
-            if self.checkButton.text == "Check":
+            if self._get_check_button_text() == "Check":
                 self.checkButton.disabled = True
                 self.update()
                 all_correct = self.compare_all_words()
@@ -59,14 +81,14 @@ class BaseWordField(ft.Column):
                     self.words.good_answer_at_current_row()
                 else:
                     self.words.bad_answer_at_current_row()
-                self.checkButton.text = "Next"
+                self._set_check_button_text("Next")
                 self.pb.increase()
                 self.checkButton.disabled = False
                 self.update()
-            elif self.checkButton.text == "Next":
+            elif self._get_check_button_text() == "Next":
                 self.checkButton.disabled = True
                 self.update()
-                self.checkButton.text = "Check"
+                self._set_check_button_text("Check")
                 self.set_next_word()
                 self.checkButton.disabled = False
                 self.update()

@@ -18,19 +18,19 @@ class CreateSetMenu(ft.Column):
         self.kind_dropdown = ft.Dropdown(
             label="Kind",
             options=[
-                ft.dropdown.Option("Word formations"),
-                ft.dropdown.Option("Definitions"),
+                ft.DropdownOption("Word formations"),
+                ft.DropdownOption("Definitions"),
             ],
             width=width
         )
         
         def on_cancel_click(e):
-            TilesContainer().back_to_main_menu(e)
+            TilesContainer.back_to_main_menu(e)
         
         self.buttons_row = ft.Row(
             controls=[
-                ft.ElevatedButton(text="Cancel", on_click=on_cancel_click),
-                ft.ElevatedButton(text="Create", on_click=self.on_create_click)
+                ft.Button(content="Cancel", on_click=on_cancel_click),
+                ft.Button(content="Create", on_click=self.on_create_click)
             ],
             alignment=ft.MainAxisAlignment.CENTER
         )

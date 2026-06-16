@@ -1,87 +1,89 @@
-import flet as ft 
-from AppData import get_file_names, sanitize_file_name
-from EditSetMenu import EditSetMenu
-from constants import FilesColumns
-from page_functions import create_alert_dialog
+import flet as ft
+
+from learning_app.data.app_data import get_file_names, sanitize_file_name
+from learning_app.data.constants import FilesColumns
+from learning_app.ui.page_functions import create_alert_dialog
+from learning_app.ui.screens.edit_set_menu import EditSetMenu
+
 
 class CreateSetMenu(ft.Column):
     def __init__(self, width=300):
-        from TilesContainer import TilesContainer
+        from learning_app.ui.components.tiles_container import TilesContainer
         super().__init__()
         self.width = width
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        
+
         self.title_field = ft.TextField(label="Title", width=width, max_length=20)
-        
+
         self.subtitle_field = ft.TextField(label="Subtitle", width=width, multiline=True, min_lines=1, max_lines=2)
-        
+
         self.kind_dropdown = ft.Dropdown(
             label="Kind",
             options=[
                 ft.DropdownOption("Word formations"),
                 ft.DropdownOption("Definitions"),
             ],
-            width=width
+            width=width,
         )
-        
+
         def on_cancel_click(e):
             TilesContainer.back_to_main_menu(e)
-        
+
         self.buttons_row = ft.Row(
             controls=[
                 ft.Button(content="Cancel", on_click=on_cancel_click),
-                ft.Button(content="Create", on_click=self.on_create_click)
+                ft.Button(content="Create", on_click=self.on_create_click),
             ],
-            alignment=ft.MainAxisAlignment.CENTER
+            alignment=ft.MainAxisAlignment.CENTER,
         )
-        
+
         self.controls.extend([
             self.title_field,
             self.subtitle_field,
             self.kind_dropdown,
-            self.buttons_row
+            self.buttons_row,
         ])
-    
+
     def on_create_click(self, e):
-        from CSVProcessor import CSVProcessor
+        from learning_app.data.csv_processor import CSVProcessor
         if not CSVProcessor.validate_files_csv()["is_valid"]:
             create_alert_dialog(
                 page=e.page,
                 title="Error",
                 content="files.csv has been changed. \nPlease restore it to its original state.",
-                close_button_text="OK"
+                close_button_text="OK",
             )
             return
-        
+
         if not self.title_field.value:
             self.title_field.error_text = "This field is required"
         else:
             self.title_field.error_text = ""
-            
+
         if not self.kind_dropdown.value:
             self.kind_dropdown.error_text = "Choose an option from the dropdown"
         else:
             self.kind_dropdown.error_text = ""
-        
+
         if not self.title_field.value or not self.kind_dropdown.value:
             create_alert_dialog(
                 page=e.page,
                 title="Error",
                 content="Please fill in all fields and select an option \nfrom the dropdown.",
-                close_button_text="OK"
+                close_button_text="OK",
             )
         else:
             # load list of file_names to create new file_name
             filenames = get_file_names()
-            
+
             kind = self.kind_dropdown.value.lower()
-            
+
             if kind == "word formations":
                 kind = "words"
 
             # create sanitized file name
             sanitized_title = sanitize_file_name(self.title_field.value, kind)
-            
+
             # check if file_name already exists
             checking = True
             counter = 1
@@ -93,9 +95,9 @@ class CreateSetMenu(ft.Column):
                     counter += 1
                 else:
                     checking = False
-                    
+
             title = self.title_field.value.capitalize()
-            subtitle = self.subtitle_field.value.capitalize()            
-        
+            subtitle = self.subtitle_field.value.capitalize()
+
             e.page.controls.clear()
             e.page.add(EditSetMenu(new_file_name, title=title, subtitle=subtitle, width=self.width))

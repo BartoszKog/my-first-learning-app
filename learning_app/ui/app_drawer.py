@@ -1,9 +1,10 @@
 import flet as ft
-from PageProperties import PageProperties
-from TilesContainer import TilesContainer
-from SettingsControl import SettingsControl
-from InfoControl import InfoControl
-from ImportExportControl import ImportExportControl
+
+from learning_app.ui.components.tiles_container import TilesContainer
+from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.screens.import_export_control import ImportExportControl
+from learning_app.ui.screens.info_control import InfoControl
+from learning_app.ui.screens.settings_control import SettingsControl
 
 
 class AppDrawer(ft.NavigationDrawer):

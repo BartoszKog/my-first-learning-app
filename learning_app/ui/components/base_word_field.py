@@ -1,7 +1,10 @@
-import flet as ft
-from AppData import AppData, set_default_progress
-from page_functions import create_alert_dialog
 import threading
+
+import flet as ft
+
+from learning_app.data.app_data import AppData, set_default_progress
+from learning_app.ui.page_functions import create_alert_dialog
+
 
 class BaseWordField(ft.Column):
     def __init__(self, file_name, page=None):
@@ -52,7 +55,7 @@ class BaseWordField(ft.Column):
             content="If you want to start again, set the progress to 0.",
             close_button_text="Close",
             action_button_text="Set progress to 0",
-            action_function=self.set_default_progress_action
+            action_function=self.set_default_progress_action,
         )
 
     def back(self):
@@ -98,6 +101,6 @@ class BaseWordField(ft.Column):
 
     def set_next_word(self):
         raise NotImplementedError("This method should be overridden in subclasses")
-    
+
     def change_height(self, height):
         self.menu_control.change_height(height)

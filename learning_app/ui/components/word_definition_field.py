@@ -1,9 +1,11 @@
 import flet as ft
-from Controls import WordField, ProgressBar
-from WordListMenu import WordListMenu
-from constants import WordDefinitions
-from BaseWordField import BaseWordField
-from PageProperties import PageProperties
+
+from learning_app.data.constants import WordDefinitions
+from learning_app.ui.components.base_word_field import BaseWordField
+from learning_app.ui.components.controls import ProgressBar, WordField
+from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.screens.word_list_menu import WordListMenu
+
 
 class WordDefinitionField(BaseWordField):
     def __init__(self, file_name, page=None, width=300):
@@ -13,12 +15,12 @@ class WordDefinitionField(BaseWordField):
             factor = 0.80
 
         self.definitionLabel = ft.Text(theme_style=ft.TextThemeStyle.TITLE_LARGE)
-        self.word = WordField(label="", width=factor*width)
+        self.word = WordField(label="", width=factor * width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
         self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
-        self.pb = ProgressBar(width=width*factor)
-        
+        self.pb = ProgressBar(width=width * factor)
+
         if not PageProperties.platform == ft.PagePlatform.WINDOWS:
             self.checkButton.scale = 1.3
 
@@ -26,7 +28,7 @@ class WordDefinitionField(BaseWordField):
             self.pb,
             self.definitionLabel,
             self.word,
-            self.checkButton
+            self.checkButton,
         ]
 
         self.menu_control = WordListMenu(file_name, on_start=self.start, on_back=self.back, width=width)

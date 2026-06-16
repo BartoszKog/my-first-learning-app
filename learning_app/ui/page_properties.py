@@ -1,5 +1,7 @@
-from flet import Page, Padding, ThemeMode, FilePicker, IconButton
-from preferences import get_shared_preferences
+from flet import FilePicker, IconButton, Padding, Page, ThemeMode
+
+from learning_app.ui.preferences import get_shared_preferences
+
 
 class PageProperties:
     width = 500
@@ -12,7 +14,7 @@ class PageProperties:
     dark_theme_bgcolor = None
     light_theme_bgcolor = None
     export_picker_csv = None
-    
+
     @classmethod
     def disable_all_navigation_controls(cls):
         """
@@ -20,24 +22,24 @@ class PageProperties:
         when a critical issue with files.csv is detected.
         """
         page = cls.get_page()
-        
+
         # Disable bottom app bar buttons
         if page.bottom_appbar and page.bottom_appbar.content:
             for control in page.bottom_appbar.content.controls:
                 if isinstance(control, IconButton):
                     control.disabled = True
-        
+
         # Disable floating action button
         if page.floating_action_button:
             page.floating_action_button.disabled = True
-        
+
         # Disable drawer navigation
         if hasattr(cls, "drawer") and cls.drawer:
             cls.drawer.disabled = True
-        
+
         # Set global flag indicating disabled navigation
         cls.navigation_disabled = True
-        
+
         page.update()
 
     @classmethod
@@ -46,24 +48,24 @@ class PageProperties:
         Re-enables all navigation controls after a critical issue has been resolved.
         """
         page = cls.get_page()
-        
+
         # Enable bottom app bar buttons
         if page.bottom_appbar and page.bottom_appbar.content:
             for control in page.bottom_appbar.content.controls:
                 if isinstance(control, IconButton):
                     control.disabled = False
-        
+
         # Enable floating action button
         if page.floating_action_button:
             page.floating_action_button.disabled = False
-        
+
         # Enable drawer navigation
         if hasattr(cls, "drawer") and cls.drawer:
             cls.drawer.disabled = False
-        
+
         # Clear the disabled flag
         cls.navigation_disabled = False
-        
+
         page.update()
 
     @classmethod
@@ -72,16 +74,16 @@ class PageProperties:
         Returns whether navigation is currently disabled due to a critical issue.
         """
         return getattr(cls, "navigation_disabled", False)
-    
+
     @classmethod
     def set_page(cls, page: Page):
         cls.page = page
-        
+
     @classmethod
     def get_page(cls):
         assert hasattr(cls, "page"), "Page is not set"
         return cls.page
-    
+
     @classmethod
     def create_export_csv_picker(cls, page):
         if not cls.export_picker_csv:
@@ -92,50 +94,50 @@ class PageProperties:
     def get_export_csv_picker(cls):
         assert cls.export_picker_csv is not None, "Export CSV picker is not set"
         return cls.export_picker_csv
-    
+
     @classmethod
     def set_width_height_from_page(cls, page: Page):
         cls.width = page.width
         cls.height = page.height
         cls.padding = page.padding
         cls.platform = page.platform
-    
+
     @classmethod
     def set_theme_from_page(cls, page: Page):
         cls.theme_mode = page.theme_mode
-        if cls.theme_mode.value ==  ThemeMode.DARK.value:
+        if cls.theme_mode.value == ThemeMode.DARK.value:
             cls.dark_mode = True
             cls.light_mode = False
         else:
             cls.dark_mode = False
             cls.light_mode = True
-    
+
     @classmethod
     def set_body(cls, body):
         cls.body = body
-        
+
     @classmethod
     def set_drawer(cls, drawer):
         cls.drawer = drawer
-        
+
     @classmethod
     def set_export_body(cls, export_body):
         cls.export_body = export_body
-        
+
     @classmethod
     def has_export_body(cls):
         return hasattr(cls, "export_body")
-        
+
     @classmethod
     def get_body(cls):
         assert hasattr(cls, "body"), "Body is not set"
         return cls.body
-    
+
     @classmethod
     def get_drawer(cls):
         assert hasattr(cls, "drawer"), "Drawer is not set"
         return cls.drawer
-    
+
     @classmethod
     def get_export_body(cls):
         assert hasattr(cls, "export_body"), "Export body is not set"
@@ -175,7 +177,7 @@ class PageProperties:
             return cls.light_theme_bgcolor if cls.theme_mode == ThemeMode.LIGHT else cls.dark_theme_bgcolor
         else:
             return cls.light_theme_bgcolor
-        
+
     @classmethod
     async def set_slider_and_bgcolor_values_from_page(cls, page):
         storage = get_shared_preferences()
@@ -183,16 +185,16 @@ class PageProperties:
         cls.light_theme_slider_value = int(await storage.get("light_theme_slider_value"))
         cls.dark_theme_bgcolor = await storage.get("dark_theme_bgcolor")
         cls.light_theme_bgcolor = await storage.get("light_theme_bgcolor")
-        
+
     @classmethod
     def set_current_search_control_involved_export_mode(cls, involved):
         cls.current_search_control_involved_export_mode = involved
-        
+
     @classmethod
     def get_current_search_control_involved_export_mode(cls):
         assert hasattr(cls, "current_search_control_involved_export_mode"), "Current search control involved export mode is not set"
         return cls.current_search_control_involved_export_mode
-    
+
     @classmethod
     def delete_current_search_control_involved_export_mode(cls):
         del cls.current_search_control_involved_export_mode

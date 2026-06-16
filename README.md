@@ -12,6 +12,22 @@ uv sync
 uv run flet run .
 ```
 
+## Project Structure
+
+The root `main.py` file is a thin launcher. Application code lives in the
+`learning_app` package:
+
+```text
+learning_app/
+  app.py                  # Flet application entrypoint
+  data/                   # CSV processing, data model, file paths, constants
+  ui/
+    components/           # reusable Flet controls
+    screens/              # larger application screens and menus
+  utils/                  # small general helpers
+tests/                    # focused unit tests
+```
+
 ## 📱 Android Release
 
 You can also download the Android version of the application:
@@ -69,6 +85,7 @@ Words are queued for learning according to the following states:
 ### Explanation of State Codes (0/0/0)
 
 State codes (e.g., 0/0/0) represent the following word attributes:
+
 - First digit: whether the word was answered correctly in the last attempt (0 - no, 1 - yes)
 - Second digit: whether the word was answered correctly in a row (0 - no, 1 - yes)
 - Third digit: whether the word is marked as requiring learning (0 - no, 1 - yes)
@@ -78,7 +95,9 @@ State codes (e.g., 0/0/0) represent the following word attributes:
 The application supports two types of CSV files:
 
 ### 1. `_words.csv` Files
+
 Contain words grouped by parts of speech:
+
 - `verb`: verb
 - `person`: person
 - `thing`: noun
@@ -86,17 +105,21 @@ Contain words grouped by parts of speech:
 - `adverb`: adverb
 
 ### 2. `_definitions.csv` Files
+
 Contain definitions and their corresponding words:
+
 - `definition`: definition
 - `word`: corresponding word
 
 ### Statistics Columns (Optional)
+
 - `correct_answers`: number of correct answers (integer)
 - `good_answers_in_a_row`: whether there were correct answers in a row (boolean)
 - `good_answer`: whether the last answer was correct (boolean)
 - `word_to_learn`: whether the word requires learning (boolean)
 
 ### Sample CSV File
+
 ```csv
 ,definition,word
 0,"1 number",one
@@ -104,6 +127,7 @@ Contain definitions and their corresponding words:
 ```
 
 ## 💡 Tips
+
 - Make sure your CSV files have the correct format and columns
 - Data import/export is available from the app's main menu
 - Words marked as "learned" will appear less frequently
@@ -113,10 +137,10 @@ Contain definitions and their corresponding words:
 ## 🔧 Technologies
 
 The application was created using:
+
 - **Flet** - a modern framework combining Flutter and Python
 - **Python** - backend programming language
 - **Pandas** - data manipulation library
-- **Flutter** - UI framework
 
 ---
 

@@ -1,6 +1,7 @@
 import random
 from datetime import datetime
 
+
 class Greetings:
     morning_greetings = ["Good morning!", "Morning!", "Top of the morning!"]
     afternoon_greetings = ["Good afternoon!", "Hello!", "Good day!", "Hi!"]

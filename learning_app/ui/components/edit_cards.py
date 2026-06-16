@@ -1,7 +1,10 @@
-import flet as ft
-from constants import PartsOfSpeech, WordDefinitions
-from PageProperties import PageProperties
 import asyncio
+
+import flet as ft
+
+from learning_app.data.constants import PartsOfSpeech, WordDefinitions
+from learning_app.ui.page_properties import PageProperties
+
 
 class EditCardBase(ft.Card):
     def __init__(self, lv_parent: ft.ListView, width: int, fields: dict, words_row=None):
@@ -72,8 +75,8 @@ class EditCardBase(ft.Card):
                 ft.Text(size=5)
             ]
         )
-        controls_column.controls.extend(self.dict_word_fields.values()) 
-        
+        controls_column.controls.extend(self.dict_word_fields.values())
+
         controls_column.controls.append(self.delete_button)
         controls_column.controls.append(self.error_label)
         controls_column.controls.append(ft.Text(size=5))
@@ -127,7 +130,7 @@ class EditCardWords(EditCardBase):
             PartsOfSpeech.PERSON.value: ft.TextField(),
             PartsOfSpeech.THING.value: ft.TextField(),
             PartsOfSpeech.ADJECTIVE.value: ft.TextField(),
-            PartsOfSpeech.ADVERB.value: ft.TextField()
+            PartsOfSpeech.ADVERB.value: ft.TextField(),
         }
         super().__init__(lv_parent, width, fields, words_row)
 
@@ -140,7 +143,7 @@ class EditCardDefinitions(EditCardBase):
                 multiline=True,
                 min_lines=1,
                 max_lines=6,
-                shift_enter=True
-            )
+                shift_enter=True,
+            ),
         }
         super().__init__(lv_parent, width, fields, words_row)

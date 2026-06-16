@@ -1,10 +1,13 @@
-import flet as ft
 import random as rd
 from typing import Dict
-from Controls import WordField, ProgressBar
-from WordListMenu import WordListMenu
-from BaseWordField import BaseWordField
-from PageProperties import PageProperties
+
+import flet as ft
+
+from learning_app.ui.components.base_word_field import BaseWordField
+from learning_app.ui.components.controls import ProgressBar, WordField
+from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.screens.word_list_menu import WordListMenu
+
 
 class WordFields(BaseWordField):
     def __init__(self, file_name: str = "data_words.csv", page=None, width=300):
@@ -12,24 +15,24 @@ class WordFields(BaseWordField):
         factor = 0.90
         if PageProperties.platform == ft.PagePlatform.WINDOWS:
             factor = 0.83
-            
+
         self.dict_word_fields: Dict[str, WordField] = {}
 
         self.Word = ft.Text("Word", theme_style=ft.TextThemeStyle.TITLE_LARGE)
-        self.verbWord = WordField(label="Verb", width=factor*width)
-        self.nounPersonWord = WordField(label="Noun (person)", width=factor*width)
-        self.nounThingWord = WordField(label="Noun (thing)", width=factor*width)
-        self.adjWord = WordField(label="Adjective", width=factor*width)
-        self.advWord = WordField(label="Adverb", width=factor*width)
+        self.verbWord = WordField(label="Verb", width=factor * width)
+        self.nounPersonWord = WordField(label="Noun (person)", width=factor * width)
+        self.nounThingWord = WordField(label="Noun (thing)", width=factor * width)
+        self.adjWord = WordField(label="Adjective", width=factor * width)
+        self.advWord = WordField(label="Adverb", width=factor * width)
         self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
-        self.pb = ProgressBar(width=width*factor)
+        self.pb = ProgressBar(width=width * factor)
 
         self.dict_word_fields = {
             "verb": self.verbWord,
             "person": self.nounPersonWord,
             "thing": self.nounThingWord,
             "adjective": self.adjWord,
-            "adverb": self.advWord
+            "adverb": self.advWord,
         }
 
         self.active_controls = [
@@ -39,7 +42,7 @@ class WordFields(BaseWordField):
             self.nounPersonWord,
             self.nounThingWord,
             self.adjWord,
-            self.advWord
+            self.advWord,
         ]
 
         self.menu_control = WordListMenu(file_name, on_start=self.start, on_back=self.back, width=width)

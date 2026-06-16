@@ -1,7 +1,9 @@
 import flet as ft
-from PageProperties import PageProperties
-from constants import MAX_ROWS
- 
+
+from learning_app.data.constants import MAX_ROWS
+from learning_app.ui.page_properties import PageProperties
+
+
 class InfoControl(ft.Container):
     MD_TEXT = f"""
 # About the App
@@ -99,48 +101,48 @@ If you are interested in the source code of this application, please visit our r
 \\
 \\...
     """
-    
+
     def __init__(self):
         super().__init__()
         self.drawer = PageProperties.get_drawer()
-        
+
         # menu button
         self.menu_button = ft.IconButton(
             icon=ft.Icons.MENU,
             on_click=self.on_menu_click,
-            icon_color=ft.Colors.WHITE
+            icon_color=ft.Colors.WHITE,
         )
-        
+
         # Create markdown component
         markdown = ft.Markdown(
             self.MD_TEXT,
             on_tap_link=lambda e: e.page.launch_url(e.data),
             extension_set=ft.MarkdownExtensionSet.GITHUB_FLAVORED,
         )
-        
+
         self.markdown_container = ft.ListView(
             controls=[markdown],
             expand=True,
             spacing=10,
             padding=10,
-            auto_scroll=False
+            auto_scroll=False,
         )
-    
+
     async def on_menu_click(self, e):
         await self.page.show_drawer()
-        
+
     def did_mount(self):
         appbar = self.page.appbar
         appbar.leading = self.menu_button
         appbar.title.value = "Information"
-        
+
         self.page.bottom_appbar.visible = False
         self.page.floating_action_button.visible = False
-        
+
         self.page.add(self.markdown_container)
-        
+
         self.page.update()
- 
+
     def will_unmount(self):
         appbar = self.page.appbar
         appbar.leading = None

@@ -1,26 +1,31 @@
 from enum import Enum
 
+
 class PartsOfSpeech(Enum):
     VERB = "verb"
     PERSON = "person"
     THING = "thing"
     ADJECTIVE = "adjective"
     ADVERB = "adverb"
-    
+
+
 class WordDefinitions(Enum):
     DEFINITION = "definition"
     WORD = "word"
-    
+
+
 class StatsColumns(Enum):
     CORRECT_ANSWERS = "correct_answers"
     GOOD_ANSWERS_IN_A_ROW = "good_answers_in_a_row"
     GOOD_ANSWER = "good_answer"
     WORD_TO_LEARN = "word_to_learn"
-    
+
+
 class FilesColumns(Enum):
     FILE_NAME = "file_name"
     TITLE = "title"
     SUBTITLE = "subtitle"
+
 
 class Warnings(Enum):
     UNNECESSARY_COLUMNS = "Unnecessary columns found."
@@ -34,8 +39,10 @@ class Warnings(Enum):
     NEGATIVE_CORRECT_ANSWERS = "Negative values found in correct_answers column."
     INSUFFICIENT_NON_EMPTY_VALUES = "Some rows have insufficient non-empty values in typical columns."
 
+
 # constant value form maximum number of rows in set
 MAX_ROWS = 40
+
 
 class Errors(Enum):
     NOT_A_CSV = "File is not a CSV."
@@ -47,4 +54,3 @@ class Errors(Enum):
     EMPTY_VALUES_IN_DEFINITIONS = "All rows have empty values in typical columns for definitions file."
     INSUFFICIENT_NON_EMPTY_VALUES_IN_WORDS = "All rows have insufficient non-empty values in typical columns for words file."
     NO_MATCHING_COLUMN_PATTERN = "File does not match any expected column patterns."
-

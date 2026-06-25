@@ -5,27 +5,30 @@ import flet as ft
 
 from learning_app.ui.components.base_word_field import BaseWordField
 from learning_app.ui.components.controls import ProgressBar, WordField
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.layout_host import control_is_on_page
+from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore, learn_words_field_width
 from learning_app.ui.screens.word_list_menu import WordListMenu
 
 
 class WordFields(BaseWordField):
-    def __init__(self, file_name: str = "data_words.csv", page=None, width=300):
-        super().__init__(file_name, page)
-        factor = 0.90
-        if PageProperties.platform == ft.PagePlatform.WINDOWS:
-            factor = 0.83
+    def __init__(self, file_name: str = "data_words.csv", page=None, width=300, session=False):
+        super().__init__(file_name, page, session=session)
+        if not session:
+            self.expand = True
+
+        self._form_width = width
+        field_width = learn_words_field_width(width, page)
 
         self.dict_word_fields: Dict[str, WordField] = {}
 
         self.Word = ft.Text("Word", theme_style=ft.TextThemeStyle.TITLE_LARGE)
-        self.verbWord = WordField(label="Verb", width=factor * width)
-        self.nounPersonWord = WordField(label="Noun (person)", width=factor * width)
-        self.nounThingWord = WordField(label="Noun (thing)", width=factor * width)
-        self.adjWord = WordField(label="Adjective", width=factor * width)
-        self.advWord = WordField(label="Adverb", width=factor * width)
+        self.verbWord = WordField(label="Verb", width=field_width)
+        self.nounPersonWord = WordField(label="Noun (person)", width=field_width)
+        self.nounThingWord = WordField(label="Noun (thing)", width=field_width)
+        self.adjWord = WordField(label="Adjective", width=field_width)
+        self.advWord = WordField(label="Adverb", width=field_width)
         self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
-        self.pb = ProgressBar(width=width * factor)
+        self.pb = ProgressBar(width=field_width)
 
         self.dict_word_fields = {
             "verb": self.verbWord,
@@ -45,8 +48,21 @@ class WordFields(BaseWordField):
             self.advWord,
         ]
 
-        self.menu_control = WordListMenu(file_name, on_start=self.start, on_back=self.back, width=width)
-        self.controls = [self.menu_control]
+        self.menu_control = WordListMenu(file_name, on_back=self.back, width=width)
+        self.controls = [self.menu_control] if not session else []
+
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        if metrics is None:
+            metrics = LayoutMetricsStore.refresh(self._get_page())
+        self._form_width = metrics.form_width
+        field_width = learn_words_field_width(metrics.form_width, self._get_page())
+        for word_field in self.dict_word_fields.values():
+            word_field.width = field_width
+        self.pb.width = field_width
+        if self.menu_control in self.controls:
+            self.menu_control.apply_layout(metrics)
+        elif control_is_on_page(self):
+            self.update()
 
     def compare_all_words(self):
         all_correct = True

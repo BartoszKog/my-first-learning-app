@@ -1,6 +1,6 @@
 import flet as ft
 
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.app_theme import AppTheme
 
 
 class WordField(ft.TextField):
@@ -68,7 +68,7 @@ class WordField(ft.TextField):
 
     def did_mount(self):
         # Set border width, based on the theme mode.
-        if PageProperties.dark_mode:
+        if AppTheme.is_dark_mode():
             self.width_border_indicator = 1
         else:
             self.width_border_indicator = 3

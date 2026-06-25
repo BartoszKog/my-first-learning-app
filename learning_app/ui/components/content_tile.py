@@ -4,10 +4,9 @@ import flet as ft
 
 from learning_app.data.app_data import delate_set, get_kind_of_file_and_validate, set_default_progress
 from learning_app.data.file_path_manager import FilePathManager
-from learning_app.ui.components.word_definition_field import WordDefinitionField
-from learning_app.ui.components.word_fields import WordFields
+from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.page_functions import create_alert_dialog
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.app_session import AppSession
 
 
 class ContentTile(ft.Card):
@@ -52,10 +51,9 @@ class ContentTile(ft.Card):
         self.margin = 5  # Add some margin around the card
 
     def edit(self, e):
-        from learning_app.ui.page_functions import quit_main_menu
-        from learning_app.ui.screens.edit_set_menu import EditSetMenu
-        quit_main_menu(e)
-        e.page.add(EditSetMenu(self.file_name, width=PageProperties.width * 0.8))
+        from learning_app.ui.navigation import go_edit_set
+
+        go_edit_set(e.page, self.file_name)
 
     def show_delete_dialog(self, e):
         create_alert_dialog(
@@ -138,18 +136,10 @@ class ContentTile(ft.Card):
         if not self.__validate_file_before_opening(e):
             return
 
-        e.page.controls.clear()
-        e.page.appbar.visible = False
-        e.page.bottom_appbar.visible = False
-        e.page.floating_action_button.visible = False
-        PageProperties.set_width_height_from_page(e.page)
-        if self.kind == "words":
-            wf = WordFields(self.file_name, page=e.page, width=PageProperties.width * 0.8)
-            e.page.add(wf)
-        elif self.kind == "definitions":
-            wdf = WordDefinitionField(self.file_name, page=e.page, width=PageProperties.width * 0.8)
-            e.page.add(wdf)
-        e.page.update()
+        from learning_app.ui.navigation import go_learn_set
+
+        LayoutMetricsStore.refresh(e.page)
+        go_learn_set(e.page, self.file_name)
 
     def file_not_found_dialog(self, e):
         create_alert_dialog(
@@ -216,10 +206,7 @@ class ContentTile(ft.Card):
         e.page.run_task(self._export_file, e.page)
 
     async def _export_file(self, page):
-        try:
-            picker = PageProperties.get_export_csv_picker()
-        except AssertionError:
-            picker = PageProperties.create_export_csv_picker(page)
+        picker = AppSession.get_export_csv_picker()
 
         is_windows = page.platform == ft.PagePlatform.WINDOWS
 

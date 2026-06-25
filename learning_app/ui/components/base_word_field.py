@@ -7,12 +7,17 @@ from learning_app.ui.page_functions import create_alert_dialog
 
 
 class BaseWordField(ft.Column):
-    def __init__(self, file_name, page=None):
+    def __init__(self, file_name, page=None, session=False):
         super().__init__()
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        if session:
+            self.expand = True
+            self.alignment = ft.MainAxisAlignment.CENTER
         self.words = AppData(file_name)
         self.file_name = file_name
         self._app_page = page
+        self.session = session
+        self._session_active = False
         self.lock = threading.Lock()
 
     def _get_check_button_text(self):
@@ -37,10 +42,20 @@ class BaseWordField(ft.Column):
     def _get_page(self):
         return self.page or self._app_page
 
+    def did_mount(self):
+        if self.session:
+            self.start()
+
+    def will_unmount(self):
+        if self._session_active:
+            self.back()
+            self._session_active = False
+
     def menu(self):
-        self.controls.clear()
-        self.controls.append(self.menu_control)
-        self.update()
+        self._session_active = False
+        from learning_app.ui.navigation import go_back
+
+        go_back(self._get_page())
 
     def set_default_progress_action(self, e):
         set_default_progress(self.file_name)
@@ -63,6 +78,7 @@ class BaseWordField(ft.Column):
 
     def start(self):
         if not self.words.are_all_words_learned():
+            self._session_active = True
             self.controls.clear()
             self.controls.extend(self.active_controls)
             self.update()
@@ -101,6 +117,3 @@ class BaseWordField(ft.Column):
 
     def set_next_word(self):
         raise NotImplementedError("This method should be overridden in subclasses")
-
-    def change_height(self, height):
-        self.menu_control.change_height(height)

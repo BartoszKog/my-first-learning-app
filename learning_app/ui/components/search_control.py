@@ -1,7 +1,7 @@
 import flet as ft
 
 from learning_app.ui.components.tiles_container import TilesContainer
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.navigation import go_back_from_search
 
 
 class SearchControl(ft.Row):
@@ -18,7 +18,6 @@ class SearchControl(ft.Row):
             label="Search",
             expand=True,
             autofocus=True,
-            on_focus=self.focus_text_field,
             on_change=self.change_text_field,
             border_color=self.COLOR,
         )
@@ -58,29 +57,7 @@ class SearchControl(ft.Row):
         self.tiles_container.scroll_to_previous()
 
     def on_close_click(self, e):
-        if not self.tiles_container.export_mode:
-            TilesContainer.back_to_main_menu(e)
-            self.tiles_container.turn_off_searching_mode()
-        else:
-            self.close_but_in_export_mode()
-
-    # It is involved with changing the height of TilesContainer
-    def focus_text_field(self, e):
-        from learning_app.ui.page_functions import is_instance_in_the_page  # to check if it is instance of ImportExportControl
-        from learning_app.ui.screens.import_export_control import ImportExportControl  # to check if it is instance of ImportExportControl
-        # check if it is instance of TilesContainer in controls of page
-        if isinstance(e.page.controls[0], TilesContainer):
-            if e.page.platform == ft.PagePlatform.WINDOWS:
-                e.page.controls[0].scale_height_to_page(e.page, 0.85)
-            else:
-                e.page.controls[0].scale_height_to_page(e.page, 0.55)
-        elif is_instance_in_the_page(e.page, ImportExportControl) and e.page.platform == ft.PagePlatform.ANDROID:
-            export_body = PageProperties.get_export_body()
-            export_body.scale_height_to_page(e.page, 0.40)
-            assert isinstance(e.page.controls[0], ImportExportControl)
-            import_export_control = e.page.controls[0]
-            import_export_control.add_space_before_export_controls()
-            import_export_control.scale_height_to_page(0.55)
+        go_back_from_search(self._get_page())
 
     def change_text_field(self, e):
         pattern = self.search_field.value
@@ -91,21 +68,3 @@ class SearchControl(ft.Row):
 
     def will_unmount(self):
         self.tiles_container.turn_off_searching_mode()
-
-    def close_but_in_export_mode(self):
-        from learning_app.ui.screens.import_export_control import ImportExportControl
-        page = self._get_page()
-        assert self.tiles_container.export_mode
-        assert isinstance(page.controls[0], ImportExportControl)
-        if page.platform == ft.PagePlatform.ANDROID:
-            import_export_control = page.controls[0]
-            import_export_control.remove_space_before_export_controls()
-            import_export_control.scale_height_to_page(0.80)
-        page.bottom_appbar.visible = True
-        page.appbar.visible = True
-        page.padding = PageProperties.padding
-        export_body = PageProperties.get_export_body()
-        export_body.reset_indications()
-        self.tiles_container.turn_off_searching_mode()
-        self.tiles_container.scale_height_to_page(page, 0.65)
-        page.remove(self)

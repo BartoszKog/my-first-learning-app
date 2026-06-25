@@ -1,7 +1,8 @@
 import flet as ft
 
 from learning_app.data.constants import MAX_ROWS
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.layout_host import control_is_on_page
+from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 
 
 class InfoControl(ft.Container):
@@ -97,21 +98,10 @@ If you are interested in the source code of this application, please visit our r
 ---
 
 *Application created with the Flet framework (Flutter + Python)*
-\\
-\\
-\\...
     """
 
     def __init__(self):
         super().__init__()
-        self.drawer = PageProperties.get_drawer()
-
-        # menu button
-        self.menu_button = ft.IconButton(
-            icon=ft.Icons.MENU,
-            on_click=self.on_menu_click,
-            icon_color=ft.Colors.WHITE,
-        )
 
         # Create markdown component
         markdown = ft.Markdown(
@@ -120,30 +110,21 @@ If you are interested in the source code of this application, please visit our r
             extension_set=ft.MarkdownExtensionSet.GITHUB_FLAVORED,
         )
 
-        self.markdown_container = ft.ListView(
+        self.content = ft.ListView(
             controls=[markdown],
             expand=True,
             spacing=10,
             padding=10,
             auto_scroll=False,
         )
-
-    async def on_menu_click(self, e):
-        await self.page.show_drawer()
+        self.expand = True
 
     def did_mount(self):
-        appbar = self.page.appbar
-        appbar.leading = self.menu_button
-        appbar.title.value = "Information"
+        self.apply_layout()
 
-        self.page.bottom_appbar.visible = False
-        self.page.floating_action_button.visible = False
-
-        self.page.add(self.markdown_container)
-
-        self.page.update()
-
-    def will_unmount(self):
-        appbar = self.page.appbar
-        appbar.leading = None
-        self.page.update()
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        if metrics is None:
+            metrics = LayoutMetricsStore.refresh(self.page)
+        self.width = metrics.body_width
+        if control_is_on_page(self):
+            self.update()

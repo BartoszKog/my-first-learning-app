@@ -1,10 +1,12 @@
 import flet as ft
 
 from learning_app.data.csv_processor import CSVProcessor
-from learning_app.ui.components.search_control import SearchControl
 from learning_app.ui.components.tiles_container import TilesContainer
-from learning_app.ui.page_functions import create_alert_dialog, is_instance_in_the_page
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.app_chrome import AppChrome
+from learning_app.ui.body_registry import BodyRegistry
+from learning_app.ui.layout_metrics import LayoutMetricsStore, is_android_platform
+from learning_app.ui.page_functions import create_alert_dialog
+from learning_app.ui.app_session import AppSession
 
 
 class ImportExportControl(ft.Container):
@@ -12,13 +14,10 @@ class ImportExportControl(ft.Container):
     DEFAULT_BOTTOM_APP_BAR_HEIGHT = 80
     MINIMAL_BOTTOM_APP_BAR_HEIGHT = 50
 
-    def __init__(self):
+    def __init__(self, page=None):
         super().__init__()
-        # self.alignment = ft.MainAxisAlignment.START
-        # self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        self.expand = True
         self.last_tab_index = 0
-        self.height = PageProperties.height * 0.8
-        self.width = PageProperties.width * 0.9
 
         # import controls
         self.title_field = ft.TextField(
@@ -96,35 +95,38 @@ class ImportExportControl(ft.Container):
         )
 
         # export controls
-        if not PageProperties.has_export_body():
-            self.tiles_of_sets = TilesContainer(export_mode=True)
-            PageProperties.set_export_body(self.tiles_of_sets)
+        if not BodyRegistry.has_export():
+            self.tiles_of_sets = TilesContainer(page, export_mode=True)
+            BodyRegistry.set_export(self.tiles_of_sets)
         else:
-            self.tiles_of_sets = PageProperties.get_export_body()
+            self.tiles_of_sets = BodyRegistry.get_export()
 
         self.export_controls = ft.Column(
             [
                 ft.Text("Choose a set to export."),
                 self.tiles_of_sets,
             ],
+            expand=True,
             alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
         self.export_tab_column = ft.Column(
             [self.export_controls],
+            expand=True,
             alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
         self.import_tab_content = ft.Container(
             content=self.import_controls,
-            height=PageProperties.height * 0.4,
+            expand=True,
             padding=ft.Padding(left=30, right=30, top=0, bottom=30),
         )
 
         self.export_tab_content = ft.Container(
             content=self.export_tab_column,
+            expand=True,
             padding=ft.Padding(left=30, right=30, top=0, bottom=30),
         )
 
@@ -166,6 +168,14 @@ class ImportExportControl(ft.Container):
         self.validation_requires_specific_actions = None
         self.validation_has_statistics = None
         self.validation_data_type = None
+
+    def did_mount(self):
+        self.apply_layout()
+
+    def apply_layout(self):
+        metrics = LayoutMetricsStore.refresh(self.page)
+        self.tiles_of_sets.apply_flex_layout(metrics)
+        self.__show_search_button(self.tabs.selected_index == 1)
 
     def __make_layout_for_chosen_file(self, selected_file: str = None, selected_file_path: str = None):
         # assert that shows invalid call of the method
@@ -229,7 +239,7 @@ class ImportExportControl(ft.Container):
         self.update()
 
     def __on_choose_file_click(self, e):
-        if PageProperties.is_navigation_disabled():
+        if AppSession.is_navigation_disabled():
             return
 
         self.__disable_all_import_controls()
@@ -274,10 +284,21 @@ class ImportExportControl(ft.Container):
         self.__android_center_import_controls_alignment()
         self.page.show_dialog(ft.SnackBar(ft.Text("Set has been added successfully.")))
 
+    def __finish_adding_set(self, information: str | None = None):
+        if information:
+            create_alert_dialog(
+                self.page,
+                title="Information",
+                content=information,
+                close_action_function=lambda e: self.__layout_after_adding_set(),
+            )
+        else:
+            self.__layout_after_adding_set()
+
     def __on_add_set_click(self, e):
         is_valid_files_csv = CSVProcessor.validate_files_csv()["is_valid"]
         if not is_valid_files_csv:
-            PageProperties.disable_all_navigation_controls()
+            AppSession.disable_all_navigation_controls()
 
             create_alert_dialog(
                 self.page,
@@ -286,7 +307,7 @@ class ImportExportControl(ft.Container):
                 close_button_text="OK",
             )
 
-        if PageProperties.is_navigation_disabled():
+        if AppSession.is_navigation_disabled():
             return
 
         if not self.title_field.value.strip():
@@ -361,13 +382,7 @@ class ImportExportControl(ft.Container):
                             validation_warnings,
                             True,  # keep_statistics
                         )
-                        if information:
-                            create_alert_dialog(
-                                self.page,
-                                title="Information",
-                                content=information,
-                            )
-                        self.__layout_after_adding_set()
+                        self.__finish_adding_set(information)
 
                     def close_action_function_for_dialog(e):  # user checked "No"
                         information = CSVProcessor.save_set_with_specific_actions(
@@ -380,13 +395,7 @@ class ImportExportControl(ft.Container):
                             validation_warnings,
                             False,  # don't keep_statistics
                         )
-                        if information:
-                            create_alert_dialog(
-                                self.page,
-                                title="Information",
-                                content=information,
-                            )
-                        self.__layout_after_adding_set()
+                        self.__finish_adding_set(information)
 
                     create_alert_dialog(
                         self.page,
@@ -407,13 +416,7 @@ class ImportExportControl(ft.Container):
                         False,  # has_statistics
                         validation_warnings,
                     )
-                    if information:
-                        create_alert_dialog(
-                            self.page,
-                            title="Information",
-                            content=information,
-                        )
-                    self.__layout_after_adding_set()
+                    self.__finish_adding_set(information)
 
     def __upscale_import_button(self):
         self.choose_file_button.scale = ImportExportControl.SCALE_IMPORT_BUTTON
@@ -455,11 +458,8 @@ class ImportExportControl(ft.Container):
             self.__on_blur_field(None)
 
     def __on_change_tab_from_export_to_import_delate_search_control(self):
-        if is_instance_in_the_page(self.page, SearchControl):
+        if self.last_tab_index == 1:
             self.remove_space_before_export_controls()
-            if self.last_tab_index == 1:
-                current_search_control = PageProperties.get_current_search_control_involved_export_mode()
-                current_search_control.close_but_in_export_mode()
 
     def __on_tab_change(self, e):
         self.__on_change_tab_from_import_to_export_delate_search_control()
@@ -471,8 +471,7 @@ class ImportExportControl(ft.Container):
         self.last_tab_index = e.control.selected_index
 
     def __show_search_button(self, choice: bool):
-        # making search button in bottom appbar visible or not
-        self.page.bottom_appbar.content.controls[2].visible = choice
+        AppChrome.get_search_button().visible = choice
         self.page.update()
 
     def __disable_menu_button(self):
@@ -502,7 +501,7 @@ class ImportExportControl(ft.Container):
         self.update()
 
     def __android_center_import_controls_alignment(self):
-        if PageProperties.platform == ft.PagePlatform.ANDROID:
+        if is_android_platform(self.page):
             # it is necessary to show the title field when keyboard is opened
             self.import_controls.alignment = ft.MainAxisAlignment.CENTER
             self.import_controls.spacing = 25
@@ -512,7 +511,7 @@ class ImportExportControl(ft.Container):
             self.update()
 
     def __android_start_import_controls_alignment(self):
-        if PageProperties.platform == ft.PagePlatform.ANDROID:
+        if is_android_platform(self.page):
             # it is necessary to show the title field when keyboard is opened
             self.import_controls.alignment = ft.MainAxisAlignment.START
             self.import_controls.spacing = 10
@@ -530,33 +529,14 @@ class ImportExportControl(ft.Container):
         self.__android_center_import_controls_alignment()
 
     def add_space_before_export_controls(self):
-        if PageProperties.platform == ft.PagePlatform.ANDROID and self.last_tab_index == 1:
+        if is_android_platform(self.page) and self.last_tab_index == 1:
             self.export_tab_column.controls.insert(0, ft.Container(height=40))
             self.update()
 
     def remove_space_before_export_controls(self):
-        if PageProperties.platform == ft.PagePlatform.ANDROID and self.last_tab_index == 1:
+        if is_android_platform(self.page) and self.last_tab_index == 1:
             if self.export_tab_column.controls and isinstance(self.export_tab_column.controls[0], ft.Container):
                 if getattr(self.export_tab_column.controls[0], "height", None) == 40:
                     self.export_tab_column.controls.pop(0)
                     self.update()
 
-    def scale_height_to_page(self, scale_factor: float):
-        self.height = self.page.height * scale_factor
-        self.update()
-
-    def did_mount(self):
-        appbar = self.page.appbar
-        appbar.title.value = "Import/Export"
-
-        self.page.bottom_appbar.visible = True
-        self.page.floating_action_button.visible = False
-
-        self.__show_search_button(False)
-
-        self.page.update()
-
-    def will_unmount(self):
-        self.__show_search_button(True)
-
-        self.page.update()

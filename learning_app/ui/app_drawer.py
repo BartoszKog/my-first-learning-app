@@ -1,10 +1,9 @@
 import flet as ft
 
-from learning_app.ui.components.tiles_container import TilesContainer
-from learning_app.ui.page_properties import PageProperties
-from learning_app.ui.screens.import_export_control import ImportExportControl
-from learning_app.ui.screens.info_control import InfoControl
-from learning_app.ui.screens.settings_control import SettingsControl
+from learning_app.ui.app_session import AppSession
+from learning_app.ui.navigation import navigate_to_async
+from learning_app.ui.route_url import route_path
+from learning_app.ui.routes import DRAWER_ROUTES
 
 
 class AppDrawer(ft.NavigationDrawer):
@@ -36,33 +35,16 @@ class AppDrawer(ft.NavigationDrawer):
             ],
         )
 
-    def __there_is_instance_of(self, control_class):
-        return sum([isinstance(control, control_class) for control in self._host_page.controls]) > 0
-
     async def __handle_change(self, e: ft.ControlEvent):
-        if PageProperties.is_navigation_disabled():
+        if AppSession.is_navigation_disabled():
             return
 
         page = self._host_page
+        target_route = DRAWER_ROUTES[self.selected_index]
 
-        if self.selected_index == 0:
-            if not self.__there_is_instance_of(TilesContainer):
-                page.controls.clear()
-                TilesContainer.back_to_main_menu(e)
-
-        elif self.selected_index == 1:
-            if not self.__there_is_instance_of(ImportExportControl):
-                page.controls.clear()
-                page.add(ImportExportControl())
-
-        elif self.selected_index == 2:
-            if not self.__there_is_instance_of(SettingsControl):
-                page.controls.clear()
-                page.add(SettingsControl(page))
-
-        elif self.selected_index == 3:
-            if not self.__there_is_instance_of(InfoControl):
-                page.controls.clear()
-                page.add(InfoControl())
+        if route_path(page.route) == target_route:
+            await page.close_drawer()
+            return
 
         await page.close_drawer()
+        await navigate_to_async(page, target_route)

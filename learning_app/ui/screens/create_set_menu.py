@@ -2,15 +2,16 @@ import flet as ft
 
 from learning_app.data.app_data import get_file_names, sanitize_file_name
 from learning_app.data.constants import FilesColumns
+from learning_app.ui.layout_host import control_is_on_page
+from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
+from learning_app.ui.navigation import go_back, go_edit_set
 from learning_app.ui.page_functions import create_alert_dialog
-from learning_app.ui.screens.edit_set_menu import EditSetMenu
 
 
 class CreateSetMenu(ft.Column):
     def __init__(self, width=300):
-        from learning_app.ui.components.tiles_container import TilesContainer
         super().__init__()
-        self.width = width
+        self._form_width = width
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
         self.title_field = ft.TextField(label="Title", width=width, max_length=20)
@@ -25,9 +26,8 @@ class CreateSetMenu(ft.Column):
             ],
             width=width,
         )
-
         def on_cancel_click(e):
-            TilesContainer.back_to_main_menu(e)
+            go_back(e.page)
 
         self.buttons_row = ft.Row(
             controls=[
@@ -43,6 +43,18 @@ class CreateSetMenu(ft.Column):
             self.kind_dropdown,
             self.buttons_row,
         ])
+
+    def did_mount(self):
+        self.apply_layout()
+
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        if metrics is None:
+            metrics = LayoutMetricsStore.refresh(self.page)
+        self._form_width = metrics.form_width
+        for field in (self.title_field, self.subtitle_field, self.kind_dropdown):
+            field.width = metrics.form_width
+        if control_is_on_page(self):
+            self.update()
 
     def on_create_click(self, e):
         from learning_app.data.csv_processor import CSVProcessor
@@ -99,5 +111,4 @@ class CreateSetMenu(ft.Column):
             title = self.title_field.value.capitalize()
             subtitle = self.subtitle_field.value.capitalize()
 
-            e.page.controls.clear()
-            e.page.add(EditSetMenu(new_file_name, title=title, subtitle=subtitle, width=self.width))
+            go_edit_set(e.page, new_file_name, title=title, subtitle=subtitle)

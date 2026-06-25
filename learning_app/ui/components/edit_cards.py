@@ -3,7 +3,7 @@ import asyncio
 import flet as ft
 
 from learning_app.data.constants import PartsOfSpeech, WordDefinitions
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.app_theme import AppTheme
 
 
 class EditCardBase(ft.Card):
@@ -98,7 +98,7 @@ class EditCardBase(ft.Card):
 
         for label, field in self.dict_word_fields.items():
             if field.value.strip():
-                if PageProperties.dark_mode:
+                if AppTheme.is_dark_mode():
                     field.color = self.font_text_field_color_dark_theme
                 else:
                     field.color = self.font_text_field_color_light_theme

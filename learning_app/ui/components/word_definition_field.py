@@ -3,26 +3,35 @@ import flet as ft
 from learning_app.data.constants import WordDefinitions
 from learning_app.ui.components.base_word_field import BaseWordField
 from learning_app.ui.components.controls import ProgressBar, WordField
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.layout_host import control_is_on_page
+from learning_app.ui.layout_metrics import (
+    LayoutMetrics,
+    LayoutMetricsStore,
+    is_windows_platform,
+    learn_definition_field_width,
+)
+from learning_app.ui.layout_tokens import LEARN_DEFINITION_CHECK_BUTTON_SCALE
 from learning_app.ui.screens.word_list_menu import WordListMenu
 
 
 class WordDefinitionField(BaseWordField):
-    def __init__(self, file_name, page=None, width=300):
-        super().__init__(file_name, page)
-        factor = 0.90
-        if PageProperties.platform == ft.PagePlatform.WINDOWS:
-            factor = 0.80
+    def __init__(self, file_name, page=None, width=300, session=False):
+        super().__init__(file_name, page, session=session)
+        if not session:
+            self.expand = True
+
+        self._form_width = width
+        field_width = learn_definition_field_width(width, page)
 
         self.definitionLabel = ft.Text(theme_style=ft.TextThemeStyle.TITLE_LARGE)
-        self.word = WordField(label="", width=factor * width)
+        self.word = WordField(label="", width=field_width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
         self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
-        self.pb = ProgressBar(width=width * factor)
+        self.pb = ProgressBar(width=field_width)
 
-        if not PageProperties.platform == ft.PagePlatform.WINDOWS:
-            self.checkButton.scale = 1.3
+        if not is_windows_platform(page):
+            self.checkButton.scale = LEARN_DEFINITION_CHECK_BUTTON_SCALE
 
         self.active_controls = [
             self.pb,
@@ -31,8 +40,20 @@ class WordDefinitionField(BaseWordField):
             self.checkButton,
         ]
 
-        self.menu_control = WordListMenu(file_name, on_start=self.start, on_back=self.back, width=width)
-        self.controls = [self.menu_control]
+        self.menu_control = WordListMenu(file_name, on_back=self.back, width=width)
+        self.controls = [self.menu_control] if not session else []
+
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        if metrics is None:
+            metrics = LayoutMetricsStore.refresh(self._get_page())
+        self._form_width = metrics.form_width
+        field_width = learn_definition_field_width(metrics.form_width, self._get_page())
+        self.word.width = field_width
+        self.pb.width = field_width
+        if self.menu_control in self.controls:
+            self.menu_control.apply_layout(metrics)
+        elif control_is_on_page(self):
+            self.update()
 
     def compare_all_words(self):
         good_word = self.words.get_current_row()[WordDefinitions.WORD.value]

@@ -1,16 +1,17 @@
 import flet as ft
 
-from learning_app.ui.page_functions import set_theme_from_bgcolor
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.layout_host import control_is_on_page
+from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
+from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.preferences import get_shared_preferences
 
 
 class BackgroundShadeSlider(ft.Column):
     DARK_THEME_COLORS = [
-        ft.Colors.BLACK,
-        ft.Colors.SURFACE,
-        ft.Colors.WHITE_10,
-        ft.Colors.GREY_900,
+        "#000000",   # 1 — AMOLED
+        "#0F0F0F",   # 2
+        "#171717",   # 3
+        "#1F1F1F",   # 4
     ]
 
     LIGHT_THEME_COLORS = [
@@ -20,8 +21,9 @@ class BackgroundShadeSlider(ft.Column):
         ft.Colors.BLUE_50,
     ]
 
-    def __init__(self, label: str, initial_value: int):
+    def __init__(self, label: str, initial_value: int, width: float):
         super().__init__()
+        self.width = width
         initial_value = int(initial_value)
         max_value = len(self.DARK_THEME_COLORS)
         self.label = ft.Text(label)
@@ -34,30 +36,34 @@ class BackgroundShadeSlider(ft.Column):
         )
         self.controls = [self.label, self.slider]
 
+    def apply_layout(self, width: float):
+        self.width = width
+
     def on_slider_change(self, e):
         value = int(e.control.value)
-        PageProperties.set_slider_value(PageProperties.theme_mode, value)
-        if PageProperties.theme_mode == ft.ThemeMode.DARK:
+        AppTheme.set_slider_value(AppTheme.theme_mode, value)
+        if AppTheme.theme_mode == ft.ThemeMode.DARK:
             color = self.DARK_THEME_COLORS[value - 1]
         else:
             color = self.LIGHT_THEME_COLORS[value - 1]
-        PageProperties.set_bgcolor(PageProperties.theme_mode, color)
-        set_theme_from_bgcolor(self.page, color)
+
+        AppTheme.set_bgcolor(AppTheme.theme_mode, color)
+
+        AppTheme.apply_to_page(self.page)
         self.page.run_task(
             self._save_slider_settings,
-            PageProperties.theme_mode.value,
+            AppTheme.theme_mode.value,
             value,
             color,
         )
+
         self.page.update()
 
     async def _save_slider_settings(self, theme_mode_value, value, color):
-        storage = get_shared_preferences()
-        await storage.set(f"{theme_mode_value}_theme_slider_value", value)
-        await storage.set(f"{theme_mode_value}_theme_bgcolor", color.value)
+        await AppTheme.save_slider_settings(theme_mode_value, value, color)
 
     def update_slider_position(self):
-        self.slider.value = PageProperties.get_slider_value()
+        self.slider.value = AppTheme.get_slider_value()
         self.slider.update()
 
     def did_mount(self):
@@ -65,60 +71,54 @@ class BackgroundShadeSlider(ft.Column):
 
 
 class SettingsControl(ft.Column):
-    # BUTTON_HEIGHT = 60
-    # FONT_SIZE_BUTTON = 15
     def __init__(self, page):
         super().__init__()
+        self.expand = True
+        self.alignment = ft.MainAxisAlignment.CENTER
         self.spacing = 60
-
         self._app_page = page
-        self.drawer = PageProperties.get_drawer()
+        self._content_width = 300
 
-        # menu button
-        self.menu_button = ft.IconButton(
-            icon=ft.Icons.MENU,
-            on_click=self.on_menu_click,
-            icon_color=ft.Colors.WHITE,
-        )
-
-        # theme switch
         self.theme_switch = ft.Switch(
             label="Light theme",
             label_text_style=ft.TextStyle(size=16),
-            value=PageProperties.theme_mode == ft.ThemeMode.LIGHT,
+            value=AppTheme.theme_mode == ft.ThemeMode.LIGHT,
             on_change=self.on_theme_change,
         )
 
-        # background shade slider
-        initial_value = PageProperties.get_slider_value()
+        initial_value = AppTheme.get_slider_value()
+
         self.background_shade_slider = BackgroundShadeSlider(
             label="Background Shade",
             initial_value=initial_value,
+            width=self._content_width,
         )
 
-        # Add elements in column to container
+        self.theme_switch_row = ft.Row(
+            [self.theme_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
+
         self.controls = [
-            ft.Row(
-                [self.theme_switch],
-                alignment=ft.MainAxisAlignment.START,
-                width=PageProperties.width * 0.7,
-            ),
+            self.theme_switch_row,
             self.background_shade_slider,
         ]
 
-        self.__update_controls_width()
-
     def _get_page(self):
-        return self.page or self._app_page
+        if control_is_on_page(self):
+            return self.page
+        return self._app_page
 
-    def __update_controls_width(self):
-        width = PageProperties.width * 0.7
-        for control in self.controls:
-            control.width = width
-        self.theme_switch.width = None
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        if metrics is None:
+            metrics = LayoutMetricsStore.refresh(self._get_page())
 
-    async def on_menu_click(self, e):
-        await self._get_page().show_drawer()
+        self._content_width = metrics.settings_width
+        self.theme_switch_row.width = metrics.settings_width
+        self.background_shade_slider.apply_layout(metrics.settings_width)
+
+        if control_is_on_page(self):
+            self.update()
 
     def on_theme_change(self, e):
         page = self._get_page()
@@ -130,9 +130,8 @@ class SettingsControl(ft.Column):
             theme_mode_value = ft.ThemeMode.DARK.value
 
         page.run_task(self._save_theme_mode, theme_mode_value)
-        PageProperties.set_theme_from_page(page)
-        bgcolor = PageProperties.get_bgcolor()
-        set_theme_from_bgcolor(page, bgcolor)
+        AppTheme.sync_from_page(page)
+        AppTheme.apply_to_page(page)
         page.update()
         self.background_shade_slider.update_slider_position()
 
@@ -141,17 +140,8 @@ class SettingsControl(ft.Column):
 
     def did_mount(self):
         page = self._get_page()
-        appbar = page.appbar
-        appbar.leading = self.menu_button
-        appbar.title.value = "Settings"
+        AppTheme.apply_to_page(page)
+        self.apply_layout()
+        self.background_shade_slider.update_slider_position()
 
-        page.bottom_appbar.visible = False
-        page.floating_action_button.visible = False
-        page.update()
 
-    def will_unmount(self):
-        page = self._get_page()
-        self.__update_controls_width()
-        appbar = page.appbar
-        appbar.leading = None
-        page.update()

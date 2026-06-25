@@ -5,7 +5,9 @@ import flet as ft
 from learning_app.data.app_data import AppData, get_kind_of_file_and_validate
 from learning_app.data.constants import PartsOfSpeech, StatsColumns, WordDefinitions
 from learning_app.ui.components.controls import ProgressBar
-from learning_app.ui.page_properties import PageProperties
+from learning_app.ui.layout_host import control_is_on_page
+from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
+from learning_app.ui.app_theme import AppTheme
 
 BORDERS = {
     "To learn": ft.Border.all(1.5, ft.Colors.BLUE_GREY_700),
@@ -158,18 +160,18 @@ class WordContainer(ft.Container):
 
     def did_mount(self):
         # changing the border width based on the theme mode
-        if PageProperties.dark_mode:
+        if AppTheme.is_dark_mode():
             self.__change_border_width(1.5)
         else:
             self.__change_border_width(3)
 
 
 class WordListMenu(ft.Column):
-    def __init__(self, file_name: str = "data_words.csv", width: int = 250, on_start=lambda: None, on_back=lambda: None):
-        from learning_app.ui.components.tiles_container import TilesContainer
-
+    def __init__(self, file_name: str = "data_words.csv", width: int = 250, on_back=lambda: None):
         super().__init__()
-        self.width = width
+        self.expand = True
+        self.file_name = file_name
+        self._content_width = width
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
         self.kind = get_kind_of_file_and_validate(file_name)
@@ -195,7 +197,7 @@ class WordListMenu(ft.Column):
                 selected=True if label == "All" else False,
             )
 
-        filter_chips_row = ft.Container(
+        self.filter_chips_row = ft.Container(
             width=width + 30,
             height=50,
             content=ft.ListView(
@@ -215,11 +217,15 @@ class WordListMenu(ft.Column):
 
         def on_button_click(e):
             if e.control.content == "Start":
-                on_start()
+                from learning_app.ui.navigation import go_learn_session
+
+                go_learn_session(e.page, self.file_name)
 
             elif e.control.content == "Back":
                 on_back()
-                TilesContainer.back_to_main_menu(e)
+                from learning_app.ui.navigation import go_back
+
+                go_back(e.page)
 
         self.start_button = ft.Button(
             content="Start",
@@ -242,12 +248,12 @@ class WordListMenu(ft.Column):
             content=self.lv,
             padding=10,
             width=width + 30,
-            height=PageProperties.height * 0.7,
+            expand=True,
         )
 
         self.controls = [
             self.bp,
-            filter_chips_row,
+            self.filter_chips_row,
             self.container,
             ft.Row(
                 [self.back_button, self.start_button],
@@ -268,7 +274,7 @@ class WordListMenu(ft.Column):
             is_in_previous_session = self.words.was_this_index_drawn(row[0])
             wc = WordContainer(
                 row[1],
-                width=self.width,
+                width=self._content_width,
                 was_in_previous_session=is_in_previous_session,
             )
             if self.__should_add_word(label, wc):
@@ -292,15 +298,23 @@ class WordListMenu(ft.Column):
         self.update()
 
     def did_mount(self):
+        self.apply_layout()
         self.__update_lv()
         self.__update_bp()
-        self.update()
+
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        if metrics is None:
+            metrics = LayoutMetricsStore.refresh(self.page)
+        self._content_width = metrics.form_width
+        list_width = metrics.form_width + 30
+        self.container.width = list_width
+        self.filter_chips_row.width = list_width
+        self.bp.width = metrics.form_width
+        if control_is_on_page(self):
+            self.update()
 
     def refresh_content(self):
         self.__update_lv()
         self.__update_bp()
-        self.update()
-
-    def change_height(self, height):
-        self.container.height = height
-        self.update()
+        if control_is_on_page(self):
+            self.update()

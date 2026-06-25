@@ -1,14 +1,6 @@
 import flet as ft
 
 
-def quit_main_menu(e):
-    e.page.controls.clear()
-    e.page.appbar.visible = False
-    e.page.bottom_appbar.visible = False
-    e.page.floating_action_button.visible = False
-    e.page.update()
-
-
 def create_alert_dialog(page, title, content, close_button_text="OK", action_button_text=None, action_function=None, close_action_function=None):
     """
     Creates and displays an alert dialog using the Flet library.
@@ -40,6 +32,7 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
         e.page.pop_dialog()
         if callback:
             callback(e)
+        e.page.update()
 
     def close_action(e):
         if close_action_function:
@@ -65,13 +58,7 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
     page.show_dialog(alert_dialog)
 
 
-def is_instance_in_the_page(page, instance):
-    for control in page.controls:
-        if isinstance(control, instance):
-            return True
-    return False
-
-
 def set_theme_from_bgcolor(page, bgcolor):
-    page.bgcolor = bgcolor
-    # here we can implement more options for setting theme
+    from learning_app.ui.app_theme import AppTheme
+
+    AppTheme.apply_bgcolor(page, bgcolor)

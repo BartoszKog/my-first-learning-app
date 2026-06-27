@@ -1,7 +1,7 @@
 import flet as ft
 
 from learning_app.ui.components.tiles_container import TilesContainer
-from learning_app.ui.navigation import go_back_from_search
+from learning_app.ui.navigation import go_back
 
 
 class SearchControl(ft.Row):
@@ -57,7 +57,7 @@ class SearchControl(ft.Row):
         self.tiles_container.scroll_to_previous()
 
     def on_close_click(self, e):
-        go_back_from_search(self._get_page())
+        go_back(self._get_page())
 
     def change_text_field(self, e):
         pattern = self.search_field.value

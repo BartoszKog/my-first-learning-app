@@ -1,11 +1,11 @@
 import flet as ft
 
 from learning_app.data.constants import MAX_ROWS
-from learning_app.ui.layout_host import control_is_on_page
-from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
+from learning_app.ui.layout_metrics import LayoutMetrics
+from learning_app.ui.routable_screen import RoutableScreenMixin
 
 
-class InfoControl(ft.Container):
+class InfoControl(RoutableScreenMixin, ft.Container):
     MD_TEXT = f"""
 # About the App
 
@@ -119,12 +119,7 @@ If you are interested in the source code of this application, please visit our r
         )
         self.expand = True
 
-    def did_mount(self):
-        self.apply_layout()
-
     def apply_layout(self, metrics: LayoutMetrics | None = None):
-        if metrics is None:
-            metrics = LayoutMetricsStore.refresh(self.page)
+        metrics = self.resolve_layout_metrics(metrics)
         self.width = metrics.body_width
-        if control_is_on_page(self):
-            self.update()
+        self.update_if_mounted()

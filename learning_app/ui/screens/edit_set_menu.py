@@ -4,12 +4,14 @@ import pandas as pd
 from learning_app.data.app_data import create_empty_set, get_kind_of_file_and_validate, load_set, save_set
 from learning_app.data.constants import MAX_ROWS, PartsOfSpeech, StatsColumns, WordDefinitions
 from learning_app.ui.components.edit_cards import EditCardDefinitions, EditCardWords
-from learning_app.ui.layout_host import control_is_on_page
-from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
+from learning_app.ui.layout_metrics import LayoutMetrics
+from learning_app.ui.navigation import go_back, navigate_to
 from learning_app.ui.page_functions import create_alert_dialog
+from learning_app.ui.routable_screen import RoutableScreenMixin
+from learning_app.ui.route_paths import HOME_ROUTE
 
 
-class EditSetMenu(ft.Column):
+class EditSetMenu(RoutableScreenMixin, ft.Column):
     MAX_CARDS = MAX_ROWS
 
     def __init__(self, file_name: str, width=340, title=None, subtitle=None):
@@ -99,16 +101,11 @@ class EditSetMenu(ft.Column):
             self.buttons_row,
         ]
 
-    def did_mount(self):
-        self.apply_layout()
-
     def apply_layout(self, metrics: LayoutMetrics | None = None):
-        if metrics is None:
-            metrics = LayoutMetricsStore.refresh(self.page)
+        metrics = self.resolve_layout_metrics(metrics)
         self._form_width = metrics.form_width
         self.main_container.width = metrics.form_width
-        if control_is_on_page(self):
-            self.update()
+        self.update_if_mounted()
 
     def on_add_click(self, e):
         if len(self.lv.controls) - 1 >= self.MAX_CARDS:
@@ -254,12 +251,8 @@ class EditSetMenu(ft.Column):
         if dialog:
             e.page.pop_dialog()
 
-        from learning_app.ui.navigation import go_home
-
-        go_home(e.page)
+        navigate_to(e.page, HOME_ROUTE)
         e.page.update()
 
     def on_back_click(self, e):
-        from learning_app.ui.navigation import go_back
-
         go_back(e.page)

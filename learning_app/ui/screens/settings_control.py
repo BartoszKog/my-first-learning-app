@@ -1,9 +1,10 @@
 import flet as ft
 
 from learning_app.ui.layout_host import control_is_on_page
-from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
+from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.preferences import get_shared_preferences
+from learning_app.ui.routable_screen import RoutableScreenMixin
 
 
 class BackgroundShadeSlider(ft.Column):
@@ -70,7 +71,7 @@ class BackgroundShadeSlider(ft.Column):
         self.update_slider_position()
 
 
-class SettingsControl(ft.Column):
+class SettingsControl(RoutableScreenMixin, ft.Column):
     def __init__(self, page):
         super().__init__()
         self.expand = True
@@ -110,15 +111,13 @@ class SettingsControl(ft.Column):
         return self._app_page
 
     def apply_layout(self, metrics: LayoutMetrics | None = None):
-        if metrics is None:
-            metrics = LayoutMetricsStore.refresh(self._get_page())
+        metrics = self.resolve_layout_metrics(metrics)
 
         self._content_width = metrics.settings_width
         self.theme_switch_row.width = metrics.settings_width
         self.background_shade_slider.apply_layout(metrics.settings_width)
 
-        if control_is_on_page(self):
-            self.update()
+        self.update_if_mounted()
 
     def on_theme_change(self, e):
         page = self._get_page()
@@ -139,9 +138,8 @@ class SettingsControl(ft.Column):
         await get_shared_preferences().set("theme_mode", theme_mode_value)
 
     def did_mount(self):
-        page = self._get_page()
-        AppTheme.apply_to_page(page)
-        self.apply_layout()
+        AppTheme.apply_to_page(self._get_page())
+        super().did_mount()
         self.background_shade_slider.update_slider_position()
 
 

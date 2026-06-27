@@ -8,6 +8,8 @@ from learning_app.ui.components.controls import ProgressBar
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 from learning_app.ui.app_theme import AppTheme
+from learning_app.ui.navigation import go_back, push_view
+from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE
 
 BORDERS = {
     "To learn": ft.Border.all(1.5, ft.Colors.BLUE_GREY_700),
@@ -217,14 +219,10 @@ class WordListMenu(ft.Column):
 
         def on_button_click(e):
             if e.control.content == "Start":
-                from learning_app.ui.navigation import go_learn_session
-
-                go_learn_session(e.page, self.file_name)
+                push_view(e.page, SET_LEARN_SESSION_ROUTE, file=self.file_name)
 
             elif e.control.content == "Back":
                 on_back()
-                from learning_app.ui.navigation import go_back
-
                 go_back(e.page)
 
         self.start_button = ft.Button(

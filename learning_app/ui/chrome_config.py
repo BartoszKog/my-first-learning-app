@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from learning_app.ui.routes import HOME_ROUTE, IMPORT_EXPORT_ROUTE, INFO_ROUTE, SETTINGS_ROUTE
+from learning_app.ui.route_paths import HOME_ROUTE, IMPORT_EXPORT_ROUTE, INFO_ROUTE, SETTINGS_ROUTE
 
 
 @dataclass(frozen=True)
@@ -14,9 +14,7 @@ class ShellChromeConfig:
 
 
 SHELL_CHROME: dict[str, ShellChromeConfig] = {
-    HOME_ROUTE: ShellChromeConfig(
-        appbar_title="__greeting__",
-    ),
+    HOME_ROUTE: ShellChromeConfig(appbar_title="__greeting__"),
     IMPORT_EXPORT_ROUTE: ShellChromeConfig(
         appbar_title="Import/Export",
         fab_visible=False,

@@ -1,60 +1,31 @@
 import flet as ft
 
-from learning_app.data.app_data import get_kind_of_file_and_validate
-from learning_app.ui.components.tiles_container import TilesContainer
-from learning_app.ui.components.word_definition_field import WordDefinitionField
-from learning_app.ui.components.word_fields import WordFields
 from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.body_registry import BodyRegistry
 from learning_app.ui.chrome_config import SHELL_CHROME
-from learning_app.ui.layout_host import (
-    build_bottom_inset_shell_body,
-    build_deep_body,
-    build_search_body,
-    build_shell_body,
-    control_is_on_page,
-    sync_body_column_width,
-)
+from learning_app.ui.layout_host import sync_body_column_width
 from learning_app.ui.app_theme import AppTheme
-from learning_app.ui.layout_metrics import LayoutMetricsStore
+from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 from learning_app.ui.route_url import route_params, route_path, routes_match
-from learning_app.ui.routes import (
-    CREATE_SET_ROUTE,
+from learning_app.ui.route_paths import HOME_ROUTE, IMPORT_EXPORT_ROUTE, SET_LEARN_ROUTE
+from learning_app.ui.route_registry import (
+    BodyWrapperKind,
     DEEP_ROUTES,
     DRAWER_ROUTES,
-    HOME_ROUTE,
-    IMPORT_EXPORT_ROUTE,
-    INFO_ROUTE,
     KNOWN_ROUTES,
+    LayoutKind,
     ROUTE_TO_DRAWER_INDEX,
-    SEARCH_ROUTE,
-    SET_EDIT_ROUTE,
-    SET_LEARN_ROUTE,
-    SET_LEARN_SESSION_ROUTE,
-    SETTINGS_ROUTE,
+    RouteKind,
+    get_route,
 )
-from learning_app.ui.screens.create_set_menu import CreateSetMenu
-from learning_app.ui.screens.edit_set_menu import EditSetMenu
-from learning_app.ui.screens.import_export_control import ImportExportControl
-from learning_app.ui.screens.info_control import InfoControl
-from learning_app.ui.screens.search_screen import SearchScreen
-from learning_app.ui.screens.settings_control import SettingsControl
+from learning_app.ui.routable_screen import call_apply_layout, find_routable_in_active_view
+from learning_app.ui.components.word_definition_field import WordDefinitionField
+from learning_app.ui.components.word_fields import WordFields
 from learning_app.utils.greetings import Greetings
-
-FORM_LAYOUT_ROUTES = {
-    CREATE_SET_ROUTE,
-    SET_EDIT_ROUTE,
-    SET_LEARN_ROUTE,
-    SET_LEARN_SESSION_ROUTE,
-}
 
 
 def is_current_route(page: ft.Page, route: str) -> bool:
     return route_path(page.route) == route
-
-
-def _content_width(page: ft.Page) -> float:
-    return LayoutMetricsStore.refresh(page).form_width
 
 
 def _sync_shell_body_layout(page: ft.Page):
@@ -75,79 +46,64 @@ def _apply_home_flex_layout(page: ft.Page):
     _sync_shell_body_layout(page)
 
 
-def _find_in_active_view(page: ft.Page, control_type: type | tuple[type, ...]):
-    if not page.views or not page.views[-1].controls:
-        return None
-    types = control_type if isinstance(control_type, tuple) else (control_type,)
-    stack = list(page.views[-1].controls)
-    while stack:
-        control = stack.pop()
-        if isinstance(control, types):
-            return control
-        nested = getattr(control, "controls", None)
-        if nested:
-            stack.extend(nested)
-        content = getattr(control, "content", None)
-        if content is not None and not isinstance(content, (str, bytes)):
-            if isinstance(content, list):
-                stack.extend(content)
-            else:
-                stack.append(content)
-    return None
+def _apply_routable_layout(
+    page: ft.Page,
+    metrics: LayoutMetrics,
+    *,
+    sync: str,
+    control_type: type | tuple[type, ...] | None = None,
+):
+    if sync == "shell":
+        _sync_shell_body_layout(page)
+    elif sync == "deep":
+        _sync_deep_body_layout(page)
+
+    control = find_routable_in_active_view(page, control_type=control_type)
+    call_apply_layout(control, metrics)
 
 
-def _apply_import_export_layout(page: ft.Page):
-    LayoutMetricsStore.refresh(page)
-    _sync_shell_body_layout(page)
-    control = _find_in_active_view(page, ImportExportControl)
-    if control and control_is_on_page(control):
-        control.apply_layout()
+def _layout_home(_page: ft.Page, _route_def):
+    _apply_home_flex_layout(_page)
 
 
-def _apply_search_layout(page: ft.Page):
+def _layout_routable_shell(page: ft.Page, route_def, *, control_type=None):
     metrics = LayoutMetricsStore.refresh(page)
-    _sync_shell_body_layout(page)
-    search = _find_in_active_view(page, SearchScreen)
-    if search:
-        search.apply_layout(metrics)
+    _apply_routable_layout(page, metrics, sync="shell", control_type=control_type)
 
 
-def _apply_shell_screen_layout(page: ft.Page, control_type: type):
+def _layout_import_export(page: ft.Page, _route_def):
+    _layout_routable_shell(page, _route_def)
+
+
+def _layout_search(page: ft.Page, route_def):
+    _layout_routable_shell(page, route_def)
+
+
+def _layout_shell(page: ft.Page, route_def):
+    _layout_routable_shell(page, route_def, control_type=route_def.shell_layout_control)
+
+
+def _layout_deep_form(page: ft.Page, _route_def):
     metrics = LayoutMetricsStore.refresh(page)
-    _sync_shell_body_layout(page)
-    control = _find_in_active_view(page, control_type)
-    if control and control_is_on_page(control):
-        control.apply_layout(metrics)
+    _apply_routable_layout(page, metrics, sync="deep")
 
 
-def _apply_deep_form_layout(page: ft.Page):
-    metrics = LayoutMetricsStore.refresh(page)
-    _sync_deep_body_layout(page)
-
-    for control_type in (EditSetMenu, CreateSetMenu):
-        control = _find_in_active_view(page, control_type)
-        if control and control_is_on_page(control):
-            control.apply_layout(metrics)
-            return
-
-    word_field = _find_in_active_view(page, (WordFields, WordDefinitionField))
-    if word_field and control_is_on_page(word_field):
-        word_field.apply_layout(metrics)
+_LAYOUT_DISPATCH = {
+    LayoutKind.HOME: _layout_home,
+    LayoutKind.IMPORT_EXPORT: _layout_import_export,
+    LayoutKind.SEARCH: _layout_search,
+    LayoutKind.SHELL: _layout_shell,
+    LayoutKind.DEEP_FORM: _layout_deep_form,
+}
 
 
 def _apply_layout_for_route(page: ft.Page, path: str):
-    if path == HOME_ROUTE:
-        _apply_home_flex_layout(page)
-    elif path == IMPORT_EXPORT_ROUTE:
-        _apply_import_export_layout(page)
-    elif path == SEARCH_ROUTE:
-        _apply_search_layout(page)
-    elif path == SETTINGS_ROUTE:
-        _apply_shell_screen_layout(page, SettingsControl)
-    elif path == INFO_ROUTE:
-        _apply_shell_screen_layout(page, InfoControl)
-    elif path in FORM_LAYOUT_ROUTES:
-        _apply_deep_form_layout(page)
+    route_def = get_route(path)
+    if route_def is None:
+        return
+    handler = _LAYOUT_DISPATCH.get(route_def.layout_kind)
+    if handler is not None:
+        handler(page, route_def)
 
 
 def _restore_active_view_state(page: ft.Page, full_route: str):
@@ -203,13 +159,14 @@ def _refresh_learn_menu_view(page: ft.Page, full_route: str):
     if route_path(full_route) != SET_LEARN_ROUTE or not page.views:
         return
 
-    control = _find_in_active_view(page, (WordFields, WordDefinitionField))
-    if control:
-        control.menu_control.refresh_content()
-        control.words.refresh()
-        if control_is_on_page(control):
-            control.apply_layout()
-            control.update()
+    control = find_routable_in_active_view(page, control_type=(WordFields, WordDefinitionField))
+    if control is None:
+        return
+
+    control.menu_control.refresh_content()
+    control.words.refresh()
+    if call_apply_layout(control):
+        control.update()
 
 
 def _detach_shared_chrome_from_views(page: ft.Page):
@@ -269,127 +226,42 @@ def _build_deep_view(
     )
 
 
-def _build_learn_control(page: ft.Page, file_name: str, *, session: bool = False):
-    width = _content_width(page)
-    kind = get_kind_of_file_and_validate(file_name)
-    if kind == "words":
-        return WordFields(file_name, page=page, width=width, session=session)
-    return WordDefinitionField(file_name, page=page, width=width, session=session)
-
-
 def _build_route_view(full_route: str, page: ft.Page) -> ft.View:
     path = route_path(full_route)
     params = route_params(full_route)
+    route_def = get_route(path)
 
-    if path == HOME_ROUTE:
-        body = TilesContainer(page)
-        BodyRegistry.set_home(body)
-        return _build_shell_view(
-            page,
-            full_route,
-            [build_shell_body(page, body)],
-            vertical_alignment=ft.MainAxisAlignment.START,
-        )
+    if route_def is None:
+        return _build_route_view(HOME_ROUTE, page)
 
-    if path == IMPORT_EXPORT_ROUTE:
-        return _build_shell_view(
-            page,
-            full_route,
-            [build_shell_body(page, ImportExportControl(page))],
-            vertical_alignment=ft.MainAxisAlignment.START,
-        )
+    controls = route_def.build_factory(page, params)
+    if controls is None:
+        fallback = route_def.fallback_path or HOME_ROUTE
+        return _build_route_view(fallback, page)
 
-    if path == SETTINGS_ROUTE:
-        return _build_shell_view(
-            page,
-            full_route,
-            [build_bottom_inset_shell_body(page, SettingsControl(page))],
-        )
-
-    if path == INFO_ROUTE:
-        return _build_shell_view(
-            page,
-            full_route,
-            [build_bottom_inset_shell_body(page, InfoControl())],
-        )
-
-    if path == CREATE_SET_ROUTE:
+    if route_def.kind is RouteKind.DEEP:
         _configure_deep_chrome(page)
+        if route_def.body_wrapper is BodyWrapperKind.SEARCH:
+            return ft.View(
+                route=full_route,
+                controls=controls,
+                horizontal_alignment=AppChrome.get_horizontal_alignment(),
+                vertical_alignment=ft.MainAxisAlignment.START,
+                padding=ft.Padding.all(0),
+                bgcolor=AppTheme.current_bgcolor(),
+            )
         return _build_deep_view(
             page,
             full_route,
-            [
-                build_deep_body(
-                    page,
-                    CreateSetMenu(width=_content_width(page)),
-                    content_alignment=ft.MainAxisAlignment.CENTER,
-                )
-            ],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            controls,
+            vertical_alignment=route_def.vertical_alignment,
         )
 
-    if path == SET_EDIT_ROUTE:
-        file_name = params.get("file")
-        if not file_name:
-            return _build_route_view(HOME_ROUTE, page)
-        _configure_deep_chrome(page)
-        title = params.get("title")
-        subtitle = params.get("subtitle")
-        edit = EditSetMenu(
-            file_name,
-            title=title,
-            subtitle=subtitle,
-            width=_content_width(page),
-        )
-        return _build_deep_view(page, full_route, [build_deep_body(page, edit)])
-
-    if path == SET_LEARN_ROUTE:
-        file_name = params.get("file")
-        if not file_name:
-            return _build_route_view(HOME_ROUTE, page)
-        _configure_deep_chrome(page)
-        learn = _build_learn_control(page, file_name)
-        return _build_deep_view(page, full_route, [build_deep_body(page, learn)])
-
-    if path == SET_LEARN_SESSION_ROUTE:
-        file_name = params.get("file")
-        if not file_name:
-            return _build_route_view(HOME_ROUTE, page)
-        _configure_deep_chrome(page)
-        session = _build_learn_control(page, file_name, session=True)
-        return _build_deep_view(
-            page,
-            full_route,
-            [build_deep_body(page, session)],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
-        )
-
-    if path == SEARCH_ROUTE:
-        mode = params.get("mode", "home")
-        if mode == "export" and BodyRegistry.has_export():
-            tiles_container = BodyRegistry.get_export()
-        elif BodyRegistry.has_home():
-            tiles_container = BodyRegistry.get_home()
-        else:
-            return _build_route_view(HOME_ROUTE, page)
-        _configure_deep_chrome(page)
-        search = SearchScreen(page, tiles_container)
-        return ft.View(
-            route=full_route,
-            controls=[build_search_body(page, search)],
-            horizontal_alignment=AppChrome.get_horizontal_alignment(),
-            vertical_alignment=ft.MainAxisAlignment.START,
-            padding=ft.Padding.all(0),
-            bgcolor=AppTheme.current_bgcolor(),
-        )
-
-    body = TilesContainer(page)
-    BodyRegistry.set_home(body)
     return _build_shell_view(
         page,
-        HOME_ROUTE,
-        [build_shell_body(page, body)],
-        vertical_alignment=ft.MainAxisAlignment.START,
+        full_route,
+        controls,
+        vertical_alignment=route_def.vertical_alignment,
     )
 
 

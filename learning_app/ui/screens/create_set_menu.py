@@ -2,13 +2,14 @@ import flet as ft
 
 from learning_app.data.app_data import get_file_names, sanitize_file_name
 from learning_app.data.constants import FilesColumns
-from learning_app.ui.layout_host import control_is_on_page
-from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
-from learning_app.ui.navigation import go_back, go_edit_set
+from learning_app.ui.layout_metrics import LayoutMetrics
+from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
+from learning_app.ui.routable_screen import RoutableScreenMixin
+from learning_app.ui.route_paths import SET_EDIT_ROUTE
 
 
-class CreateSetMenu(ft.Column):
+class CreateSetMenu(RoutableScreenMixin, ft.Column):
     def __init__(self, width=300):
         super().__init__()
         self._form_width = width
@@ -44,17 +45,12 @@ class CreateSetMenu(ft.Column):
             self.buttons_row,
         ])
 
-    def did_mount(self):
-        self.apply_layout()
-
     def apply_layout(self, metrics: LayoutMetrics | None = None):
-        if metrics is None:
-            metrics = LayoutMetricsStore.refresh(self.page)
+        metrics = self.resolve_layout_metrics(metrics)
         self._form_width = metrics.form_width
         for field in (self.title_field, self.subtitle_field, self.kind_dropdown):
             field.width = metrics.form_width
-        if control_is_on_page(self):
-            self.update()
+        self.update_if_mounted()
 
     def on_create_click(self, e):
         from learning_app.data.csv_processor import CSVProcessor
@@ -111,4 +107,4 @@ class CreateSetMenu(ft.Column):
             title = self.title_field.value.capitalize()
             subtitle = self.subtitle_field.value.capitalize()
 
-            go_edit_set(e.page, new_file_name, title=title, subtitle=subtitle)
+            push_view(e.page, SET_EDIT_ROUTE, file=new_file_name, title=title, subtitle=subtitle)

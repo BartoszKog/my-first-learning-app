@@ -3,7 +3,7 @@ import flet as ft
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.ui.app_drawer import AppDrawer
 from learning_app.ui.page_functions import set_theme_from_bgcolor
-from learning_app.ui.navigation import go_create_set, go_search
+from learning_app.ui.navigation import go_search, push_view
 from learning_app.ui.router import (
     handle_page_resize,
     handle_route_change,
@@ -16,7 +16,7 @@ from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.app_session import AppSession
 from learning_app.ui.preferences import get_shared_preferences
-from learning_app.ui.routes import IMPORT_EXPORT_ROUTE
+from learning_app.ui.route_paths import CREATE_SET_ROUTE, IMPORT_EXPORT_ROUTE
 from learning_app.utils.greetings import Greetings
 
 # dictionary with colors
@@ -49,7 +49,7 @@ async def main(page: ft.Page):
 
     def on_add_click(e):
         LayoutMetricsStore.refresh(page)
-        go_create_set(page)
+        push_view(page, CREATE_SET_ROUTE)
 
     async def on_menu_click(e):
         await page.show_drawer()

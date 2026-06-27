@@ -4,12 +4,13 @@ from learning_app.data.csv_processor import CSVProcessor
 from learning_app.ui.components.tiles_container import TilesContainer
 from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.body_registry import BodyRegistry
-from learning_app.ui.layout_metrics import LayoutMetricsStore, is_android_platform
+from learning_app.ui.layout_metrics import LayoutMetrics, is_android_platform
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.app_session import AppSession
+from learning_app.ui.routable_screen import RoutableScreenMixin
 
 
-class ImportExportControl(ft.Container):
+class ImportExportControl(RoutableScreenMixin, ft.Container):
     SCALE_IMPORT_BUTTON = 1.25
     DEFAULT_BOTTOM_APP_BAR_HEIGHT = 80
     MINIMAL_BOTTOM_APP_BAR_HEIGHT = 50
@@ -169,11 +170,8 @@ class ImportExportControl(ft.Container):
         self.validation_has_statistics = None
         self.validation_data_type = None
 
-    def did_mount(self):
-        self.apply_layout()
-
-    def apply_layout(self):
-        metrics = LayoutMetricsStore.refresh(self.page)
+    def apply_layout(self, metrics: LayoutMetrics | None = None):
+        metrics = self.resolve_layout_metrics(metrics)
         self.tiles_of_sets.apply_flex_layout(metrics)
         self.__show_search_button(self.tabs.selected_index == 1)
 

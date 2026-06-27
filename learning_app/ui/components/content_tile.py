@@ -5,8 +5,10 @@ import flet as ft
 from learning_app.data.app_data import delate_set, get_kind_of_file_and_validate, set_default_progress
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.ui.layout_metrics import LayoutMetricsStore
+from learning_app.ui.navigation import push_view
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.app_session import AppSession
+from learning_app.ui.route_paths import SET_EDIT_ROUTE, SET_LEARN_ROUTE
 
 
 class ContentTile(ft.Card):
@@ -51,9 +53,7 @@ class ContentTile(ft.Card):
         self.margin = 5  # Add some margin around the card
 
     def edit(self, e):
-        from learning_app.ui.navigation import go_edit_set
-
-        go_edit_set(e.page, self.file_name)
+        push_view(e.page, SET_EDIT_ROUTE, file=self.file_name)
 
     def show_delete_dialog(self, e):
         create_alert_dialog(
@@ -136,10 +136,8 @@ class ContentTile(ft.Card):
         if not self.__validate_file_before_opening(e):
             return
 
-        from learning_app.ui.navigation import go_learn_set
-
         LayoutMetricsStore.refresh(e.page)
-        go_learn_set(e.page, self.file_name)
+        push_view(e.page, SET_LEARN_ROUTE, file=self.file_name)
 
     def file_not_found_dialog(self, e):
         create_alert_dialog(

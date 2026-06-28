@@ -1,0 +1,212 @@
+/* Custom Learning App palette — teal + warm amber accent */
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0b6e72;
+  --md-primary-fg-color--light: #129096;
+  --md-primary-fg-color--dark: #064649;
+  --md-primary-bg-color: #0b6e72;
+  --md-accent-fg-color: #e6a020;
+  --md-accent-bg-color: #e6a020;
+  --md-default-bg-color: #f7faf9;
+  --md-default-fg-color: #1a2b2c;
+  --md-code-bg-color: #e8f2f1;
+  --md-header-fg-color: #ffffff;
+  --app-header-gradient: linear-gradient(
+    135deg,
+    #0b6e72 0%,
+    #129096 55%,
+    #e6a020 140%
+  );
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #2ec4b6;
+  --md-primary-fg-color--light: #5ed9ce;
+  --md-primary-fg-color--dark: #1a8a80;
+  --md-primary-bg-color: #2ec4b6;
+  --md-accent-fg-color: #f4b942;
+  --md-accent-bg-color: #f4b942;
+  --md-default-bg-color: #12181a;
+  --md-default-fg-color: #e4eceb;
+  --md-code-bg-color: #1c2628;
+  --md-header-fg-color: #e4eceb;
+  --app-header-gradient: linear-gradient(
+    135deg,
+    #064649 0%,
+    #1a8a80 45%,
+    #2ec4b6 100%
+  );
+}
+
+/* Colored gradient top bar */
+.md-header {
+  background: var(--app-header-gradient);
+  color: var(--md-header-fg-color);
+}
+
+.md-header__title,
+.md-header__button,
+.md-source,
+.md-header__topic,
+.md-header__option .md-icon,
+.md-search__icon {
+  color: var(--md-header-fg-color);
+}
+
+.md-header__title {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Larger app logo */
+.md-header__button.md-logo {
+  padding: 0.2rem 0.6rem 0.2rem 0.2rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+/* Mobile drawer header — match top bar gradient + larger logo */
+.md-nav--primary > .md-nav__title[for="__drawer"],
+.md-nav--primary > .md-nav__source {
+  background: var(--app-header-gradient);
+  color: var(--md-header-fg-color);
+}
+
+.md-nav--primary > .md-nav__title[for="__drawer"] .md-nav__button.md-logo {
+  padding: 0.35rem 0.6rem 0.35rem 0.25rem;
+}
+
+.md-nav--primary > .md-nav__title[for="__drawer"] .md-nav__button.md-logo img,
+.md-nav--primary > .md-nav__title[for="__drawer"] .md-nav__button.md-logo svg {
+  height: 3rem;
+  width: 3rem;
+}
+
+.md-nav--primary > .md-nav__source .md-source {
+  color: var(--md-header-fg-color);
+}
+
+/* Compact GitHub link — text only, smaller label */
+.md-source__icon {
+  display: none;
+}
+
+.md-source__repository {
+  font-size: 0.65rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  max-width: none;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.md-source {
+  width: auto;
+  max-width: none;
+  gap: 0.35rem;
+}
+
+.md-header__source {
+  max-width: none;
+}
+
+/* Tabs underline accent */
+.md-tabs {
+  background-color: var(--md-primary-fg-color--dark);
+}
+
+[data-md-color-scheme="default"] .md-tabs {
+  background-color: #eef5f4;
+}
+
+[data-md-color-scheme="default"] .md-tabs__link {
+  color: #1a2b2c;
+  opacity: 0.75;
+}
+
+[data-md-color-scheme="default"] .md-tabs__link--active {
+  color: #111111;
+  opacity: 1;
+  border-bottom: 2px solid var(--md-accent-fg-color);
+}
+
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #0d1214;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link--active {
+  opacity: 1;
+  border-bottom: 2px solid var(--md-accent-fg-color);
+}
+
+/* Hero on home page */
+.md-content .grid.cards > ul > li {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--md-primary-fg-color) 18%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.md-content .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--md-primary-fg-color) 16%, transparent);
+}
+
+/* Code blocks */
+.highlight pre,
+pre code {
+  border-radius: 10px;
+}
+
+/* Admonitions */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 10px;
+  border-left-width: 4px;
+}
+
+/* Search bar — square corners in both themes */
+.md-search__form,
+.md-search__input,
+.md-search__inner {
+  border-radius: 0;
+}
+
+/* Search bar — white pill on colored header */
+[data-md-color-scheme="default"] .md-search__input {
+  color: #111111;
+  background-color: #ffffff;
+}
+
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: color-mix(in srgb, #111111 55%, transparent);
+}
+
+[data-md-color-scheme="slate"] .md-search__input {
+  color: #e4eceb;
+  background-color: color-mix(in srgb, #ffffff 12%, transparent);
+}
+
+[data-md-color-scheme="slate"] .md-search__input::placeholder {
+  color: color-mix(in srgb, #e4eceb 55%, transparent);
+}
+
+/* Back to top — black label on orange hover background */
+.md-top:hover,
+.md-top:focus-visible {
+  color: #111111;
+}
+
+.md-top:hover .md-icon,
+.md-top:focus-visible .md-icon {
+  color: #111111;
+  fill: currentColor;
+}
+
+.md-top:hover .md-icon svg,
+.md-top:focus-visible .md-icon svg {
+  fill: currentColor;
+}

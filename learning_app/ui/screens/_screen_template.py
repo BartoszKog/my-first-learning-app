@@ -24,8 +24,7 @@ from __future__ import annotations
 import flet as ft
 
 from learning_app.ui.layout_metrics import LayoutMetrics
-from learning_app.ui.navigation import go_back, push_view
-from learning_app.ui.route_paths import DEEP_TEMPLATE_ROUTE
+from learning_app.ui.navigation import go_back
 from learning_app.ui.routable_screen import RoutableScreenMixin
 
 # ---------------------------------------------------------------------------
@@ -62,10 +61,11 @@ class ShellScreenTemplate(RoutableScreenMixin, ft.Container):
                     "Resize the window — body width below should update via apply_layout().",
                     italic=True,
                 ),
-                ft.Button(
-                    content="Open DeepScreenTemplate",
-                    on_click=self._open_deep_template,
-                ),
+                # Optional navigation example:
+                # ft.Button(
+                #     content="Open DeepScreenTemplate",
+                #     on_click=lambda e: push_view(e.page, MY_DEEP_ROUTE, file="demo-label"),
+                # ),
             ],
             spacing=12,
             scroll=ft.ScrollMode.AUTO,
@@ -78,9 +78,6 @@ class ShellScreenTemplate(RoutableScreenMixin, ft.Container):
         self.width = metrics.body_width
         self._width_label.value = f"body_width: {metrics.body_width:.0f}px"
         self.update_if_mounted()
-
-    def _open_deep_template(self, e: ft.ControlEvent) -> None:
-        push_view(e.page, DEEP_TEMPLATE_ROUTE, file="demo-label")
 
 
 class DeepScreenTemplate(RoutableScreenMixin, ft.Column):

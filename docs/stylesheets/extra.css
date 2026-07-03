@@ -210,3 +210,10 @@ pre code {
 .md-top:focus-visible .md-icon svg {
   fill: currentColor;
 }
+
+.docs-screenshot {
+  max-width: 760px;
+  width: 70%;
+  display: block;
+  margin: 1.5rem auto;
+}

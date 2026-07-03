@@ -36,7 +36,7 @@ uv run mkdocs build
 
     How routing, views, layout, chrome, and screen lifecycle fit together.
 
-    *Coming soon: `architecture.md`*
+    [Read architecture →](architecture.md)
 
 -   :material-plus-box:{ .lg .middle } **Adding a screen**
 

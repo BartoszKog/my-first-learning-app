@@ -67,15 +67,31 @@ async def main(page: ft.Page):
 
     page.floating_action_button = ft.FloatingActionButton(
         icon=ft.Icons.ADD,
+        tooltip="Create set",
         on_click=on_add_click,
         bgcolor=colors["floating_action_button_bg"],
         foreground_color=colors["icon_color"],
     )
     page.floating_action_button_location = ft.FloatingActionButtonLocation.CENTER_DOCKED
 
-    bottom_menu_button = ft.IconButton(icon=ft.Icons.MENU, icon_color=colors["icon_color"], on_click=on_menu_click)
-    search_button = ft.IconButton(icon=ft.Icons.SEARCH, icon_color=colors["icon_color"], on_click=on_search_click)
-    appbar_menu_button = ft.IconButton(icon=ft.Icons.MENU, icon_color=colors["icon_color"], on_click=on_appbar_menu_click)
+    bottom_menu_button = ft.IconButton(
+        icon=ft.Icons.MENU,
+        icon_color=colors["icon_color"],
+        tooltip="Menu",
+        on_click=on_menu_click,
+    )
+    search_button = ft.IconButton(
+        icon=ft.Icons.SEARCH,
+        icon_color=colors["icon_color"],
+        tooltip="Search",
+        on_click=on_search_click,
+    )
+    appbar_menu_button = ft.IconButton(
+        icon=ft.Icons.MENU,
+        icon_color=colors["icon_color"],
+        tooltip="Menu",
+        on_click=on_appbar_menu_click,
+    )
 
     page.appbar = ft.AppBar(
         title=ft.Text(Greetings.get_greeting(), size=40, weight=ft.FontWeight.BOLD, color=colors["font_color"]),

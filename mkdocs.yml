@@ -49,6 +49,19 @@ theme:
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - .
+          options:
+            docstring_style: google
+            filters:
+              - "!^_"
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
 
 markdown_extensions:
   - admonition
@@ -79,3 +92,26 @@ extra_css:
 nav:
   - Home: index.md
   - Architecture: architecture.md
+  - Guides:
+      - Adding a screen: guides/adding-a-screen.md
+      - Navigation guide: guides/navigation.md
+      - Layout: guides/layout.md
+      - State and persistence: guides/state-and-persistence.md
+  - Concepts:
+      - Routing: concepts/routing.md
+      - Chrome and wrappers: concepts/chrome-and-wrappers.md
+      - Body registry: concepts/body-registry.md
+  - API Reference:
+      - Overview: reference/index.md
+      - Route paths: reference/route_paths.md
+      - Route URLs: reference/route_url.md
+      - Route registry: reference/route_registry.md
+      - Navigation API: reference/navigation.md
+      - Routable screens: reference/routable_screen.md
+      - Chrome configuration: reference/chrome_config.md
+      - Layout host: reference/layout_host.md
+      - Layout metrics: reference/layout_metrics.md
+      - Body registry API: reference/body_registry.md
+      - App session: reference/app_session.md
+      - Preferences: reference/preferences.md
+      - Router: reference/router.md

@@ -7,7 +7,7 @@ Checklist (shell screen):
   2. Add ShellChromeConfig entry in chrome_config.py (if drawer / app bar)
   3. Implement screen control (see ShellScreenTemplate)
   4. Add build factory + RouteDef in route_registry.py
-  5. Navigate with: push_view(page, MY_ROUTE) or navigate_to(page, MY_ROUTE)
+  5. Navigate with: navigate_to(page, MY_ROUTE)
 
 Checklist (deep screen):
   1. Add path constant to route_paths.py
@@ -16,7 +16,7 @@ Checklist (deep screen):
   4. Navigate with: push_view(page, MY_ROUTE, file=..., title=...)
   5. Use go_back(page) for cancel / back actions
 
-See also: docs/adding-a-screen.md (when available)
+See also: docs/guides/adding-a-screen.md
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ from learning_app.ui.routable_screen import RoutableScreenMixin
 class ShellScreenTemplate(RoutableScreenMixin, ft.Container):
     """Minimal shell body — sits inside AppBar + bottom bar chrome.
 
-    Use with build_shell_body or build_bottom_inset_shell_body in route_registry.
+    Select the shell wrapper with RouteDef.body_wrapper in route_registry.
     Reference: InfoControl, SettingsControl, ImportExportControl.
     """
 
@@ -83,7 +83,7 @@ class ShellScreenTemplate(RoutableScreenMixin, ft.Container):
 class DeepScreenTemplate(RoutableScreenMixin, ft.Column):
     """Minimal deep (full-screen) form — no drawer / bottom bar.
 
-    Use with build_deep_body in route_registry.
+    Select BodyWrapperKind.DEEP in RouteDef; the router applies build_deep_body.
     Reference: CreateSetMenu, EditSetMenu.
     """
 
@@ -129,25 +129,18 @@ class DeepScreenTemplate(RoutableScreenMixin, ft.Column):
 # ---------------------------------------------------------------------------
 #
 # def _build_my_shell_controls(page: ft.Page, _params: dict[str, str]) -> list[ft.Control]:
-#     from learning_app.ui.layout_host import build_bottom_inset_shell_body
 #     from learning_app.ui.screens.my_shell_screen import ShellScreenTemplate
 #
-#     return [build_bottom_inset_shell_body(page, ShellScreenTemplate(page))]
+#     return [ShellScreenTemplate(page)]
 #
 #
 # def _build_my_deep_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
-#     from learning_app.ui.layout_host import build_deep_body
 #     from learning_app.ui.screens.my_deep_screen import DeepScreenTemplate
 #
 #     file_name = params.get("file")
 #     if not file_name:
 #         return None  # router falls back to fallback_path (usually HOME_ROUTE)
-#     return [
-#         build_deep_body(
-#             page,
-#             DeepScreenTemplate(width=_content_width(page), label=file_name),
-#         )
-#     ]
+#     return [DeepScreenTemplate(width=_content_width(page), label=file_name)]
 #
 #
 # Add to ROUTE_REGISTRY tuple:
@@ -171,6 +164,7 @@ class DeepScreenTemplate(RoutableScreenMixin, ft.Column):
 #     layout_kind=LayoutKind.DEEP_FORM,
 #     chrome=None,
 #     build_factory=_build_my_deep_controls,
+#     body_content_alignment=ft.MainAxisAlignment.CENTER,  # optional
 #     fallback_path=HOME_ROUTE,
 # ),
 #

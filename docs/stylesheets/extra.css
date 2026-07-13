@@ -217,3 +217,9 @@ pre code {
   display: block;
   margin: 1.5rem auto;
 }
+
+.md-typeset .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}

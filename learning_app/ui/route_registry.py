@@ -1,3 +1,15 @@
+"""Declarative registry of route factories, layouts, wrappers, and chrome.
+
+Public surface for authors and maintainers:
+
+* Enums ``RouteKind``, ``BodyWrapperKind``, and ``LayoutKind`` classify routes.
+* ``RouteDef`` describes one registered route.
+* ``ROUTE_REGISTRY`` is the authoritative ordered tuple of route definitions.
+* ``get_route`` looks up a ``RouteDef`` by path.
+* ``build_drawer_controls`` builds drawer destinations from shell routes.
+* ``DRAWER_ROUTES``, ``DEEP_ROUTES``, and ``KNOWN_ROUTES`` expose path lists.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -25,11 +37,28 @@ RouteBuildFactory = Callable[[ft.Page, dict[str, str]], list[ft.Control] | None]
 
 
 class RouteKind(Enum):
+    """Describe how a route participates in the page view stack.
+
+    Attributes:
+        SHELL: Root destination that replaces the current view stack.
+        DEEP: Destination that may be pushed above a shell view.
+    """
+
     SHELL = "shell"
     DEEP = "deep"
 
 
 class BodyWrapperKind(Enum):
+    """Select the host wrapper applied to route body controls.
+
+    Attributes:
+        SHELL: Width-constrained shell column without an added safe area.
+        BOTTOM_INSET_SHELL: Shell column protected from side and bottom
+            intrusions while allowing the app bar to own the top inset.
+        DEEP: Width-constrained form container for a deep route.
+        SEARCH: Shell-width column protected on every safe-area edge.
+    """
+
     SHELL = "shell"
     BOTTOM_INSET_SHELL = "bottom_inset_shell"
     DEEP = "deep"
@@ -37,6 +66,16 @@ class BodyWrapperKind(Enum):
 
 
 class LayoutKind(Enum):
+    """Select the resize-layout strategy for a route.
+
+    Attributes:
+        HOME: Refresh the home tile collection's flex layout.
+        IMPORT_EXPORT: Apply routable shell sizing to import/export content.
+        SEARCH: Apply routable shell sizing to search content.
+        SHELL: Apply shell sizing to the route's declared layout control.
+        DEEP_FORM: Apply form sizing to a routable deep-screen control.
+    """
+
     HOME = "home"
     IMPORT_EXPORT = "import_export"
     SEARCH = "search"
@@ -65,49 +104,37 @@ def _build_learn_control(page: ft.Page, file_name: str, *, session: bool = False
 def _build_home_controls(page: ft.Page, _params: dict[str, str]) -> list[ft.Control]:
     from learning_app.ui.body_registry import BodyRegistry
     from learning_app.ui.components.tiles_container import TilesContainer
-    from learning_app.ui.layout_host import build_shell_body
 
     body = TilesContainer(page)
     BodyRegistry.set_home(body)
-    return [build_shell_body(page, body)]
+    return [body]
 
 
 def _build_import_export_controls(page: ft.Page, _params: dict[str, str]) -> list[ft.Control]:
-    from learning_app.ui.layout_host import build_shell_body
     from learning_app.ui.screens.import_export_control import ImportExportControl
 
-    return [build_shell_body(page, ImportExportControl(page))]
+    return [ImportExportControl(page)]
 
 
 def _build_settings_controls(page: ft.Page, _params: dict[str, str]) -> list[ft.Control]:
-    from learning_app.ui.layout_host import build_bottom_inset_shell_body
     from learning_app.ui.screens.settings_control import SettingsControl
 
-    return [build_bottom_inset_shell_body(page, SettingsControl(page))]
+    return [SettingsControl(page)]
 
 
 def _build_info_controls(page: ft.Page, _params: dict[str, str]) -> list[ft.Control]:
-    from learning_app.ui.layout_host import build_bottom_inset_shell_body
     from learning_app.ui.screens.info_control import InfoControl
 
-    return [build_bottom_inset_shell_body(page, InfoControl())]
+    return [InfoControl()]
 
 
 def _build_create_set_controls(page: ft.Page, _params: dict[str, str]) -> list[ft.Control]:
-    from learning_app.ui.layout_host import build_deep_body
     from learning_app.ui.screens.create_set_menu import CreateSetMenu
 
-    return [
-        build_deep_body(
-            page,
-            CreateSetMenu(width=_content_width(page)),
-            content_alignment=ft.MainAxisAlignment.CENTER,
-        )
-    ]
+    return [CreateSetMenu(width=_content_width(page))]
 
 
 def _build_edit_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
-    from learning_app.ui.layout_host import build_deep_body
     from learning_app.ui.screens.edit_set_menu import EditSetMenu
 
     file_name = params.get("file")
@@ -119,32 +146,27 @@ def _build_edit_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.C
         subtitle=params.get("subtitle"),
         width=_content_width(page),
     )
-    return [build_deep_body(page, edit)]
+    return [edit]
 
 
 def _build_learn_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
-    from learning_app.ui.layout_host import build_deep_body
-
     file_name = params.get("file")
     if not file_name:
         return None
     learn = _build_learn_control(page, file_name)
-    return [build_deep_body(page, learn)]
+    return [learn]
 
 
 def _build_learn_session_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
-    from learning_app.ui.layout_host import build_deep_body
-
     file_name = params.get("file")
     if not file_name:
         return None
     session = _build_learn_control(page, file_name, session=True)
-    return [build_deep_body(page, session)]
+    return [session]
 
 
 def _build_search_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
     from learning_app.ui.body_registry import BodyRegistry
-    from learning_app.ui.layout_host import build_search_body
     from learning_app.ui.screens.search_screen import SearchScreen
 
     mode = params.get("mode", "home")
@@ -155,17 +177,38 @@ def _build_search_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Con
     else:
         return None
     search = SearchScreen(page, tiles_container)
-    return [build_search_body(page, search)]
+    return [search]
 
 
 @dataclass(frozen=True)
 class RouteDef:
+    """Describe all routing and presentation behavior for one route.
+
+    Attributes:
+        path: Canonical route path without query parameters.
+        kind: Whether the route replaces the shell or is pushed as a deep view.
+        body_wrapper: Wrapper used to host controls returned by the factory.
+        layout_kind: Layout strategy applied initially and after resize events.
+        chrome: Shared shell chrome configuration, or ``None`` for deep routes.
+        build_factory: Callable that builds body controls from a page and
+            decoded route parameters. Returning ``None`` triggers fallback.
+        body_content_alignment: Main-axis alignment inside deep body columns.
+        vertical_alignment: Main-axis alignment assigned to the Flet view.
+        shell_layout_control: Optional control type used to identify the
+            routable shell body during layout updates.
+        drawer_label: Navigation drawer label, or ``None`` to omit the route.
+        drawer_icon: Name of the corresponding ``ft.Icons`` member.
+        drawer_divider_before: Whether to add a divider before this drawer item.
+        fallback_path: Route used when the body factory returns ``None``.
+    """
+
     path: str
     kind: RouteKind
     body_wrapper: BodyWrapperKind
     layout_kind: LayoutKind
     chrome: ShellChromeConfig | None
     build_factory: RouteBuildFactory
+    body_content_alignment: ft.MainAxisAlignment = ft.MainAxisAlignment.START
     vertical_alignment: ft.MainAxisAlignment = ft.MainAxisAlignment.START
     shell_layout_control: type | None = None
     drawer_label: str | None = None
@@ -228,6 +271,7 @@ ROUTE_REGISTRY: tuple[RouteDef, ...] = (
         layout_kind=LayoutKind.DEEP_FORM,
         chrome=None,
         build_factory=_build_create_set_controls,
+        body_content_alignment=ft.MainAxisAlignment.CENTER,
         vertical_alignment=ft.MainAxisAlignment.CENTER,
     ),
     RouteDef(
@@ -289,6 +333,11 @@ def _drawer_icon(icon_name: str | None):
 
 
 def build_drawer_controls() -> list[ft.Control]:
+    """Build drawer destinations from registered drawer routes.
+
+    Returns:
+        A spacer followed by registered destinations and configured dividers.
+    """
     controls: list[ft.Control] = [ft.Container(height=24)]
     for route in DRAWER_ROUTE_DEFS:
         if route.drawer_divider_before:
@@ -303,4 +352,12 @@ def build_drawer_controls() -> list[ft.Control]:
 
 
 def get_route(path: str) -> RouteDef | None:
+    """Look up a route definition by canonical path.
+
+    Args:
+        path: Route path without query parameters.
+
+    Returns:
+        The matching route definition, or ``None`` when the path is unknown.
+    """
     return ROUTES_BY_PATH.get(path)

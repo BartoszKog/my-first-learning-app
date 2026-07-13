@@ -1,9 +1,17 @@
+"""Coordinate route views, shared chrome, and responsive layout state."""
+
 import flet as ft
 
 from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.body_registry import BodyRegistry
 from learning_app.ui.chrome_config import SHELL_CHROME
-from learning_app.ui.layout_host import sync_body_column_width
+from learning_app.ui.layout_host import (
+    build_bottom_inset_shell_body,
+    build_deep_body,
+    build_search_body,
+    build_shell_body,
+    sync_body_column_width,
+)
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 from learning_app.ui.route_url import route_params, route_path, routes_match
@@ -15,6 +23,7 @@ from learning_app.ui.route_registry import (
     KNOWN_ROUTES,
     LayoutKind,
     ROUTE_TO_DRAWER_INDEX,
+    RouteDef,
     RouteKind,
     get_route,
 )
@@ -25,6 +34,17 @@ from learning_app.utils.greetings import Greetings
 
 
 def is_current_route(page: ft.Page, route: str) -> bool:
+    """Return whether the page's current route path matches a path.
+
+    Query parameters on ``page.route`` are ignored.
+
+    Args:
+        page: Page whose current route should be inspected.
+        route: Canonical route path to compare.
+
+    Returns:
+        ``True`` when the current route path equals ``route``.
+    """
     return route_path(page.route) == route
 
 
@@ -226,6 +246,59 @@ def _build_deep_view(
     )
 
 
+def _wrap_shell_body(
+    page: ft.Page,
+    controls: list[ft.Control],
+    _route_def: RouteDef,
+) -> ft.Control:
+    return build_shell_body(page, *controls)
+
+
+def _wrap_bottom_inset_shell_body(
+    page: ft.Page,
+    controls: list[ft.Control],
+    _route_def: RouteDef,
+) -> ft.Control:
+    return build_bottom_inset_shell_body(page, *controls)
+
+
+def _wrap_deep_body(
+    page: ft.Page,
+    controls: list[ft.Control],
+    route_def: RouteDef,
+) -> ft.Control:
+    return build_deep_body(
+        page,
+        *controls,
+        content_alignment=route_def.body_content_alignment,
+    )
+
+
+def _wrap_search_body(
+    page: ft.Page,
+    controls: list[ft.Control],
+    _route_def: RouteDef,
+) -> ft.Control:
+    return build_search_body(page, *controls)
+
+
+_BODY_WRAPPER_DISPATCH = {
+    BodyWrapperKind.SHELL: _wrap_shell_body,
+    BodyWrapperKind.BOTTOM_INSET_SHELL: _wrap_bottom_inset_shell_body,
+    BodyWrapperKind.DEEP: _wrap_deep_body,
+    BodyWrapperKind.SEARCH: _wrap_search_body,
+}
+
+
+def _wrap_route_controls(
+    page: ft.Page,
+    controls: list[ft.Control],
+    route_def: RouteDef,
+) -> list[ft.Control]:
+    wrapper = _BODY_WRAPPER_DISPATCH[route_def.body_wrapper]
+    return [wrapper(page, controls, route_def)]
+
+
 def _build_route_view(full_route: str, page: ft.Page) -> ft.View:
     path = route_path(full_route)
     params = route_params(full_route)
@@ -239,12 +312,14 @@ def _build_route_view(full_route: str, page: ft.Page) -> ft.View:
         fallback = route_def.fallback_path or HOME_ROUTE
         return _build_route_view(fallback, page)
 
+    wrapped_controls = _wrap_route_controls(page, controls, route_def)
+
     if route_def.kind is RouteKind.DEEP:
         _configure_deep_chrome(page)
         if route_def.body_wrapper is BodyWrapperKind.SEARCH:
             return ft.View(
                 route=full_route,
-                controls=controls,
+                controls=wrapped_controls,
                 horizontal_alignment=AppChrome.get_horizontal_alignment(),
                 vertical_alignment=ft.MainAxisAlignment.START,
                 padding=ft.Padding.all(0),
@@ -253,14 +328,14 @@ def _build_route_view(full_route: str, page: ft.Page) -> ft.View:
         return _build_deep_view(
             page,
             full_route,
-            controls,
+            wrapped_controls,
             vertical_alignment=route_def.vertical_alignment,
         )
 
     return _build_shell_view(
         page,
         full_route,
-        controls,
+        wrapped_controls,
         vertical_alignment=route_def.vertical_alignment,
     )
 
@@ -277,6 +352,16 @@ def _normalize_full_route(full_route: str) -> str:
 
 
 async def reset_to_route(page: ft.Page, full_route: str):
+    """Replace the view stack with one normalized route.
+
+    Unknown paths resolve to the home route. The operation rebuilds the target
+    view, updates the browser/page route, reapplies the theme, and refreshes the
+    page.
+
+    Args:
+        page: Page whose view stack should be replaced.
+        full_route: Route path with optional encoded query parameters.
+    """
     full_route = _normalize_full_route(full_route)
 
     LayoutMetricsStore.refresh(page)
@@ -289,6 +374,15 @@ async def reset_to_route(page: ft.Page, full_route: str):
 
 
 async def push_route_view(page: ft.Page, full_route: str):
+    """Push a normalized deep route or reset to a shell route.
+
+    An already-active complete route is not duplicated. Unknown routes and
+    registered shell routes are handled as stack replacements.
+
+    Args:
+        page: Page whose view stack should be updated.
+        full_route: Route path with optional encoded query parameters.
+    """
     full_route = _normalize_full_route(full_route)
     path = route_path(full_route)
 
@@ -309,6 +403,13 @@ async def push_route_view(page: ft.Page, full_route: str):
 
 
 async def pop_route_view(page: ft.Page):
+    """Remove the active view and restore state for the revealed route.
+
+    When no previous view exists, the page is reset to the home route.
+
+    Args:
+        page: Page whose active route view should be removed.
+    """
     if len(page.views) <= 1:
         await reset_to_route(page, HOME_ROUTE)
         return
@@ -324,10 +425,23 @@ async def pop_route_view(page: ft.Page):
 
 
 async def initialize_routes(page: ft.Page):
+    """Initialize a page with the home route.
+
+    Args:
+        page: Page whose route stack should be initialized.
+    """
     await reset_to_route(page, HOME_ROUTE)
 
 
 def handle_route_change(e: ft.RouteChangeEvent):
+    """Synchronize or schedule navigation after a Flet route change.
+
+    Active routes are refreshed in place. Drawer routes replace the stack, and
+    deep routes are pushed above the active shell view.
+
+    Args:
+        e: Route-change event containing the affected page.
+    """
     page = e.page
     full_route = page.route or HOME_ROUTE
     path = _resolve_path(route_path(full_route))
@@ -347,6 +461,11 @@ def handle_route_change(e: ft.RouteChangeEvent):
 
 
 async def handle_view_pop(e: ft.ViewPopEvent):
+    """Restore route state after Flet removes a view.
+
+    Args:
+        e: View-pop event containing the affected page.
+    """
     page = e.page
     if not page.views:
         await initialize_routes(page)
@@ -363,6 +482,11 @@ async def handle_view_pop(e: ft.ViewPopEvent):
 
 
 def handle_page_resize(e: ft.ControlEvent):
+    """Reapply route layout and theme after a page resize.
+
+    Args:
+        e: Resize event containing the affected page.
+    """
     page = e.page
     _apply_layout_for_route(page, route_path(page.route or HOME_ROUTE))
     AppTheme.apply_to_page(page)

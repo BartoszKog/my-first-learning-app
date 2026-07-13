@@ -1,3 +1,9 @@
+"""Declarative visibility and title settings for shared shell chrome.
+
+``SHELL_CHROME`` maps each shell route path to its ``ShellChromeConfig``.
+Deep routes omit chrome and are not present in this mapping.
+"""
+
 from dataclasses import dataclass
 
 from learning_app.ui.route_paths import HOME_ROUTE, IMPORT_EXPORT_ROUTE, INFO_ROUTE, SETTINGS_ROUTE
@@ -5,6 +11,19 @@ from learning_app.ui.route_paths import HOME_ROUTE, IMPORT_EXPORT_ROUTE, INFO_RO
 
 @dataclass(frozen=True)
 class ShellChromeConfig:
+    """Configure shared chrome for a shell route.
+
+    Attributes:
+        appbar_title: Text displayed in the app bar. The ``"__greeting__"``
+            sentinel requests a generated greeting.
+        appbar_menu_leading: Whether the app bar shows the drawer menu button.
+        bottom_appbar_visible: Whether the shared bottom app bar is visible.
+        fab_visible: Whether the shared floating action button is visible.
+        search_button_visible: Whether the bottom app bar's search action is
+            visible.
+        bottom_appbar_height: Height of the bottom app bar in logical pixels.
+    """
+
     appbar_title: str
     appbar_menu_leading: bool = False
     bottom_appbar_visible: bool = True

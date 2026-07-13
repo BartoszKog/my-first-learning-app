@@ -165,6 +165,7 @@ cython_debug/
 # python files for testing
 temp.py
 test_*.py
+!tests/test_*.py
 doc_example_for_test/
 
 # temporary files

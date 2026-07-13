@@ -11,4 +11,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]",
+    "ruff>=0.15.21",
 ]

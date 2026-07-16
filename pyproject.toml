@@ -1,10 +1,10 @@
 [project]
 name = "learning-app"
-version = "0.1.0"
+version = "1.0.2"
 description = "Word learning application built with Flet"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "flet>=0.85.3,<1.0",
+    "flet>=0.86.0,<1.0",
     "pandas==3.0.3",
 ]
 

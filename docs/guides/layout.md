@@ -87,8 +87,9 @@ adding control-specific conditions to the router.
 
 ## Layout metrics
 
-`LayoutMetrics` is one immutable snapshot calculated from the viewport,
-visible chrome, padding, breakpoints, and platform.
+`LayoutMetrics` from `ui/layout_metrics.py` is one immutable
+snapshot calculated from the viewport, visible chrome, padding, breakpoints,
+and platform.
 
 | Field | Meaning | Current consumers |
 | --- | --- | --- |
@@ -123,8 +124,9 @@ Calling `self.update()` before mounting or after removal can fail. A
 ### Recalculating shared widths in each screen
 
 Do not repeat viewport ratios in the router or individual controls. Shared
-dimensions belong in `layout_tokens.py` and `LayoutMetrics`; the screen only
-chooses the relevant metric and applies it to its own children.
+dimensions belong in `ui/layout_tokens.py` and `LayoutMetrics`;
+the screen only chooses the relevant metric and applies it to its own
+children.
 
 For generated contracts, see the
 [Layout host API](../reference/layout_host.md),

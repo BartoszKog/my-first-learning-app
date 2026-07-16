@@ -14,8 +14,9 @@ flowchart TD
     Route -->|No| Runtime[AppSession only for app-wide runtime services]
 ```
 
-`BodyRegistry` is a separate, narrowly scoped exception for sharing Home and
-Import/Export tile bodies with Search. It is not a general state store.
+`BodyRegistry` in `ui/body_registry.py` is a separate, narrowly
+scoped exception for sharing Home and Import/Export tile bodies with Search.
+It is not a general state store.
 
 ## Local screen state
 
@@ -63,8 +64,8 @@ an incomplete route through its configured fallback.
 
 ## Application runtime services
 
-`AppSession` owns process-wide UI objects and interaction state that should
-exist once while the application is running.
+`AppSession` in `ui/app_session.py` owns process-wide UI objects
+and interaction state that should exist once while the application is running.
 
 ### Shared page and file picker
 
@@ -100,8 +101,8 @@ Do not put these values in `AppSession`:
 
 ## Persisted preferences
 
-Use Flet `SharedPreferences` for small settings that should survive an
-application restart:
+Use Flet `SharedPreferences` via `ui/preferences.py` for small
+settings that should survive an application restart:
 
 ```python
 from learning_app.ui.preferences import get_shared_preferences
@@ -116,10 +117,11 @@ data and temporary controls out of this store.
 
 ## Where `BodyRegistry` fits
 
-`BodyRegistry` stores only the active Home and Import/Export
-`TilesContainer` instances so Search can filter the same controls the user was
-already viewing. It should not hold preferences, route parameters, form state,
-or general domain data. See [Body registry](../concepts/body-registry.md).
+`BodyRegistry` in `ui/body_registry.py` stores only the active
+Home and Import/Export `TilesContainer` instances so Search can filter the
+same controls the user was already viewing. It should not hold preferences,
+route parameters, form state, or general domain data. See
+[Body registry](../concepts/body-registry.md).
 
 For generated contracts, see the
 [App session API](../reference/app_session.md),

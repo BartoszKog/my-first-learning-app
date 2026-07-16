@@ -5,9 +5,9 @@ The registry describes each route; the router executes that description.
 
 ## Registry responsibility
 
-`route_registry.py` is the source of truth for available screens.
-`ROUTE_REGISTRY` keeps route-specific decisions out of buttons, drawer code,
-and router conditionals.
+`ui/route_registry.py` is the source of truth for available
+screens. `ROUTE_REGISTRY` keeps route-specific decisions out of buttons,
+drawer code, and router conditionals.
 
 A `RouteDef` connects a path to:
 
@@ -40,7 +40,7 @@ new drawer route therefore does not require a separate path-to-drawer mapping.
 
 ## Router responsibility
 
-`router.py`:
+`ui/router.py`:
 
 - responds to Flet route and view-pop events,
 - resolves the matching `RouteDef`,
@@ -74,14 +74,15 @@ return build_view(wrapped_controls, route_def)
 
 The helper names in this example describe the flow rather than form a public
 API. The real implementation keeps wrapper and view construction private to
-`router.py`.
+`ui/router.py`.
 
 ## Why screens use navigation helpers
 
 Screens should import `navigate_to()`, `push_view()`, `go_back()`, and
-`go_search()` from `navigation.py`, not internal router functions. The helper
-module provides a small stable boundary and lets the router change its stack,
-normalization, or update details without changing every screen.
+`go_search()` from `ui/navigation.py`, not internal router
+functions. The helper module provides a small stable boundary and lets the
+router change its stack, normalization, or update details without changing
+every screen.
 
 For a practical registration checklist, see
 [Adding a screen](../guides/adding-a-screen.md). For symbol-level details, see

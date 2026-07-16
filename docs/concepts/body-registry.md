@@ -1,5 +1,7 @@
 # Body registry
 
+Source: `ui/body_registry.py`
+
 Home and Import/Export each own a `TilesContainer`. Search should filter the
 same container the user was already viewing: constructing a second copy would
 duplicate controls and could show state different from the source screen.
@@ -31,6 +33,11 @@ The complete flow is:
 ```text
 TilesContainer → BodyRegistry.set_home() → go_search(mode="home") → SearchScreen
 ```
+
+Search is a Deep route: it reuses the same tile body, without shared Shell
+chrome.
+
+![Search filtering the Home tile body](../assets/architecture/search-screen.png){ .docs-screenshot-sm }
 
 ## Import/Export flow
 

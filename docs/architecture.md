@@ -21,7 +21,8 @@ flowchart TD
 
 The flow is:
 
-1. A screen or drawer calls a public helper from `navigation.py`.
+1. A screen or drawer calls a public helper from
+   `ui/navigation.py`.
 2. The router resolves the matching `RouteDef` in `ROUTE_REGISTRY`.
 3. The route's build factory returns raw screen controls.
 4. The router applies the configured body wrapper and, for Shell routes,
@@ -43,11 +44,17 @@ See [Routing](concepts/routing.md) for route resolution and
 | `app.py` | Creates the page and application-level services. |
 | `ui/navigation.py` | Exposes the supported navigation operations. |
 | `ui/route_paths.py` | Defines reusable route path constants. |
+| `ui/route_url.py` | Parses, builds, and compares route URLs with query parameters. |
 | `ui/route_registry.py` | Declares routes and their factories, layout, chrome, drawer, and fallback metadata. |
 | `ui/router.py` | Builds and restores the view stack and dispatches layout updates. |
 | `ui/layout_host.py` | Wraps route bodies with the required sizing and safe-area behavior. |
 | `ui/chrome_config.py` | Configures shared Shell chrome per route. |
 | `ui/layout_metrics.py` | Computes reusable responsive dimensions. |
+| `ui/layout_tokens.py` | Shared layout ratios and sizing constants used by metrics. |
+| `ui/routable_screen.py` | `apply_layout` protocol and active-view lookup for responsive screens. |
+| `ui/body_registry.py` | Shared Home and export `TilesContainer` accessors for Search. |
+| `ui/app_session.py` | In-memory session bag for app-wide runtime UI services. |
+| `ui/preferences.py` | `SharedPreferences` factory for durable settings. |
 | `ui/screens/` | Contains route-specific controls and behavior. |
 
 ## Two navigation roles { #two-navigation-roles }
@@ -77,6 +84,11 @@ button, and search button. A route does not need to display every element.
 Home, Import/Export, Settings, and Info are Shell routes.
 
 ![Shell screen with shared application chrome](assets/architecture/shell-chrome.png){ .docs-screenshot }
+
+The drawer lists Shell destinations registered with `drawer_label` /
+`drawer_icon`:
+
+![Shell navigation drawer open](assets/architecture/shell-drawer.png){ .docs-screenshot-sm }
 
 ### Deep: a focused task
 

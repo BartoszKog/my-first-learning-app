@@ -1,8 +1,8 @@
 # Navigation
 
-Application code should use helpers from `learning_app/ui/navigation.py`
+Application code should use helpers from `ui/navigation.py`
 instead of manipulating `page.views` directly. Import route constants from
-`route_paths.py`.
+`ui/route_paths.py`.
 
 Choose the helper from the navigation intent:
 
@@ -115,6 +115,8 @@ Supported modes are `"home"` and `"export"`:
 ```python
 go_search(page, mode="export")
 ```
+
+![Search filtering shared tile body](../assets/architecture/search-screen.png){ .docs-screenshot-sm }
 
 Search obtains that source through the
 [body registry](../concepts/body-registry.md). If the selected

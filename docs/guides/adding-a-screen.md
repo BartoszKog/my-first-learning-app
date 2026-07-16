@@ -1,6 +1,6 @@
 # Adding a screen
 
-Use `learning_app/ui/screens/_screen_template.py` as the implementation
+Use `ui/screens/_screen_template.py` as the implementation
 starting point. Before copying it, decide what role the new screen has.
 
 ## Decide: Shell or Deep?
@@ -19,7 +19,7 @@ through the public helpers.
 
 ## 1. Define the path
 
-Add a constant to `learning_app/ui/route_paths.py`:
+Add a constant to `ui/route_paths.py`:
 
 ```python
 MY_SCREEN_ROUTE = "/my-screen"
@@ -31,7 +31,7 @@ See the [route paths API](../reference/route_paths.md).
 
 ## 2. Create the screen control
 
-Place the control in `learning_app/ui/screens/`. Keeping UI construction in a
+Place the control in `ui/screens/`. Keeping UI construction in a
 screen class separates screen behavior from route lookup and view-stack
 management.
 
@@ -79,9 +79,9 @@ See the [Layout guide](layout.md) for the resize lifecycle and the
 
 ## 3. Add a build factory
 
-Build factories in `route_registry.py` receive the page and decoded query
-parameters. The factory isolates how the route creates its screen, so the
-router does not need screen-specific constructors.
+Build factories in `ui/route_registry.py` receive the page and
+decoded query parameters. The factory isolates how the route creates its
+screen, so the router does not need screen-specific constructors.
 
 ```python
 def _build_my_screen_controls(
@@ -102,7 +102,8 @@ the router builds the configured fallback route.
 
 ## 4. Register the route
 
-Add a `RouteDef` to `ROUTE_REGISTRY`. This is the single place that connects a
+Add a `RouteDef` to `ROUTE_REGISTRY` in
+`ui/route_registry.py`. This is the single place that connects a
 path with its construction, navigation role, wrapper, layout behavior, chrome,
 and optional drawer metadata.
 
@@ -121,7 +122,7 @@ RouteDef(
 
 ### Required fields
 
-- `path` — the constant defined in `route_paths.py`.
+- `path` — the constant defined in `ui/route_paths.py`.
 - `kind` — `RouteKind.SHELL` or `RouteKind.DEEP`.
 - `body_wrapper` — the outer body container selected by the router.
 - `layout_kind` — the resize-dispatch strategy.
@@ -172,7 +173,7 @@ and safe area rather than resize dispatch. See
 ## 5. Configure Shell chrome
 
 For a Shell route, add its `ShellChromeConfig` to `SHELL_CHROME` in
-`chrome_config.py`:
+`ui/chrome_config.py`:
 
 ```python
 MY_SCREEN_ROUTE: ShellChromeConfig(

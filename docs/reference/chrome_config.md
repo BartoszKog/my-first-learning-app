@@ -1,5 +1,7 @@
 # Chrome Configuration
 
+Source: `ui/chrome_config.py`
+
 Configuration objects and route mappings for shared app bars, navigation
 drawers, and other shell chrome. See
 [Chrome and wrappers](../concepts/chrome-and-wrappers.md).

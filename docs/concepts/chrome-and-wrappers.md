@@ -19,9 +19,13 @@ inside `ft.View.controls`; it contains the screen body.
 
 ## Shell chrome
 
-`chrome_config.py` contains the per-route `SHELL_CHROME` configuration. It
-controls the AppBar title and menu button, bottom bar, floating action button,
-and search button. Deep routes have no shared chrome.
+`ui/chrome_config.py` contains the per-route `SHELL_CHROME`
+configuration. It controls the AppBar title and menu button, bottom bar,
+floating action button, and search button. Deep routes have no shared chrome.
+
+A typical Shell route such as Home shows the full chrome around the body:
+
+![Shell screen with shared application chrome](../assets/architecture/shell-chrome.png){ .docs-screenshot }
 
 Settings demonstrates reduced Shell chrome: it retains the AppBar while
 hiding the bottom bar, search button, and floating action button.
@@ -46,9 +50,9 @@ the Shell and Deep screen forms.
 
 ## Body wrappers
 
-Wrappers in `layout_host.py` centralize sizing, padding, and safe-area behavior.
-The router chooses one from `RouteDef.body_wrapper`; screen factories return
-only their raw controls.
+Wrappers in `ui/layout_host.py` centralize sizing, padding, and
+safe-area behavior. The router chooses one from `RouteDef.body_wrapper`;
+screen factories return only their raw controls.
 
 | Wrapper | Helper | Typical routes |
 | --- | --- | --- |

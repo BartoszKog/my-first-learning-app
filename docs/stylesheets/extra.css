@@ -218,6 +218,13 @@ pre code {
   margin: 1.5rem auto;
 }
 
+.docs-screenshot-sm {
+  max-width: 500px;
+  width: 55%;
+  display: block;
+  margin: 1.5rem auto;
+}
+
 .md-typeset .mermaid {
   display: flex;
   justify-content: center;

@@ -5,22 +5,32 @@ routing layer. Read [Architecture](../architecture.md) and the
 [Guides](../guides/adding-a-screen.md) first; use this tab while implementing
 to confirm types, parameters, and return values.
 
-## Module map
+## Routing & navigation
 
-| Module | Purpose | Use when | Related docs |
-| --- | --- | --- | --- |
-| [Route paths](route_paths.md) | Canonical `"/…"` constants for every route. | Declaring or comparing paths without string typos. | [Adding a screen](../guides/adding-a-screen.md) |
-| [Route URLs](route_url.md) | Parse, build, and compare route URLs with query params. | Encoding `file_name` or `mode` in navigation calls. | [Navigation guide](../guides/navigation.md) |
-| [Route registry](route_registry.md) | `RouteDef` entries, enums, drawer builder, `get_route`. | Registering a route or inspecting registry metadata. | [Routing concept](../concepts/routing.md) |
-| [Navigation](navigation.md) | `navigate_to`, `push_view`, `go_back`, `go_search`. | Moving between routes from screen and control code. | [Navigation guide](../guides/navigation.md) |
-| [Routable screens](routable_screen.md) | `apply_layout` protocol and active-view lookup. | Implementing responsive shell or deep controls. | [Layout guide](../guides/layout.md) |
-| [Chrome configuration](chrome_config.md) | `ShellChromeConfig` and per-route chrome map. | Tuning app bar, FAB, or bottom bar for a shell route. | [Chrome and wrappers](../concepts/chrome-and-wrappers.md) |
-| [Layout host](layout_host.md) | Body-wrapper builders and width sync helpers. | Choosing or extending `BodyWrapperKind` hosts. | [Chrome and wrappers](../concepts/chrome-and-wrappers.md) |
-| [Layout metrics](layout_metrics.md) | `LayoutMetrics`, store, and field-width helpers. | Reading breakpoints and computed widths in `apply_layout`. | [Layout guide](../guides/layout.md) |
-| [Body registry](body_registry.md) | Shared home and export `TilesContainer` accessors. | Search, export, or navigation that reuses tile bodies. | [Body registry concept](../concepts/body-registry.md) |
-| [App session](app_session.md) | In-memory session bag for multi-step workflows. | Holding transient state across views in one run. | [State and persistence](../guides/state-and-persistence.md) |
-| [Preferences](preferences.md) | `SharedPreferences` factory for durable settings. | Reading or writing user settings outside a screen instance. | [State and persistence](../guides/state-and-persistence.md) |
-| [Router](router.md) | Route-change handlers, view construction, layout dispatch. | Wiring `app.py` or debugging stack replacement and push. | [Routing concept](../concepts/routing.md) |
+| Module | Source | Purpose | Use when | Related docs |
+| --- | --- | --- | --- | --- |
+| [Route paths](route_paths.md) | `ui/route_paths.py` | Canonical `"/…"` constants for every route. | Declaring or comparing paths without string typos. | [Adding a screen](../guides/adding-a-screen.md) |
+| [Route URLs](route_url.md) | `ui/route_url.py` | Parse, build, and compare route URLs with query params. | Encoding `file_name` or `mode` in navigation calls. | [Navigation guide](../guides/navigation.md) |
+| [Route registry](route_registry.md) | `ui/route_registry.py` | `RouteDef` entries, enums, drawer builder, `get_route`. | Registering a route or inspecting registry metadata. | [Routing concept](../concepts/routing.md) |
+| [Navigation](navigation.md) | `ui/navigation.py` | `navigate_to`, `push_view`, `go_back`, `go_search`. | Moving between routes from screen and control code. | [Navigation guide](../guides/navigation.md) |
+| [Router](router.md) | `ui/router.py` | Route-change handlers, view construction, layout dispatch. | Wiring `app.py` or debugging stack replacement and push. | [Routing concept](../concepts/routing.md) |
+
+## Layout & chrome
+
+| Module | Source | Purpose | Use when | Related docs |
+| --- | --- | --- | --- | --- |
+| [Routable screens](routable_screen.md) | `ui/routable_screen.py` | `apply_layout` protocol and active-view lookup. | Implementing responsive shell or deep controls. | [Layout guide](../guides/layout.md) |
+| [Chrome configuration](chrome_config.md) | `ui/chrome_config.py` | `ShellChromeConfig` and per-route chrome map. | Tuning app bar, FAB, or bottom bar for a shell route. | [Chrome and wrappers](../concepts/chrome-and-wrappers.md) |
+| [Layout host](layout_host.md) | `ui/layout_host.py` | Body-wrapper builders and width sync helpers. | Choosing or extending `BodyWrapperKind` hosts. | [Chrome and wrappers](../concepts/chrome-and-wrappers.md) |
+| [Layout metrics](layout_metrics.md) | `ui/layout_metrics.py` | `LayoutMetrics`, store, and field-width helpers. | Reading breakpoints and computed widths in `apply_layout`. | [Layout guide](../guides/layout.md) |
+
+## Shared state
+
+| Module | Source | Purpose | Use when | Related docs |
+| --- | --- | --- | --- | --- |
+| [Body registry](body_registry.md) | `ui/body_registry.py` | Shared home and export `TilesContainer` accessors. | Search, export, or navigation that reuses tile bodies. | [Body registry concept](../concepts/body-registry.md) |
+| [App session](app_session.md) | `ui/app_session.py` | In-memory session bag for multi-step workflows. | Holding transient state across views in one run. | [State and persistence](../guides/state-and-persistence.md) |
+| [Preferences](preferences.md) | `ui/preferences.py` | `SharedPreferences` factory for durable settings. | Reading or writing user settings outside a screen instance. | [State and persistence](../guides/state-and-persistence.md) |
 
 ## Suggested order for new contributors
 

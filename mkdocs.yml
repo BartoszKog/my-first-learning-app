@@ -6,7 +6,7 @@ repo_url: https://github.com/BartoszKog/my-first-learning-app
 repo_name: BartoszKog/my-first-learning-app
 edit_uri: edit/main/docs/
 
-copyright: Copyright &copy; 2026 BartoszKog
+copyright: Copyright &copy; 2026 BartoszKog and contributors
 
 theme:
   name: material
@@ -103,15 +103,18 @@ nav:
       - Body registry: concepts/body-registry.md
   - API Reference:
       - Overview: reference/index.md
-      - Route paths: reference/route_paths.md
-      - Route URLs: reference/route_url.md
-      - Route registry: reference/route_registry.md
-      - Navigation API: reference/navigation.md
-      - Routable screens: reference/routable_screen.md
-      - Chrome configuration: reference/chrome_config.md
-      - Layout host: reference/layout_host.md
-      - Layout metrics: reference/layout_metrics.md
-      - Body registry API: reference/body_registry.md
-      - App session: reference/app_session.md
-      - Preferences: reference/preferences.md
-      - Router: reference/router.md
+      - Routing & navigation:
+          - Route paths: reference/route_paths.md
+          - Route URLs: reference/route_url.md
+          - Route registry: reference/route_registry.md
+          - Navigation API: reference/navigation.md
+          - Router: reference/router.md
+      - Layout & chrome:
+          - Routable screens: reference/routable_screen.md
+          - Chrome configuration: reference/chrome_config.md
+          - Layout host: reference/layout_host.md
+          - Layout metrics: reference/layout_metrics.md
+      - Shared state:
+          - Body registry API: reference/body_registry.md
+          - App session: reference/app_session.md
+          - Preferences: reference/preferences.md

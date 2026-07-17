@@ -93,6 +93,9 @@ class ContentTile(ft.Card):
             return
 
         delate_set(self.file_name, file_not_exist)
+        from learning_app.ui.router import remove_views_for_set_file
+
+        remove_views_for_set_file(e.page, self.file_name)
         self.parent_container.refresh_content()
         e.page.update()
 

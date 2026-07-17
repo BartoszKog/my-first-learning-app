@@ -356,20 +356,27 @@ async def reset_to_route(page: ft.Page, full_route: str):
 
     Unknown paths resolve to the home route. The operation rebuilds the target
     view, updates the browser/page route, reapplies the theme, and refreshes the
-    page.
+    page. When a deep-route factory falls back (for example a missing set file),
+    the fallback view route is pushed so the URL stays consistent.
 
     Args:
         page: Page whose view stack should be replaced.
         full_route: Route path with optional encoded query parameters.
     """
-    full_route = _normalize_full_route(full_route)
+    requested_route = _normalize_full_route(full_route)
 
     LayoutMetricsStore.refresh(page)
-    _update_drawer_selection(full_route)
+    view = _build_route_view(requested_route, page)
+    resolved_route = view.route or HOME_ROUTE
+    fell_back = not routes_match(resolved_route, requested_route)
+
+    _update_drawer_selection(resolved_route)
     _detach_shared_chrome_from_views(page)
-    page.views[:] = [_build_route_view(full_route, page)]
-    await page.push_route(full_route)
+    page.views[:] = [view]
+    await page.push_route(resolved_route)
     AppTheme.apply_to_page(page)
+    if fell_back and route_params(requested_route).get("file"):
+        _notify_missing_set(page)
     page.update()
 
 
@@ -377,7 +384,9 @@ async def push_route_view(page: ft.Page, full_route: str):
     """Push a normalized deep route or reset to a shell route.
 
     An already-active complete route is not duplicated. Unknown routes and
-    registered shell routes are handled as stack replacements.
+    registered shell routes are handled as stack replacements. When the deep
+    factory falls back (missing ``file`` or deleted set CSV), the stack is
+    reset to the fallback route instead of pushing a mismatched URL.
 
     Args:
         page: Page whose view stack should be updated.
@@ -396,9 +405,67 @@ async def push_route_view(page: ft.Page, full_route: str):
         return
 
     LayoutMetricsStore.refresh(page)
-    page.views.append(_build_route_view(full_route, page))
+    view = _build_route_view(full_route, page)
+    if not routes_match(view.route, full_route):
+        # Factory fell back (missing file, etc.): replace stack and sync URL.
+        resolved_route = view.route or HOME_ROUTE
+        _update_drawer_selection(resolved_route)
+        _detach_shared_chrome_from_views(page)
+        page.views[:] = [view]
+        await page.push_route(resolved_route)
+        AppTheme.apply_to_page(page)
+        if route_params(full_route).get("file"):
+            _notify_missing_set(page)
+        page.update()
+        return
+
+    page.views.append(view)
     await page.push_route(full_route)
     AppTheme.apply_to_page(page)
+    page.update()
+
+
+def _notify_missing_set(page: ft.Page) -> None:
+    page.show_dialog(ft.SnackBar(ft.Text("This set no longer exists.")))
+
+
+def _view_refers_to_set_file(view_route: str | None, file_name: str) -> bool:
+    import os
+
+    file_param = route_params(view_route).get("file")
+    if not file_param:
+        return False
+    return os.path.basename(file_param) == os.path.basename(file_name)
+
+
+def remove_views_for_set_file(page: ft.Page, file_name: str) -> None:
+    """Drop stacked views that reference a deleted set and resync the top route.
+
+    Args:
+        page: Page whose view stack may contain learn/edit/session views.
+        file_name: Set basename or path that was removed.
+    """
+    if not page.views:
+        return
+
+    kept = [view for view in page.views if not _view_refers_to_set_file(view.route, file_name)]
+    if len(kept) == len(page.views):
+        return
+
+    if not kept:
+        page.run_task(reset_to_route, page, HOME_ROUTE)
+        return
+
+    page.views[:] = kept
+    top_route = kept[-1].route or HOME_ROUTE
+    page.run_task(_resync_after_view_prune, page, top_route)
+
+
+async def _resync_after_view_prune(page: ft.Page, full_route: str) -> None:
+    _restore_active_view_state(page, full_route)
+    AppTheme.apply_to_page(page)
+    if not routes_match(page.route, full_route):
+        await page.push_route(full_route)
     page.update()
 
 

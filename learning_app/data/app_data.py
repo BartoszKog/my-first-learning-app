@@ -59,6 +59,15 @@ def load_set(file_name: str) -> pd.DataFrame:
     return pd.read_csv(full_path, index_col=0)
 
 
+def set_file_exists(file_name: str) -> bool:
+    """Return whether the set CSV exists on disk.
+
+    Args:
+        file_name: Set basename or path resolved by ``FilePathManager``.
+    """
+    return os.path.exists(FilePathManager.get_csv_path(file_name))
+
+
 def sanitize_file_name(file_name: str, kind: str) -> str:
     """Build a safe set basename with the given kind suffix.
 

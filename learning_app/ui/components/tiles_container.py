@@ -160,6 +160,10 @@ class TilesContainer(ft.Container):
 
         for file_name in files_to_remove:
             delate_set(file_name, file_not_exist=True)
+            if page is not None:
+                from learning_app.ui.router import remove_views_for_set_file
+
+                remove_views_for_set_file(page, file_name)
 
         if file_has_been_removed:
             files_and_titles = get_file_names_and_titles()

@@ -33,9 +33,10 @@ The flow is:
 5. The result is added to the page as an `ft.View`.
 
 If a build factory returns `None`, the router builds the route's
-`fallback_path`, or Home when no fallback is configured. This keeps incomplete
-routes, such as an edit screen without its required file parameter, out of the
-view stack.
+`fallback_path`, or Home when no fallback is configured, and syncs the page
+URL to that fallback. Factories for learn, session, and existing-set edit also
+return `None` when the set CSV is missing (for example after delete + browser
+Back). This keeps incomplete or stale deep links out of the view stack.
 
 ## Two navigation roles { #two-navigation-roles }
 

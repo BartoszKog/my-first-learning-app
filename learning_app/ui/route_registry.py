@@ -89,6 +89,12 @@ def _content_width(page: ft.Page) -> float:
     return LayoutMetricsStore.refresh(page).form_width
 
 
+def _set_csv_exists(file_name: str) -> bool:
+    from learning_app.data.app_data import set_file_exists
+
+    return set_file_exists(file_name)
+
+
 def _build_learn_control(page: ft.Page, file_name: str, *, session: bool = False):
     from learning_app.data.app_data import get_kind_of_file_and_validate
     from learning_app.ui.components.word_definition_field import WordDefinitionField
@@ -140,6 +146,9 @@ def _build_edit_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.C
     file_name = params.get("file")
     if not file_name:
         return None
+    # Create-set flow passes title and does not require an existing CSV yet.
+    if params.get("title") is None and not _set_csv_exists(file_name):
+        return None
     edit = EditSetMenu(
         file_name,
         title=params.get("title"),
@@ -151,7 +160,7 @@ def _build_edit_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.C
 
 def _build_learn_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
     file_name = params.get("file")
-    if not file_name:
+    if not file_name or not _set_csv_exists(file_name):
         return None
     learn = _build_learn_control(page, file_name)
     return [learn]
@@ -159,7 +168,7 @@ def _build_learn_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.
 
 def _build_learn_session_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
     file_name = params.get("file")
-    if not file_name:
+    if not file_name or not _set_csv_exists(file_name):
         return None
     session = _build_learn_control(page, file_name, session=True)
     return [session]

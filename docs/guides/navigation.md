@@ -93,10 +93,13 @@ def _build_edit_set_controls(
     title = params.get("title")
 ```
 
-If required data is absent, the factory can return `None`. The router then
-builds the route configured in `RouteDef.fallback_path`; when no fallback is
-configured, it uses Home. This prevents an incomplete Deep screen from being
-shown with missing input.
+If required data is absent, or a set CSV referenced by ``file`` no longer
+exists on disk, the factory can return `None`. The router then builds the
+route configured in `RouteDef.fallback_path` (usually Home), pushes that
+fallback URL so browser history stays consistent, and may show a short
+SnackBar when the missing resource was a deleted set. This prevents crashes
+from stale deep links after delete, and avoids showing an incomplete Deep
+screen with missing input.
 
 ```python
 def _build_edit_set_controls(

@@ -433,10 +433,19 @@ async def initialize_routes(page: ft.Page):
     await reset_to_route(page, HOME_ROUTE)
 
 
+def _index_of_route_in_views(page: ft.Page, full_route: str) -> int | None:
+    for index, view in enumerate(page.views):
+        if routes_match(view.route, full_route):
+            return index
+    return None
+
+
 def handle_route_change(e: ft.RouteChangeEvent):
     """Synchronize or schedule navigation after a Flet route change.
 
-    Active routes are refreshed in place. Drawer routes replace the stack, and
+    Active routes are refreshed in place. Routes already present below the top
+    of the view stack (typical browser back/forward) pop down to that view
+    instead of pushing a duplicate. Drawer routes replace the stack, and new
     deep routes are pushed above the active shell view.
 
     Args:
@@ -450,6 +459,15 @@ def handle_route_change(e: ft.RouteChangeEvent):
         _update_drawer_selection(full_route)
         _sync_chrome_for_route(full_route, page)
         _apply_layout_for_route(page, path)
+        AppTheme.apply_to_page(page)
+        page.update()
+        return
+
+    # Browser history moved to a route that is already under the top view.
+    existing_index = _index_of_route_in_views(page, full_route)
+    if existing_index is not None:
+        del page.views[existing_index + 1 :]
+        _restore_active_view_state(page, full_route)
         AppTheme.apply_to_page(page)
         page.update()
         return

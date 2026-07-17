@@ -52,13 +52,21 @@ def build_route(path: str, **params: object) -> str:
 
 
 def routes_match(left: str | None, right: str | None) -> bool:
-    """Compare two complete route strings without normalization.
+    """Compare two routes by path and decoded query parameters.
+
+    Raw string equality is accepted first. Otherwise the paths and decoded
+    query maps are compared so browser history URLs that differ only in
+    percent-encoding (e.g. ``C%3A`` vs ``C:``) still match stacked views.
 
     Args:
         left: First route, with ``None`` treated as an empty string.
         right: Second route, with ``None`` treated as an empty string.
 
     Returns:
-        ``True`` when both complete route strings are equal.
+        ``True`` when both routes refer to the same path and parameters.
     """
-    return (left or "") == (right or "")
+    left_route = left or ""
+    right_route = right or ""
+    if left_route == right_route:
+        return True
+    return route_path(left_route) == route_path(right_route) and route_params(left_route) == route_params(right_route)

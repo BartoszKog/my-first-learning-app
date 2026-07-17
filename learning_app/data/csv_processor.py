@@ -176,8 +176,8 @@ class CSVProcessor:
         """Import a CSV that requires warning-driven cleanup before save.
 
         Applies repairs implied by ``warnings`` (index handling, dropping
-        sparse rows, discarding broken statistics, fixing name suffixes), then
-        registers and saves the set.
+        sparse rows, discarding broken statistics) and normalizes the stored
+        basename suffix from ``data_type``, then registers and saves the set.
 
         Args:
             file_path: Absolute path of the picked source file.
@@ -248,19 +248,13 @@ class CSVProcessor:
                     df = CSVProcessor.__keep_necessary_columns(df, data_type)
                     df = CSVProcessor.__add_statistics_columns(df)
 
-        # preparing file name
-        warnings_file_name = [
-            Warnings.FILE_NAME_PATTERN_WORDS.value,
-            Warnings.FILE_NAME_PATTERN_DEFINITIONS.value,
-        ]
-
-        unappropriated_file_name = any(warning in warnings for warning in warnings_file_name)
-
-        if not unappropriated_file_name:
+        # preparing file name (suffix is an internal convention; repair silently)
+        expected_suffix = f"_{data_type}.csv"
+        if file_name.endswith(expected_suffix):
             file_name = CSVProcessor.__create_appropriate_file_name(file_name)
         else:
             file_name = CSVProcessor.__sanitize_file_name(file_name, "")
-            file_name += f"_{data_type}.csv"
+            file_name += expected_suffix
             file_name = CSVProcessor.__create_appropriate_file_name(file_name)
 
         # correct the index
@@ -271,11 +265,17 @@ class CSVProcessor:
         return information_after_processing
 
     @staticmethod
-    def validate_file(file_path: str) -> dict:
+    def validate_file(file_path: str, original_name: str | None = None) -> dict:
         """Validate a picked learning-set CSV before import.
 
         Args:
-            file_path: Absolute path to the candidate ``.csv`` file.
+            file_path: Absolute path to the candidate ``.csv`` file
+                (may be a temporary path when the picker has no filesystem
+                path, e.g. on web).
+            original_name: Display/basename from the file picker. Used for
+                title suggestion and suffix checks so temporary paths do not
+                leak random names into the UI. Defaults to
+                ``os.path.basename(file_path)``.
 
         Returns:
             Dict with ``errors``, ``warnings``, ``is_valid``,
@@ -289,6 +289,7 @@ class CSVProcessor:
         has_statistics = False
         name_suggestion = ""
         data_type = ""
+        name_source = os.path.basename(original_name) if original_name else os.path.basename(file_path)
 
         def validate_columns(expected_columns, df_columns, error_message):
             nonlocal requires_specific_actions
@@ -371,26 +372,18 @@ class CSVProcessor:
                 errors.append(Errors.NO_MATCHING_COLUMN_PATTERN.value)
                 is_valid = False
 
-            # Now we check if the file name matches the detected data type
+            # Suffix is an internal storage convention; mismatch only routes
+            # save through the repair path (no user-facing warning).
             if data_type:
-                if not file_path.endswith(expected_suffix):
-                    # Add a warning about file name mismatch
-                    if data_type == "words":
-                        warnings.append(Warnings.FILE_NAME_PATTERN_WORDS.value)
-                    else:  # data_type == "definitions"
-                        warnings.append(Warnings.FILE_NAME_PATTERN_DEFINITIONS.value)
+                if not name_source.endswith(expected_suffix):
                     requires_specific_actions = True
 
-                # Create a file name suggestion
-                if file_path.endswith("_words.csv") or file_path.endswith("_definitions.csv"):
-                    for suffix in ["_words.csv", "_definitions.csv"]:
-                        if file_path.endswith(suffix):
-                            name_suggestion = os.path.basename(file_path.split(suffix)[0])
-                            break
-                else:
-                    # If there is no standard suffix, use the file name without the extension
-                    base_name = os.path.basename(file_path)
-                    name_suggestion = base_name.rsplit(".", 1)[0]
+                # Suggest a title only when the original name already uses the
+                # app suffix (avoids temp basenames like tmpXXXX on web).
+                for suffix in ["_words.csv", "_definitions.csv"]:
+                    if name_source.endswith(suffix):
+                        name_suggestion = name_source[: -len(suffix)]
+                        break
 
         # Check for statistics columns
         if is_valid:

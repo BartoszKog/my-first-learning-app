@@ -50,8 +50,12 @@ place to hold CSV content.
 ```python
 from learning_app.data.csv_processor import CSVProcessor
 
-result = CSVProcessor.validate_file(file_path)
+result = CSVProcessor.validate_file(file_path, original_name=picked_file_name)
 ```
+
+Pass `original_name` (picker display name / basename) when the path may be a
+temporary file (web/mobile). Suffix checks and `name_suggestion` use that
+name, not the temp path.
 
 `validate_file` returns a dict:
 
@@ -63,7 +67,7 @@ result = CSVProcessor.validate_file(file_path)
 | `requires_specific_actions` | `True` when save must use the repair path |
 | `has_statistics` | `True` when all stats columns look usable |
 | `data_type` | `"words"` or `"definitions"` when detected |
-| `name_suggestion` | Suggested title stem from the file name |
+| `name_suggestion` | Title stem only when the original name ends in `_words.csv` or `_definitions.csv`; otherwise empty |
 
 ### Errors versus warnings
 
@@ -72,8 +76,11 @@ result = CSVProcessor.validate_file(file_path)
   empty content that cannot form a set, and similar hard failures.
 - **Warnings** allow import to continue but set
   `requires_specific_actions`: bad index column, unexpected extra columns,
-  file-name suffix mismatch, broken or inconsistent statistics, sparse rows
-  that should be dropped on save, and related issues.
+  broken or inconsistent statistics, sparse rows that should be dropped on
+  save, and related issues.
+- Missing `_words.csv` / `_definitions.csv` on the original name also sets
+  `requires_specific_actions` so save can allocate a correct basename, but
+  that is not surfaced as a user-facing warning.
 
 When `is_valid` is `False`, the UI shows the error list and does not open the
 title form. When valid with warnings, the UI still proceeds and surfaces the

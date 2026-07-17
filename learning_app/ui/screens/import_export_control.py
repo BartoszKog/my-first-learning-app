@@ -295,7 +295,10 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
                 )
                 return
 
-            validation_result = CSVProcessor.validate_file(resolved_path)
+            validation_result = CSVProcessor.validate_file(
+                resolved_path,
+                original_name=file.name,
+            )
 
             if validation_result["is_valid"]:
                 self.title_field.value = validation_result["name_suggestion"]

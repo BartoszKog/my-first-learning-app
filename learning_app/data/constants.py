@@ -47,8 +47,6 @@ class Warnings(Enum):
 
     UNNECESSARY_COLUMNS = "Unnecessary columns found."
     FIRST_COLUMN_NOT_INDEX = "The first column is not an index."
-    FILE_NAME_PATTERN_WORDS = "File name does not match the expected pattern for words file."
-    FILE_NAME_PATTERN_DEFINITIONS = "File name does not match the expected pattern for definitions file."
     COLUMN_NOT_BOOLEAN = "One or more statistics columns are not of type boolean."
     EMPTY_VALUES_STATISTICS = "The file contains empty values in statistics columns."
     COLUMN_NOT_INTEGER = "The 'correct_answers' column is not of type integer."

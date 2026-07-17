@@ -35,8 +35,9 @@ for export mode.
 
 `ContentTile` opens learn or edit via `push_view`, and offers menu actions such
 as reset progress (`set_default_progress`), delete (`delate_set`), and export
-through `AppSession.get_export_csv_picker()`. In export mode the tile is
-oriented toward picking a set to save out rather than full Home management.
+through `AppSession.get_export_csv_picker()` with `save_file(..., src_bytes=...)`.
+In export mode the tile is oriented toward picking a set to save out rather
+than full Home management.
 
 ```text
 files.csv → TilesContainer → ContentTile → learn / edit / delete / export

@@ -29,9 +29,11 @@ flowchart TD
 ```
 
 `ImportExportControl` picks a single `.csv` file with its **own**
-`FilePicker` (`csv_file_selector` on the screen), calls `validate_file`, and
-shows warnings or errors with `create_alert_dialog` from
-`ui/page_functions.py` (title + message, optional second action button for
+`FilePicker` (`csv_file_selector` on the screen) using `with_data=True` so the
+file contents are available even when `path` is `None`. In that case the
+control materializes `file.bytes` into a temporary file before calling
+`validate_file`. It then shows warnings or errors with `create_alert_dialog`
+from `ui/page_functions.py` (title + message, optional second action button for
 Yes/No flows such as keep-progress). On success it stores validation flags on
 the control and lets the user confirm title and subtitle before save. There is
 no separate API page for that helper — call it from screen code when you need
@@ -153,10 +155,13 @@ when the catalog is invalid rather than auto-repairing mid-import.
 ## Export
 
 Export tiles reuse the shared export `TilesContainer` from
-[Body registry](../concepts/body-registry.md). Choosing export on a tile opens
-`AppSession.get_export_csv_picker().save_file(...)` and writes the existing
-set CSV to the path the user picks. Export does not re-run
-`validate_file`; the file already lives under application storage.
+[Body registry](../concepts/body-registry.md). Choosing export on a tile reads
+the set CSV from application storage, then calls
+`AppSession.get_export_csv_picker().save_file(..., src_bytes=...)` so Flet
+writes or downloads the bytes (required on web and mobile; also used on
+desktop). A `SnackBar` confirms success; failures still use
+`create_alert_dialog`. Export does not re-run `validate_file`; the file
+already lives under application storage.
 
 ### Search on the Export tab
 

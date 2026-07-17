@@ -1,3 +1,7 @@
+import os
+import tempfile
+from pathlib import Path
+
 import flet as ft
 
 from learning_app.data.csv_processor import CSVProcessor
@@ -243,6 +247,22 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.__disable_all_import_controls()
         e.page.run_task(self.__pick_csv_file)
 
+    def __resolve_picked_csv_path(self, file) -> str | None:
+        """Return a filesystem path for validation/save.
+
+        When ``file.path`` is missing, ``file.bytes`` (from ``with_data=True``)
+        are written to a temporary file.
+        """
+        if file.path:
+            return file.path
+        if not file.bytes:
+            return None
+        suffix = Path(file.name).suffix or ".csv"
+        fd, temp_path = tempfile.mkstemp(suffix=suffix)
+        with os.fdopen(fd, "wb") as temp_file:
+            temp_file.write(file.bytes)
+        return temp_path
+
     async def __pick_csv_file(self):
         try:
             files = await self.csv_file_selector.pick_files(
@@ -250,28 +270,50 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
                 allowed_extensions=["csv"],
                 file_type=ft.FilePickerFileType.CUSTOM,
                 dialog_title="Select csv file to import",
+                with_data=True,
             )
-            if files and files[0].path:
-                file = files[0]
-                validation_result = CSVProcessor.validate_file(file.path)
 
-                if validation_result["is_valid"]:
-                    self.title_field.value = validation_result["name_suggestion"]
-                    self.subtitle_field.value = ""
-                    self.__make_layout_for_chosen_file(file.name, file.path)
-                    self.__set_validation_properties(validation_result)
-
-                    if validation_result["warnings"]:
-                        warning_title = "Warnings" if len(validation_result["warnings"]) > 1 else "Warning"
-                        create_alert_dialog(self.page, warning_title, "\n".join(validation_result["warnings"]))
+            if not files:
+                if self.__user_has_chosen_file():
+                    self.__make_layout_for_chosen_file()
                 else:
-                    if validation_result["errors"]:
-                        error_title = "Errors" if len(validation_result["errors"]) > 1 else "Error"
-                        create_alert_dialog(self.page, error_title, "\n".join(validation_result["errors"]))
-            elif self.__user_has_chosen_file():
-                self.__make_layout_for_chosen_file()
+                    self.__make_layout_before_chosen_file()
+                return
+
+            file = files[0]
+            resolved_path = self.__resolve_picked_csv_path(file)
+
+            if not resolved_path:
+                if self.__user_has_chosen_file():
+                    self.__make_layout_for_chosen_file()
+                else:
+                    self.__make_layout_before_chosen_file()
+                create_alert_dialog(
+                    self.page,
+                    "Error",
+                    "Could not read the selected file. Please try again.",
+                )
+                return
+
+            validation_result = CSVProcessor.validate_file(resolved_path)
+
+            if validation_result["is_valid"]:
+                self.title_field.value = validation_result["name_suggestion"]
+                self.subtitle_field.value = ""
+                self.__make_layout_for_chosen_file(file.name, resolved_path)
+                self.__set_validation_properties(validation_result)
+
+                if validation_result["warnings"]:
+                    warning_title = "Warnings" if len(validation_result["warnings"]) > 1 else "Warning"
+                    create_alert_dialog(self.page, warning_title, "\n".join(validation_result["warnings"]))
             else:
-                self.__make_layout_before_chosen_file()
+                if validation_result["errors"]:
+                    error_title = "Errors" if len(validation_result["errors"]) > 1 else "Error"
+                    create_alert_dialog(self.page, error_title, "\n".join(validation_result["errors"]))
+                if self.__user_has_chosen_file():
+                    self.__make_layout_for_chosen_file()
+                else:
+                    self.__make_layout_before_chosen_file()
         finally:
             self.__enable_all_import_controls()
 

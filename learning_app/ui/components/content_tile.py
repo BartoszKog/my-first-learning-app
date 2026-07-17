@@ -221,41 +221,30 @@ class ContentTile(ft.Card):
 
     async def _export_file(self, page):
         picker = AppSession.get_export_csv_picker()
-
-        is_windows = page.platform == ft.PagePlatform.WINDOWS
-
-        if is_windows:
-            destination_path = await picker.save_file(
-                dialog_title="Choose export location",
-                file_name=os.path.basename(self.file_name),
-                allowed_extensions=["csv"],
-                file_type=ft.FilePickerFileType.CUSTOM,
-            )
-            if destination_path and not destination_path.endswith(".csv"):
-                destination_path += ".csv"
-        else:
-            directory_path = await picker.get_directory_path(
-                dialog_title="Choose export directory",
-            )
-            if not directory_path:
-                return
-            destination_path = os.path.join(directory_path, os.path.basename(self.file_name))
-
-        if not destination_path:
-            return
+        file_name = os.path.basename(self.file_name)
+        if not file_name.endswith(".csv"):
+            file_name += ".csv"
 
         try:
             src_file_path = FilePathManager.get_csv_path(self.file_name)
             with open(src_file_path, "rb") as fsrc:
-                with open(destination_path, "wb") as fdst:
-                    fdst.write(fsrc.read())
+                src_bytes = fsrc.read()
 
-            create_alert_dialog(
-                page=page,
-                title="Export completed",
-                content=f"Successfully exported set '{self.title}' to:\n{destination_path}",
-                close_button_text="OK",
+            destination_path = await picker.save_file(
+                dialog_title="Choose export location",
+                file_name=file_name,
+                allowed_extensions=["csv"],
+                file_type=ft.FilePickerFileType.CUSTOM,
+                src_bytes=src_bytes,
             )
+            if not destination_path:
+                return
+
+            if page.web:
+                message = f"Successfully exported set '{self.title}'."
+            else:
+                message = f"Successfully exported set '{self.title}' to {destination_path}."
+            page.show_dialog(ft.SnackBar(ft.Text(message)))
         except Exception as ex:
             create_alert_dialog(
                 page=page,

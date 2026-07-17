@@ -15,6 +15,12 @@ from learning_app.ui.screens.word_list_menu import WordListMenu
 
 
 class WordDefinitionField(BaseWordField):
+    """Learn UI for a ``*_definitions.csv`` set (definition → word).
+
+    Shows the definition prompt and a single answer field, with progress and
+    the optional ``WordListMenu`` when ``session`` is ``False``.
+    """
+
     def __init__(self, file_name, page=None, width=300, session=False):
         super().__init__(file_name, page, session=session)
         if not session:

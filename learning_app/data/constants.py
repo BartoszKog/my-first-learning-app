@@ -1,7 +1,16 @@
+"""CSV schema enums, row limits, and import validation messages.
+
+Column enums define the expected headers for words sets, definitions sets,
+per-row learning statistics, and the ``files.csv`` catalog. ``Errors`` and
+``Warnings`` supply stable message text for ``CSVProcessor``.
+"""
+
 from enum import Enum
 
 
 class PartsOfSpeech(Enum):
+    """Content columns for a ``*_words.csv`` learning set."""
+
     VERB = "verb"
     PERSON = "person"
     THING = "thing"
@@ -10,11 +19,15 @@ class PartsOfSpeech(Enum):
 
 
 class WordDefinitions(Enum):
+    """Content columns for a ``*_definitions.csv`` learning set."""
+
     DEFINITION = "definition"
     WORD = "word"
 
 
 class StatsColumns(Enum):
+    """Per-row learning statistics stored on every set CSV."""
+
     CORRECT_ANSWERS = "correct_answers"
     GOOD_ANSWERS_IN_A_ROW = "good_answers_in_a_row"
     GOOD_ANSWER = "good_answer"
@@ -22,12 +35,16 @@ class StatsColumns(Enum):
 
 
 class FilesColumns(Enum):
+    """Columns of the set catalog ``files.csv``."""
+
     FILE_NAME = "file_name"
     TITLE = "title"
     SUBTITLE = "subtitle"
 
 
 class Warnings(Enum):
+    """Non-fatal import validation messages from ``CSVProcessor``."""
+
     UNNECESSARY_COLUMNS = "Unnecessary columns found."
     FIRST_COLUMN_NOT_INDEX = "The first column is not an index."
     FILE_NAME_PATTERN_WORDS = "File name does not match the expected pattern for words file."
@@ -40,11 +57,13 @@ class Warnings(Enum):
     INSUFFICIENT_NON_EMPTY_VALUES = "Some rows have insufficient non-empty values in typical columns."
 
 
-# constant value form maximum number of rows in set
 MAX_ROWS = 40
+"""Maximum number of content rows allowed in one learning set."""
 
 
 class Errors(Enum):
+    """Fatal import validation messages from ``CSVProcessor``."""
+
     NOT_A_CSV = "File is not a CSV."
     ERROR_LOADING_FILE = "Error loading file with pandas."
     FILE_NOT_FOUND = "File not found."

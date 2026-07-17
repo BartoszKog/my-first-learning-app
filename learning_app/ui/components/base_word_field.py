@@ -7,6 +7,18 @@ from learning_app.ui.page_functions import create_alert_dialog
 
 
 class BaseWordField(ft.Column):
+    """Shared learn menu and session loop over one ``AppData`` set.
+
+    Subclasses supply visible fields and buttons. This base owns starting and
+    stopping a session, checking answers, advancing the practice group, and
+    offering progress reset when every row is learned.
+
+    Args:
+        file_name: Set basename or path loaded into ``AppData``.
+        page: Application page used for navigation and dialogs.
+        session: ``False`` for the learn menu; ``True`` for an active session.
+    """
+
     def __init__(self, file_name, page=None, session=False):
         super().__init__()
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER

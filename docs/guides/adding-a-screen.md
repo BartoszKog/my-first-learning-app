@@ -10,11 +10,11 @@ starting point. Before copying it, decide what role the new screen has.
 - Choose **Deep** when the screen is a focused task opened from another view
   and closed with Back, Cancel, or Save.
 
-See [Two navigation roles](../architecture.md#two-navigation-roles) for the
+See [Two navigation roles](../architecture/routing-and-screens.md#two-navigation-roles) for the
 reason behind this distinction.
 
 The remaining work is usually: define a path, implement the control, create a
-factory, register a `RouteDef`, configure Shell chrome if needed, and navigate
+factory, configure Shell chrome if needed, register a `RouteDef`, and navigate
 through the public helpers.
 
 ## 1. Define the path
@@ -100,11 +100,35 @@ screens, navigation, and route registration.
 A factory may return `None` when required route data is missing. In that case
 the router builds the configured fallback route.
 
-## 4. Register the route
+## 4. Configure Shell chrome
+
+For a Shell route, add its `ShellChromeConfig` to `SHELL_CHROME` in
+`ui/chrome_config.py` **before** registering the route. Existing Shell
+`RouteDef` entries index that map (`chrome=SHELL_CHROME[…]`), and the router
+also looks up chrome by path in `SHELL_CHROME` at runtime:
+
+```python
+MY_SCREEN_ROUTE: ShellChromeConfig(
+    appbar_title="My screen",
+    appbar_menu_leading=True,
+    bottom_appbar_visible=False,
+    fab_visible=False,
+    search_button_visible=False,
+),
+```
+
+This keeps shared AppBar, bottom bar, FAB, and search visibility out of the
+screen's business logic. Deep routes need no entry here.
+The live controls themselves are registered once on `AppChrome` at startup —
+see [Chrome and wrappers](../concepts/chrome-and-wrappers.md#runtime-appchrome).
+APIs: [chrome configuration](../reference/chrome_config.md),
+[App chrome](../reference/app_chrome.md).
+
+## 5. Register the route
 
 Add a `RouteDef` to `ROUTE_REGISTRY` in
 `ui/route_registry.py`. This is the single place that connects a
-path with its construction, navigation role, wrapper, layout behavior, chrome,
+path with its construction, navigation role, wrapper, layout behavior,
 and optional drawer metadata.
 
 ```python
@@ -126,7 +150,10 @@ RouteDef(
 - `kind` — `RouteKind.SHELL` or `RouteKind.DEEP`.
 - `body_wrapper` — the outer body container selected by the router.
 - `layout_kind` — the resize-dispatch strategy.
-- `chrome` — a `ShellChromeConfig` for Shell, normally `None` for Deep.
+- `chrome` — pass `SHELL_CHROME[path]` for Shell (after step 4), or `None`
+  for Deep. Stored on the registry entry for consistency with existing routes;
+  **runtime** AppBar / bottom bar / FAB / search visibility comes from
+  `SHELL_CHROME[path]` in the router, not from reading `route_def.chrome`.
 - `build_factory` — the function that returns raw controls or `None`.
 
 ### Optional fields
@@ -170,25 +197,6 @@ Choose `body_wrapper` separately. It controls the outer container, padding,
 and safe area rather than resize dispatch. See
 [Chrome and wrappers](../concepts/chrome-and-wrappers.md).
 
-## 5. Configure Shell chrome
-
-For a Shell route, add its `ShellChromeConfig` to `SHELL_CHROME` in
-`ui/chrome_config.py`:
-
-```python
-MY_SCREEN_ROUTE: ShellChromeConfig(
-    appbar_title="My screen",
-    appbar_menu_leading=True,
-    bottom_appbar_visible=False,
-    fab_visible=False,
-    search_button_visible=False,
-),
-```
-
-This keeps shared AppBar, bottom bar, FAB, and search visibility out of the
-screen's business logic. Deep routes set `chrome=None` and need no entry.
-See the [chrome configuration API](../reference/chrome_config.md).
-
 ## 6. Navigate and verify
 
 Use `navigate_to()` for Shell and `push_view()` for Deep. These helpers express
@@ -204,3 +212,6 @@ Before considering the route complete, verify:
 - The layout updates after resizing.
 - AppBar, bottom bar, FAB, search, and safe-area behavior are correct.
 - Drawer label, icon, selection, and divider are correct when configured.
+
+Existing routes and owning classes are listed in
+[Routing and screens](../architecture/routing-and-screens.md#screen-map).

@@ -14,6 +14,17 @@ from learning_app.ui.app_session import AppSession
 
 
 class TilesContainer(ft.Container):
+    """Scrollable list of learning-set tiles for Home or export mode.
+
+    Loads catalog entries, builds ``ContentTile`` children, and supports
+    search filtering used by ``SearchControl``. Register Home/export instances
+    with ``BodyRegistry`` when the container is shared across routes.
+
+    Args:
+        page: Optional page used to refresh layout metrics on construction.
+        export_mode: When ``True``, tiles use export-oriented actions.
+    """
+
     SCROLL_PIXELS_PER_TILE = 95
     SCROLL_OFFSET_CORRECTION = -100
 

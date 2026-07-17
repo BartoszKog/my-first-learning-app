@@ -11,7 +11,7 @@ Choose the helper from the navigation intent:
 - Close the active Deep task → `go_back()`.
 - Search the active tile source → `go_search()`.
 
-See [Two navigation roles](../architecture.md#two-navigation-roles) if the
+See [Two navigation roles](../architecture/routing-and-screens.md#two-navigation-roles) if the
 Shell/Deep distinction is not yet clear.
 
 ## Open a Shell screen
@@ -51,6 +51,21 @@ push_view(
     title="Animals",
 )
 ```
+
+Open the learn menu or an active learn session the same way:
+
+```python
+from learning_app.ui.route_paths import (
+    SET_LEARN_ROUTE,
+    SET_LEARN_SESSION_ROUTE,
+)
+
+push_view(page, SET_LEARN_ROUTE, file="animals_words.csv")
+push_view(page, SET_LEARN_SESSION_ROUTE, file="animals_words.csv")
+```
+
+`SET_LEARN_ROUTE` is the set menu; `SET_LEARN_SESSION_ROUTE` is the active
+practice view. Both require `file` (the set basename).
 
 `push_view()` is the normal entry point for a registered Deep route. If it
 receives a Shell route, the router does not push that route onto the stack; it
@@ -119,9 +134,19 @@ go_search(page, mode="export")
 ![Search filtering shared tile body](../assets/architecture/search-screen.png){ .docs-screenshot-sm }
 
 Search obtains that source through the
-[body registry](../concepts/body-registry.md). If the selected
-`TilesContainer` has no content tiles, `go_search()` returns without opening a
-new view.
+[body registry](../concepts/body-registry.md). Important constraints:
+
+- Call `go_search(..., mode="export")` only after the Import/Export screen has
+  registered the export `TilesContainer`. `BodyRegistry.get_export()` asserts
+  if that body was never created.
+- If the selected body has no content tiles, `go_search()` returns without
+  opening a new view.
+- On the Import/Export route, the bottom-bar search button is shown only on the
+  **Export** tab; the screen toggles visibility itself. Startup still routes
+  that button to `mode="export"` whenever the current path is Import/Export.
+- The Search route factory prefers the export body when `mode="export"` and it
+  exists; otherwise it falls back to the home body when that entry is
+  registered.
 
 See the [Navigation API](../reference/navigation.md) and
 [Route URL API](../reference/route_url.md) for complete signatures and

@@ -12,6 +12,22 @@ from learning_app.ui.route_paths import SET_EDIT_ROUTE, SET_LEARN_ROUTE
 
 
 class ContentTile(ft.Card):
+    """One catalog entry with learn, edit, delete, reset, or export actions.
+
+    Home mode opens learn/edit flows and management menus. Export mode focuses
+    on saving the set through the shared export file picker.
+
+    Args:
+        file_name: Set basename or path (``*_words.csv`` / ``*_definitions.csv``).
+        title: Display title.
+        subtitle: Optional secondary text.
+        parent_container: Owning ``TilesContainer``, used after delete/refresh.
+        key: Optional Flet control key.
+        export_mode: When ``True``, present export-oriented behavior.
+        pattern: Optional search highlight pattern.
+        main_color: When ``True``, emphasize the tile as the current search hit.
+    """
+
     def __init__(self, file_name: str, title: str, subtitle: str = "", parent_container=None, key=None, export_mode=False, pattern: str = "", main_color: bool = False):
         super().__init__(key=key)
         self.parent_container = parent_container

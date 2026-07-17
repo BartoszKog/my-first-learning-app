@@ -11,6 +11,12 @@ from learning_app.ui.screens.word_list_menu import WordListMenu
 
 
 class WordFields(BaseWordField):
+    """Learn UI for a ``*_words.csv`` set (parts-of-speech fields).
+
+    Builds verb/person/thing/adjective/adverb inputs, progress, and the optional
+    ``WordListMenu`` when ``session`` is ``False``.
+    """
+
     def __init__(self, file_name: str = "data_words.csv", page=None, width=300, session=False):
         super().__init__(file_name, page, session=session)
         if not session:

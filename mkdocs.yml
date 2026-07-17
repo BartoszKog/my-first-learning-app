@@ -90,17 +90,26 @@ extra_css:
   - stylesheets/extra.css
 
 nav:
-  - Home: index.md
-  - Architecture: architecture.md
+  - Home:
+      - Overview: index.md
+      - Getting started: getting-started.md
+  - Architecture:
+      - Overview: architecture/index.md
+      - Routing and screens: architecture/routing-and-screens.md
+      - Data and storage: architecture/data-and-storage.md
+      - Startup and lifecycle: architecture/startup.md
   - Guides:
-      - Adding a screen: guides/adding-a-screen.md
       - Navigation guide: guides/navigation.md
       - Layout: guides/layout.md
+      - Adding a screen: guides/adding-a-screen.md
       - State and persistence: guides/state-and-persistence.md
+      - Import and export: guides/import-export.md
   - Concepts:
       - Routing: concepts/routing.md
       - Chrome and wrappers: concepts/chrome-and-wrappers.md
       - Body registry: concepts/body-registry.md
+      - Learning algorithm: concepts/learning-algorithm.md
+      - UI components: concepts/ui-components.md
   - API Reference:
       - Overview: reference/index.md
       - Routing & navigation:
@@ -112,9 +121,17 @@ nav:
       - Layout & chrome:
           - Routable screens: reference/routable_screen.md
           - Chrome configuration: reference/chrome_config.md
+          - App chrome: reference/app_chrome.md
+          - App drawer: reference/app_drawer.md
           - Layout host: reference/layout_host.md
           - Layout metrics: reference/layout_metrics.md
       - Shared state:
           - Body registry API: reference/body_registry.md
           - App session: reference/app_session.md
           - Preferences: reference/preferences.md
+          - App theme: reference/app_theme.md
+      - Data & learning:
+          - File path manager: reference/file_path_manager.md
+          - App data: reference/app_data.md
+          - Constants: reference/constants.md
+          - CSV processor: reference/csv_processor.md

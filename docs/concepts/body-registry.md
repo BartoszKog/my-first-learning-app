@@ -66,10 +66,15 @@ The flow is:
 TilesContainer → BodyRegistry.set_export() → go_search(mode="export") → SearchScreen
 ```
 
-Before pushing Search, `go_search()` verifies that the selected body contains
-tiles. The Search route factory also checks that the requested registry entry
-exists; if no body is available, it returns `None` and the route fallback is
-used.
+`get_export()` asserts if the export body was never registered, so call
+export search only after Import/Export has run its constructor at least once.
+Before pushing Search, `go_search()` also verifies that the selected body
+contains tiles.
+
+The Search route factory prefers the export body when `mode="export"` and
+`BodyRegistry.has_export()` is true. If export is missing but home is
+registered, it falls back to the home `TilesContainer`. If neither body
+exists, the factory returns `None` and the route fallback is used.
 
 ## Scope of the registry
 
@@ -86,6 +91,9 @@ Do not use `BodyRegistry` for:
 
 See [State and persistence](../guides/state-and-persistence.md) for choosing
 the correct owner and lifetime for other values.
+
+Tile list behavior is summarized in
+[UI components](ui-components.md).
 
 See the [Body registry API](../reference/body_registry.md) for its generated
 method contracts.

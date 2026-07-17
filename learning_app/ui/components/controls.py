@@ -4,6 +4,18 @@ from learning_app.ui.app_theme import AppTheme
 
 
 class WordField(ft.TextField):
+    """Styled text field for learn and edit forms.
+
+    Supports read-only display, good/bad answer borders, and slash-separated
+    alternate answers via ``contain_word``.
+
+    Args:
+        label: Field label.
+        width: Width in logical pixels.
+        read_only: Initial read-only state.
+        autofocus: Whether the field requests focus on mount.
+    """
+
     def __init__(self, label: str, width: int = 250, read_only: bool = True, autofocus=False):
         super().__init__()
         self.label = label
@@ -75,6 +87,16 @@ class WordField(ft.TextField):
 
 
 class ProgressBar(ft.Column):
+    """Simple answered/total progress indicator for learn sessions.
+
+    Args:
+        qty: Maximum count (denominator).
+        start: Initial answered count.
+        width: Bar width in logical pixels.
+        word: Label prefix shown beside the counts.
+        div_qty: Step size when incrementing progress.
+    """
+
     def __init__(self, qty: int = 10, start: int = 0, width: int = 250, word: str = "Answered", div_qty: int = 1):
         super().__init__()
         assert start <= qty, "The start quantity must be less than or equal to the maximum quantity."

@@ -1,3 +1,11 @@
+"""Import validation, catalog repair, and CSV save helpers for learning sets.
+
+``CSVProcessor`` inspects picked files, reports ``Errors`` / ``Warnings``, and
+writes normalized set CSVs plus ``files.csv`` catalog rows. Prefer the public
+static methods from Import/Export UI code; private ``__`` helpers stay
+internal.
+"""
+
 import os
 
 import pandas as pd
@@ -8,6 +16,8 @@ from learning_app.data.file_path_manager import FilePathManager
 
 
 class CSVProcessor:
+    """Validate and import learning-set CSVs; validate or repair ``files.csv``."""
+
     @staticmethod
     def __add_statistics_columns(df: pd.DataFrame) -> pd.DataFrame:
         # Add statistics columns to the DataFrame
@@ -119,6 +129,21 @@ class CSVProcessor:
         has_statistics: bool,
         keep_statistics: bool = False,
     ) -> None:
+        """Import a CSV that needs no warning-driven repair.
+
+        Adds or resets statistics columns, normalizes the index, allocates a
+        unique basename, registers the catalog row, and saves the set.
+
+        Args:
+            file_path: Absolute path of the picked source file.
+            file_name: Original basename used to build the stored name.
+            title: Catalog title.
+            subtitle: Catalog subtitle.
+            has_statistics: Whether the source already has usable stats
+                columns.
+            keep_statistics: When ``has_statistics`` is ``True``, keep existing
+                progress if ``True``; otherwise reset statistics.
+        """
         if file_path is None or file_name is None:
             raise ValueError("file_path and file_name cannot be None")
 
@@ -148,6 +173,27 @@ class CSVProcessor:
         warnings: list,
         keep_statistics: bool = False,
     ) -> str:
+        """Import a CSV that requires warning-driven cleanup before save.
+
+        Applies repairs implied by ``warnings`` (index handling, dropping
+        sparse rows, discarding broken statistics, fixing name suffixes), then
+        registers and saves the set.
+
+        Args:
+            file_path: Absolute path of the picked source file.
+            file_name: Original basename used to build the stored name.
+            title: Catalog title.
+            subtitle: Catalog subtitle.
+            data_type: ``\"words\"`` or ``\"definitions\"``.
+            has_statistics: Whether validation found usable stats columns.
+            warnings: Warning strings from ``validate_file``.
+            keep_statistics: Keep existing progress when statistics are still
+                usable and the user confirms.
+
+        Returns:
+            Optional information string for the UI (empty when nothing extra
+            must be shown).
+        """
         if file_path is None or file_name is None or data_type is None:
             raise ValueError("file_path, file_name and data_type cannot be None")
         if data_type not in ["words", "definitions"]:
@@ -226,7 +272,16 @@ class CSVProcessor:
 
     @staticmethod
     def validate_file(file_path: str) -> dict:
-        # Function for validating the file of the given path
+        """Validate a picked learning-set CSV before import.
+
+        Args:
+            file_path: Absolute path to the candidate ``.csv`` file.
+
+        Returns:
+            Dict with ``errors``, ``warnings``, ``is_valid``,
+            ``requires_specific_actions``, ``has_statistics``,
+            ``name_suggestion``, and ``data_type``.
+        """
         errors = []
         warnings = []
         is_valid = True
@@ -406,12 +461,15 @@ class CSVProcessor:
 
     @staticmethod
     def validate_files_csv() -> dict:
-        """
-        Validates the files.csv file containing information about all learning sets.
+        """Validate the set catalog ``files.csv``.
+
+        A missing catalog is treated as valid because helpers create it later.
+        Missing set files on disk produce warnings; structural problems produce
+        errors.
 
         Returns:
-            dict: Dictionary with validation results containing errors, warnings, and information
-                whether the file is valid.
+            Dict with ``errors``, ``warnings``, ``is_valid``, and
+            ``files_data`` (loaded frame or ``None``).
         """
         errors = []
         warnings = []
@@ -502,14 +560,14 @@ class CSVProcessor:
 
     @staticmethod
     def repair_files_csv() -> dict:
-        """
-        Attempts to repair the files.csv file by:
-        1. Creating it if it doesn't exist
-        2. Removing invalid entries
-        3. Removing duplicates
+        """Attempt to repair ``files.csv`` after a failed validation.
+
+        May recreate an empty catalog, drop invalid or duplicate rows, fill
+        empty subtitles, and remove entries for missing files.
 
         Returns:
-            dict: Dictionary with repair results
+            Dict with ``repair_actions`` (list of human-readable steps) and
+            ``success`` (whether any repair was applied or completed).
         """
         from learning_app.data.app_data import generate_empty_files_data
 

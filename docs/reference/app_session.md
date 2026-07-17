@@ -2,7 +2,9 @@
 
 Source: `ui/app_session.py`
 
-Application-session state shared by routing, layout, and screen controls.
-Ownership rules are in [State and persistence](../guides/state-and-persistence.md).
+Process-wide runtime services: the live `Page`, the shared export `FilePicker`,
+and a temporary navigation lock for drawer / bottom bar / FAB. Not a general
+store for form fields or domain data — see
+[State and persistence](../guides/state-and-persistence.md).
 
 ::: learning_app.ui.app_session

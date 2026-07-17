@@ -17,6 +17,24 @@ Chrome is attached through `ft.View` properties such as `appbar`, `drawer`,
 `bottom_appbar`, and `floating_action_button`. The wrapper is the root control
 inside `ft.View.controls`; it contains the screen body.
 
+## Config vs runtime
+
+Two layers work together:
+
+| Layer | Module | Role |
+| --- | --- | --- |
+| Declarative config | `ui/chrome_config.py` | Per-route `ShellChromeConfig` in `SHELL_CHROME` (titles, visibility flags). |
+| Live registry | `ui/app_chrome.py` | `AppChrome` holds the real AppBar / bottom bar / FAB / drawer instances. |
+| Drawer UI | `ui/app_drawer.py` | `AppDrawer` builds tiles and navigates on selection. |
+
+`SHELL_CHROME` answers *what should this Shell route look like*. `AppChrome`
+answers *where are the shared controls so the router can mutate them*. Startup
+creates the controls once, registers them, then the router applies config from
+`SHELL_CHROME[path]` on each Shell (or Deep) transition. Existing `RouteDef`
+entries also store `chrome=SHELL_CHROME[…]` for registry consistency, but the
+router does not read `route_def.chrome` — path lookup in `SHELL_CHROME` is the
+runtime source of truth.
+
 ## Shell chrome
 
 `ui/chrome_config.py` contains the per-route `SHELL_CHROME`
@@ -45,8 +63,53 @@ SHELL_CHROME = {
 
 ![Settings with reduced Shell chrome](../assets/architecture/shell-chrome-settings.png){ .docs-screenshot }
 
-See the [architecture overview](../architecture.md#two-navigation-roles) for
+See the [routing and screens](../architecture/routing-and-screens.md#two-navigation-roles) overview for
 the Shell and Deep screen forms.
+
+## Runtime: `AppChrome`
+
+`AppChrome` in `ui/app_chrome.py` is a process-wide registry of the shared
+chrome controls built in `app.py`. After construction:
+
+```python
+AppChrome.set_drawer(drawer)
+AppChrome.register(
+    appbar=page.appbar,
+    bottom_appbar=page.bottom_appbar,
+    floating_action_button=page.floating_action_button,
+    ...
+)
+```
+
+The router then:
+
+1. Looks up `SHELL_CHROME[path]` for Shell routes and sets visibility, AppBar
+   title (including the `__greeting__` sentinel), leading menu button, and FAB.
+2. Hides AppBar, bottom bar, and FAB for Deep routes.
+3. Attaches the same registered controls onto each Shell `ft.View` (plus
+   drawer and alignment defaults from `AppChrome`).
+4. Updates `AppChrome.get_drawer().selected_index` so the drawer highlights
+   the active Shell destination.
+
+Layout metrics also read AppBar / bottom-bar heights through `AppChrome` when
+computing available body space. `AppSession` disable/enable navigation toggles
+the drawer via `has_drawer` / `get_drawer`.
+
+Register before the first Shell view is built; see
+[Startup](../architecture/startup.md). Do not recreate AppBar or FAB per
+route — mutate the registered instances.
+
+## Runtime: `AppDrawer`
+
+`AppDrawer` in `ui/app_drawer.py` subclasses `ft.NavigationDrawer`. Tiles come
+from `build_drawer_controls()` / `DRAWER_ROUTES` in `ui/route_registry.py`.
+On change it closes the drawer and calls `navigate_to_async` unless the
+selected route is already current, or navigation is locked in `AppSession`.
+
+The drawer is assigned to `page.drawer` and registered with
+`AppChrome.set_drawer` so Shell views and chrome sync share one instance.
+
+![Navigation drawer open over Shell chrome](../assets/architecture/shell-drawer.png){ .docs-screenshot-sm }
 
 ## Body wrappers
 
@@ -99,6 +162,8 @@ form wrapper supplies form width and vertical padding; it does not add an
 Keeping these decisions in wrapper helpers prevents individual screens from
 reimplementing route-frame calculations.
 
-See the [Chrome configuration API](../reference/chrome_config.md) and
+See the [Chrome configuration API](../reference/chrome_config.md),
+[App chrome API](../reference/app_chrome.md),
+[App drawer API](../reference/app_drawer.md), and
 [Layout host API](../reference/layout_host.md) for generated field and helper
 contracts.

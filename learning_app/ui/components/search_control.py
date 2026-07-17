@@ -5,6 +5,16 @@ from learning_app.ui.navigation import go_back
 
 
 class SearchControl(ft.Row):
+    """Search field and next/previous controls over a shared ``TilesContainer``.
+
+    Drives pattern filtering and focus on the existing tile body; closing
+    returns via ``go_back``. Used by ``SearchScreen``.
+
+    Args:
+        page: Application page for navigation.
+        tiles_container: Home or export tile list to filter.
+    """
+
     COLOR = ft.Colors.CYAN
 
     def __init__(self, page, tiles_container: TilesContainer):

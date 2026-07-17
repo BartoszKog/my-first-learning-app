@@ -14,7 +14,8 @@ A `RouteDef` connects a path to:
 - a Shell or Deep route kind,
 - a screen build factory,
 - body wrapper and layout behavior,
-- optional Shell chrome,
+- optional Shell chrome (`chrome=SHELL_CHROME[path]` on existing Shell
+  entries; runtime visibility still comes from `SHELL_CHROME` by path),
 - optional drawer metadata,
 - optional fallback behavior.
 
@@ -45,7 +46,7 @@ new drawer route therefore does not require a separate path-to-drawer mapping.
 - responds to Flet route and view-pop events,
 - resolves the matching `RouteDef`,
 - calls the route's build factory,
-- applies the selected wrapper and chrome,
+- applies the selected wrapper and Shell chrome from `SHELL_CHROME[path]`,
 - builds an `ft.View`,
 - replaces or extends the view stack,
 - dispatches responsive layout updates.
@@ -85,7 +86,9 @@ router change its stack, normalization, or update details without changing
 every screen.
 
 For a practical registration checklist, see
-[Adding a screen](../guides/adding-a-screen.md). For symbol-level details, see
-the [Route registry API](../reference/route_registry.md),
+[Adding a screen](../guides/adding-a-screen.md). For the route map and Shell
+versus Deep roles, see
+[Routing and screens](../architecture/routing-and-screens.md). For symbol-level
+details, see the [Route registry API](../reference/route_registry.md),
 [Router API](../reference/router.md), and
 [Navigation API](../reference/navigation.md).

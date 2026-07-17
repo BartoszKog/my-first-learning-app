@@ -7,6 +7,19 @@ from learning_app.ui.app_theme import AppTheme
 
 
 class EditCardBase(ft.Card):
+    """Editable card for one set row inside create/edit flows.
+
+    Wires labeled fields, tracks whether the user has edited the card, and
+    validates required content before save. Prefer subclassing for set kinds
+    instead of duplicating field layout in a screen.
+
+    Args:
+        lv_parent: Parent ``ListView`` that owns the card list.
+        width: Field width in logical pixels.
+        fields: Mapping of column name → text field control.
+        words_row: Optional existing DataFrame row to preload.
+    """
+
     def __init__(self, lv_parent: ft.ListView, width: int, fields: dict, words_row=None):
         super().__init__()
         self.margin = 10
@@ -124,6 +137,8 @@ class EditCardBase(ft.Card):
 
 
 class EditCardWords(EditCardBase):
+    """Edit card with parts-of-speech fields for a words set."""
+
     def __init__(self, lv_parent: ft.ListView, width: int = 250, words_row=None):
         fields = {
             PartsOfSpeech.VERB.value: ft.TextField(),
@@ -136,6 +151,8 @@ class EditCardWords(EditCardBase):
 
 
 class EditCardDefinitions(EditCardBase):
+    """Edit card with word and multiline definition fields."""
+
     def __init__(self, lv_parent: ft.ListView, width: int = 250, words_row=None):
         fields = {
             WordDefinitions.WORD.value: ft.TextField(),

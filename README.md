@@ -5,7 +5,7 @@
 
 ## 🚀 How to Run the Application
 
-This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Python 3.11+ is required.
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Python 3.12+ is required.
 
 ```bash
 uv sync
@@ -69,12 +69,12 @@ The application uses an advanced learning algorithm visualized in the graph belo
 
 Words are queued for learning according to the following states:
 
-| State | Code | Description |
-|------|-----|------|
-| **Unknown** | 0/0/1 | Words verified as unknown |
-| **Unverified** | 0/0/0 | Words that have not yet been verified |
+| State                    | Code                | Description                                                       |
+| ------------------------ | ------------------- | ----------------------------------------------------------------- |
+| **Unknown**              | 0/0/1               | Words verified as unknown                                         |
+| **Unverified**           | 0/0/0               | Words that have not yet been verified                             |
 | **Unconfirmed as known** | 1/0/0, 1/0/1, 1/1/1 | Words marked as correctly answered but not yet confirmed as known |
-| **Known** | 1/1/0 | Words answered correctly twice in a row |
+| **Known**                | 1/1/0               | Words answered correctly twice in a row                           |
 
 ### Queuing Process
 

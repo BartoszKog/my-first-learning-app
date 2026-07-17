@@ -8,6 +8,12 @@ from learning_app.ui.routable_screen import RoutableScreenMixin
 
 
 class BackgroundShadeSlider(ft.Column):
+    """Slider that maps shade index 1–4 to light or dark page backgrounds.
+
+    Updates ``AppTheme`` in memory, applies bgcolor to the page, and persists
+    the active mode's slider and color keys.
+    """
+
     DARK_THEME_COLORS = [
         "#000000",   # 1 — AMOLED
         "#0F0F0F",   # 2
@@ -72,6 +78,12 @@ class BackgroundShadeSlider(ft.Column):
 
 
 class SettingsControl(RoutableScreenMixin, ft.Column):
+    """Settings shell screen for theme mode and background shade.
+
+    Owns the light/dark switch and ``BackgroundShadeSlider``. Persistence goes
+    through preferences and ``AppTheme``; Shell chrome colors stay in ``app.py``.
+    """
+
     def __init__(self, page):
         super().__init__()
         self.expand = True

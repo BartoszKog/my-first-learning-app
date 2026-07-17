@@ -102,6 +102,19 @@ The last row is intentionally explicit: do not invent a dependency on
 `content_height`. Use it when a future control genuinely needs the remaining
 vertical space.
 
+## Layout tokens
+
+`ui/layout_tokens.py` holds the numeric inputs that `LayoutMetrics`
+turns into a snapshot: chrome default heights, max content width, body/form/
+settings width ratios, compact/wide breakpoints, Deep vertical inset, fallback
+viewport size, and learn-field width ratios (including Windows tweaks).
+
+Screens and the router should not hard-code those ratios. Change a token when
+the *shared* sizing policy changes; then rely on `LayoutMetrics` /
+`apply_layout` to propagate. Prefer reading `metrics.body_width` (or another
+field) in a screen rather than importing tokens directly, unless you are
+extending the metrics calculator itself.
+
 ## Common mistakes
 
 ### Wrapping controls inside the factory
@@ -132,3 +145,6 @@ For generated contracts, see the
 [Layout host API](../reference/layout_host.md),
 [Layout metrics API](../reference/layout_metrics.md), and
 [Routable screen API](../reference/routable_screen.md).
+
+Which controls consume which widths is also summarized in
+[UI components](../concepts/ui-components.md).

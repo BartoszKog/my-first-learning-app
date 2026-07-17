@@ -69,8 +69,19 @@ class BaseWordField(ft.Column):
 
         go_back(self._get_page())
 
+    def _leave_session_if_needed(self, e=None):
+        if self.session:
+            from learning_app.ui.navigation import go_back
+
+            go_back(self._get_page() or (e.page if e else None))
+
     def set_default_progress_action(self, e):
         set_default_progress(self.file_name)
+        if self.session:
+            # Session view has no mounted WordListMenu; returning to learn
+            # refreshes the menu via the router.
+            self._leave_session_if_needed(e)
+            return
         self.menu_control.refresh_content()
         self.words.refresh()
         e.page.update()
@@ -83,6 +94,7 @@ class BaseWordField(ft.Column):
             close_button_text="Close",
             action_button_text="Set progress to 0",
             action_function=self.set_default_progress_action,
+            close_action_function=self._leave_session_if_needed if self.session else None,
         )
 
     def back(self):

@@ -2,13 +2,14 @@ from typing import Dict
 
 import flet as ft
 
-from learning_app.data.app_data import AppData, get_kind_of_file_and_validate
+from learning_app.data.app_data import AppData, get_kind_of_file_and_validate, set_default_progress
 from learning_app.data.constants import PartsOfSpeech, StatsColumns, WordDefinitions
 from learning_app.ui.components.controls import ProgressBar
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.navigation import go_back, push_view
+from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE
 
 BORDERS = {
@@ -217,9 +218,25 @@ class WordListMenu(ft.Column):
             width=width,
         )
 
+        def reset_progress_and_refresh(e):
+            set_default_progress(self.file_name)
+            self.words.refresh()
+            self.refresh_content()
+
         def on_button_click(e):
             if e.control.content == "Start":
-                push_view(e.page, SET_LEARN_SESSION_ROUTE, file=self.file_name)
+                self.words.refresh()
+                if self.words.are_all_words_learned():
+                    create_alert_dialog(
+                        page=e.page,
+                        title="Congratulations, all words learned!",
+                        content="If you want to start again, set the progress to 0.",
+                        close_button_text="Close",
+                        action_button_text="Set progress to 0",
+                        action_function=reset_progress_and_refresh,
+                    )
+                else:
+                    push_view(e.page, SET_LEARN_SESSION_ROUTE, file=self.file_name)
 
             elif e.control.content == "Back":
                 on_back()

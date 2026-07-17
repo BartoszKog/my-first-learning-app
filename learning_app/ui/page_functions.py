@@ -14,8 +14,8 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
         action_button_text (str, optional): The text for the optional action button. Required if action_function is provided.
         action_function (callable, optional): A function to be called when the action button is clicked.
                                              Should accept an event parameter.
-        close_action_function (callable, optional): A function to be called when the close button is clicked,
-                                                   before the dialog is closed. Should accept an event parameter.
+        close_action_function (callable, optional): A function to be called when the close button is clicked
+                                                   or the dialog is dismissed (e.g. tap outside). Should accept an event parameter.
     Returns:
         None: The function displays the dialog but doesn't return any value.
     Note:
@@ -24,12 +24,13 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
     """
     action_handled = False
 
-    def run_dialog_action(e, callback=None):
+    def run_dialog_action(e, callback=None, *, pop_dialog=True):
         nonlocal action_handled
         if action_handled:
             return
         action_handled = True
-        e.page.pop_dialog()
+        if pop_dialog:
+            e.page.pop_dialog()
         if callback:
             callback(e)
         e.page.update()
@@ -39,6 +40,13 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
             run_dialog_action(e, close_action_function)
         else:
             run_dialog_action(e)
+
+    def dismiss_action(e):
+        # Barrier dismiss already removes the dialog; only run the close callback once.
+        if close_action_function:
+            run_dialog_action(e, close_action_function, pop_dialog=False)
+        else:
+            run_dialog_action(e, pop_dialog=False)
 
     actions = [ft.TextButton(close_button_text, on_click=close_action)]
 
@@ -53,6 +61,7 @@ def create_alert_dialog(page, title, content, close_button_text="OK", action_but
         content=ft.Text(content),
         actions=actions,
         actions_alignment=ft.MainAxisAlignment.END,
+        on_dismiss=dismiss_action,
     )
 
     page.show_dialog(alert_dialog)

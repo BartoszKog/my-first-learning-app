@@ -59,9 +59,10 @@ class BaseWordField(ft.Column):
             self.start()
 
     def will_unmount(self):
-        if self._session_active:
-            self.back()
-            self._session_active = False
+        # Keep last_group_of_indexes so "Previous session" still highlights the
+        # queue the user had started, including after a forced back (browser /
+        # system back). A completed leave via menu() already skips this path.
+        self._session_active = False
 
     def menu(self):
         self._session_active = False

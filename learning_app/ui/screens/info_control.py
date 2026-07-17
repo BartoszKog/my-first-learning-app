@@ -15,7 +15,7 @@ This app is designed for effective learning of words and definitions. It allows 
 
 The app utilizes a learning algorithm visualized in the following graph:
 
-![Learning Algorithm](assets/graph.png)
+![Learning Algorithm](graph.png)
 
 ## Word Learning Queue
 

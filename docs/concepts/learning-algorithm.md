@@ -67,8 +67,10 @@ if count == 0:
 
 When `save_indexes_in_class_art=True`, the drawn indexes are also stored on
 `AppData.last_group_of_indexes` for UI helpers such as
-`was_this_index_drawn()`. Leaving a session calls
-`delete_last_group_of_indexes()` from the learn control teardown path.
+`was_this_index_drawn()` (the learn menu **Previous session** chip). That list
+is kept when leaving a session — including forced back — so the chip still
+reflects the queue the user had started. Leaving the learn menu via its Back
+button clears the list through `delete_last_group_of_indexes()`.
 
 `draw_new_row()` advances through the group. `it_is_not_last_index_of_group()`
 reports whether more indexes remain before the group is cleared.

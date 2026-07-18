@@ -546,12 +546,16 @@ def handle_route_change(e: ft.RouteChangeEvent):
 
 
 async def handle_view_pop(e: ft.ViewPopEvent):
-    """Restore route state after Flet removes a view.
+    """Remove the popped view and restore the route exposed underneath.
 
     Args:
         e: View-pop event containing the affected page.
     """
     page = e.page
+
+    if e.view is not None and e.view in page.views:
+        page.views.remove(e.view)
+
     if not page.views:
         await initialize_routes(page)
         return
@@ -561,8 +565,7 @@ async def handle_view_pop(e: ft.ViewPopEvent):
 
     _restore_active_view_state(page, full_route)
     AppTheme.apply_to_page(page)
-    if not routes_match(page.route, full_route):
-        await page.push_route(full_route)
+    await page.push_route(full_route)
     page.update()
 
 

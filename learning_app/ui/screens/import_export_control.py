@@ -528,11 +528,11 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.page.update()
 
     def __make_compact_bottom_appbar_height(self):
-        self.page.bottom_appbar.height = ImportExportControl.MINIMAL_BOTTOM_APP_BAR_HEIGHT
+        AppChrome.set_bottom_appbar_height(ImportExportControl.MINIMAL_BOTTOM_APP_BAR_HEIGHT)
         self.page.update()
 
     def __make_default_bottom_appbar_height(self):
-        self.page.bottom_appbar.height = ImportExportControl.DEFAULT_BOTTOM_APP_BAR_HEIGHT
+        AppChrome.set_bottom_appbar_height(ImportExportControl.DEFAULT_BOTTOM_APP_BAR_HEIGHT)
         self.page.update()
 
     def __hide_first_span_in_text_tip(self):

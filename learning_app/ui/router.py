@@ -144,7 +144,7 @@ def _apply_shell_chrome(path: str):
     bottom_appbar = AppChrome.get_bottom_appbar()
     bottom_appbar.visible = config.bottom_appbar_visible
     if config.bottom_appbar_visible:
-        bottom_appbar.height = config.bottom_appbar_height
+        AppChrome.set_bottom_appbar_height(config.bottom_appbar_height)
         if path != IMPORT_EXPORT_ROUTE:
             AppChrome.get_search_button().visible = config.search_button_visible
 

@@ -21,7 +21,9 @@ class ShellChromeConfig:
         fab_visible: Whether the shared floating action button is visible.
         search_button_visible: Whether the bottom app bar's search action is
             visible.
-        bottom_appbar_height: Height of the bottom app bar in logical pixels.
+        bottom_appbar_height: Content height of the bottom app bar in logical
+            pixels (menu/search row). The on-screen bar may be taller once the
+            system navigation inset is applied by Flutter's built-in SafeArea.
     """
 
     appbar_title: str

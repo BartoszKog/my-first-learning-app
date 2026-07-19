@@ -59,6 +59,7 @@ class AppChrome:
         cls._vertical_alignment = vertical_alignment
         cls._appbar_menu_button = appbar_menu_button
         cls._search_button = search_button
+        cls._allow_bottom_appbar_system_inset(bottom_appbar)
 
     @classmethod
     def set_drawer(cls, drawer: ft.NavigationDrawer):
@@ -68,6 +69,29 @@ class AppChrome:
             drawer: ``AppDrawer`` (or compatible) instance assigned to the page.
         """
         cls._drawer = drawer
+
+    @classmethod
+    def set_bottom_appbar_height(cls, height: float) -> None:
+        """Set the bottom app bar content height without clipping system insets.
+
+        ``height`` is the interactive content box (menu/search row), not the
+        final on-screen bar size. Flutter's ``BottomAppBar`` already wraps that
+        box in ``SafeArea`` and grows by the system navigation inset. Flet's
+        ``LayoutControl`` must not clamp the outer height to the same value, or
+        buttons are squeezed under the system navigation bar.
+
+        Args:
+            height: Content height in logical pixels (for example ``80`` or
+                ``50``).
+        """
+        bottom_appbar = cls.get_bottom_appbar()
+        cls._allow_bottom_appbar_system_inset(bottom_appbar)
+        bottom_appbar.height = height
+
+    @classmethod
+    def _allow_bottom_appbar_system_inset(cls, bottom_appbar: ft.BottomAppBar) -> None:
+        """Keep ``height`` as Flutter content height, not an outer SizedBox clamp."""
+        bottom_appbar._internals["skip_properties"] = ["height"]
 
     @classmethod
     def get_appbar(cls) -> ft.AppBar:

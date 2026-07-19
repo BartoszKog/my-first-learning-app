@@ -1,0 +1,137 @@
+site_name: Learning App
+site_description: Developer documentation for the Flet word learning application
+site_author: BartoszKog
+
+repo_url: https://github.com/BartoszKog/my-first-learning-app
+repo_name: BartoszKog/my-first-learning-app
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2026 BartoszKog and contributors
+
+theme:
+  name: material
+  language: en
+  logo: assets/icon.png
+  favicon: assets/icon.png
+
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  font:
+    text: Plus Jakarta Sans
+    code: JetBrains Mono
+
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - .
+          options:
+            docstring_style: google
+            filters:
+              - "!^_"
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home:
+      - Overview: index.md
+      - Getting started: getting-started.md
+  - Architecture:
+      - Overview: architecture/index.md
+      - Routing and screens: architecture/routing-and-screens.md
+      - Data and storage: architecture/data-and-storage.md
+      - Startup and lifecycle: architecture/startup.md
+  - Guides:
+      - Navigation guide: guides/navigation.md
+      - Layout: guides/layout.md
+      - Adding a screen: guides/adding-a-screen.md
+      - State and persistence: guides/state-and-persistence.md
+      - Import and export: guides/import-export.md
+  - Concepts:
+      - Routing: concepts/routing.md
+      - Chrome and wrappers: concepts/chrome-and-wrappers.md
+      - Body registry: concepts/body-registry.md
+      - Learning algorithm: concepts/learning-algorithm.md
+      - UI components: concepts/ui-components.md
+  - API Reference:
+      - Overview: reference/index.md
+      - Routing & navigation:
+          - Route paths: reference/route_paths.md
+          - Route URLs: reference/route_url.md
+          - Route registry: reference/route_registry.md
+          - Navigation API: reference/navigation.md
+          - Router: reference/router.md
+      - Layout & chrome:
+          - Routable screens: reference/routable_screen.md
+          - Chrome configuration: reference/chrome_config.md
+          - App chrome: reference/app_chrome.md
+          - App drawer: reference/app_drawer.md
+          - Layout host: reference/layout_host.md
+          - Layout metrics: reference/layout_metrics.md
+      - Shared state:
+          - Body registry API: reference/body_registry.md
+          - App session: reference/app_session.md
+          - Preferences: reference/preferences.md
+          - App theme: reference/app_theme.md
+      - Data & learning:
+          - File path manager: reference/file_path_manager.md
+          - App data: reference/app_data.md
+          - Constants: reference/constants.md
+          - CSV processor: reference/csv_processor.md

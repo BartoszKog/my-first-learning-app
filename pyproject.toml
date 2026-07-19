@@ -1,0 +1,19 @@
+[project]
+name = "learning-app"
+version = "1.0.3"
+description = "Word learning application built with Flet"
+requires-python = ">=3.12"
+dependencies = [
+    "flet>=0.86.0,<1.0",
+    "pandas==3.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]",
+    "ruff>=0.15.21",
+]
+
+[tool.flet]
+build_number = 3

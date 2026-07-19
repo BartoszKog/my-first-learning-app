@@ -165,11 +165,14 @@ cython_debug/
 # python files for testing
 temp.py
 test_*.py
+!tests/test_*.py
+doc_example_for_test/
 
 # temporary files
 copy_code.txt
 layout_import_export.py
 csv_test_files/
+notes_md/
 
 # vs code workspace
 *.code-workspace 
@@ -177,4 +180,6 @@ csv_test_files/
 # flet
 build/
 storage/
-pyproject.toml
+
+# cursor
+.cursor/

@@ -32,10 +32,13 @@ tests/                    # focused unit tests
 
 You can also download the Android version of the application:
 
-[📥 Download APK file](https://drive.google.com/uc?export=download&id=1wwNZVtlBBn6RWBOjyF5nnoJlwXFYFTkM)
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android&logoColor=white)](https://github.com/BartoszKog/my-first-learning-app/releases/latest) 
 
-> [!WARNING]
-> The mobile application may not function properly due to issues with the Android build tool in the Flet version used. Some features might work incorrectly or be unavailable on some devices. 
+## 📖 Documentation
+
+Full developer documentation available on GitHub Pages:
+
+[![Docs](https://img.shields.io/badge/Documentation-GitHub%20Pages-blue?style=for-the-badge)](https://bartoszkog.github.io/my-first-learning-app/)
 
 ## 📋 About the Application
 

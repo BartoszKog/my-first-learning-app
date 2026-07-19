@@ -1,0 +1,90 @@
+name: Build and Release Flet App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UV_PYTHON: 3.13
+  PYTHONUTF8: 1
+  FLET_CLI_NO_RICH_OUTPUT: 1
+
+permissions:
+  contents: write # Required to create tags and releases
+
+jobs:
+  check-and-release:
+    name: Check Version & Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract project info
+        id: extract
+        # System Python is enough for tomllib; defer uv until we know we must build.
+        run: |
+          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          BUILD_NUM=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['tool']['flet']['build_number'])")
+
+          echo "Version extracted: v${VERSION} (Build ${BUILD_NUM})"
+          echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_num=${BUILD_NUM}" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          # Exact ref match — avoids prefix false positives (e.g. v1.0 vs v1.0.3).
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION} already exists. Skipping build."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "New version detected. Proceeding with build."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup uv
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          enable-cache: true
+
+      - name: Cache Flutter / Android / Flet toolchains
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/flutter
+            ~/Android/sdk
+            ~/java
+            ~/.flet
+            ~/.pub-cache
+            ~/.gradle/caches
+          key: flet-apk-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            flet-apk-${{ runner.os }}-
+
+      - name: Build APK
+        if: steps.check_tag.outputs.exists == 'false'
+        run: uv run flet build apk --yes --verbose
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ steps.extract.outputs.version }}
+          name: Release ${{ steps.extract.outputs.version }} (Build ${{ steps.extract.outputs.build_num }})
+          files: build/apk/*.apk
+          generate_release_notes: true
+          fail_on_unmatched_files: true

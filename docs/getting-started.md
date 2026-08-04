@@ -30,8 +30,9 @@ uv run flet run .
 ```
 
 `uv sync` creates the virtual environment and installs runtime dependencies.
-The thin launcher `main.py` at the project root calls `ft.run` on
-`learning_app.app.main`.
+The thin launcher `src/main.py` calls `ft.run` on
+`learning_app.app.main`. Application code and Flet assets live under `src/`
+so packaging (`flet build` / `flet test`) does not include `docs/` or `tests/`.
 
 ## Serve these docs
 
@@ -58,7 +59,6 @@ uv run mkdocs build
 | Sets or catalog missing after restart | Confirm `FilePathManager.initialize()` ran and storage under `FLET_APP_STORAGE_DATA` (or the CWD fallback) is writable. See [Data and storage](architecture/data-and-storage.md). |
 | Import blocked with “restart the app” | `files.csv` failed `validate_files_csv`. Restart after fixing or repairing the catalog; see [Import and export](guides/import-export.md#catalog-integrity-filescsv). |
 | Docs build noisy / `--strict` fails | Prefer `uv run mkdocs build` without `--strict` while iterating. Strict mode can fail on Griffe type-annotation warnings from generated API pages (for example `app_theme`). |
-| Mobile / Android quirks | Prefer the notes in the repository README for platform packaging; layout tokens may apply Windows-specific tweaks on desktop only. |
 
 ## Next steps
 

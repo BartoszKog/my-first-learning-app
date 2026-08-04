@@ -1,5 +1,5 @@
 # 📚 Word Learning Application
-<img src="assets/icon.png" alt="App Logo" width="100" height="100">
+<img src="src/assets/icon.png" alt="App Logo" width="100" height="100">
 
 > _Effective tool for learning words and definitions based on intelligent repetition algorithms._
 
@@ -14,18 +14,21 @@ uv run flet run .
 
 ## Project Structure
 
-The root `main.py` file is a thin launcher. Application code lives in the
-`learning_app` package:
+The thin launcher `src/main.py` calls `ft.run` on the `learning_app` package
+(under `src/`, as expected by Flet packaging):
 
 ```text
-learning_app/
-  app.py                  # Flet application entrypoint
-  data/                   # CSV processing, data model, file paths, constants
-  ui/
-    components/           # reusable Flet controls
-    screens/              # larger application screens and menus
-  utils/                  # small general helpers
-tests/                    # focused unit tests
+src/
+  main.py                 # thin launcher: ft.run(learning_app.app.main)
+  assets/                 # app icons / splash assets for flet build
+  learning_app/
+    app.py                # Flet application entrypoint
+    data/                 # CSV processing, data model, file paths, constants
+    ui/
+      components/         # reusable Flet controls
+      screens/            # larger application screens and menus
+    utils/                # small general helpers
+tests/                    # tests (not packaged into the app)
 ```
 
 ## 📱 Android Release
@@ -66,7 +69,7 @@ This application was designed with effective vocabulary and definition learning 
 
 The application uses an advanced learning algorithm visualized in the graph below:
 
-<img src="assets/graph.png" alt="Learning Algorithm" width="500">
+<img src="src/assets/graph.png" alt="Learning Algorithm" width="500">
 
 ### Word Learning Queue
 

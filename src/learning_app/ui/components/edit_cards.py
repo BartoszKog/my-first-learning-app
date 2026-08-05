@@ -82,6 +82,10 @@ class EditCardBase(ft.Card):
                 lv_parent.deleted_indexes.append(self.index)
 
         self.delete_button = ft.Button(content="Delete", on_click=on_delete_click, icon=ft.Icons.DELETE)
+        self.action_buttons = ft.Row(
+            controls=[self.delete_button],
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
 
         controls_column = ft.Column(
             controls=[
@@ -90,7 +94,7 @@ class EditCardBase(ft.Card):
         )
         controls_column.controls.extend(self.dict_word_fields.values())
 
-        controls_column.controls.append(self.delete_button)
+        controls_column.controls.append(self.action_buttons)
         controls_column.controls.append(self.error_label)
         controls_column.controls.append(ft.Text(size=5))
         controls_column.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -164,3 +168,22 @@ class EditCardDefinitions(EditCardBase):
             ),
         }
         super().__init__(lv_parent, width, fields, words_row)
+
+        self.swap_button = ft.IconButton(
+            icon=ft.Icons.SWAP_VERT,
+            on_click=self._on_swap_click,
+        )
+        self.action_buttons.controls.insert(0, self.swap_button)
+
+    def swap_word_and_definition(self):
+        word_field = self.dict_word_fields[WordDefinitions.WORD.value]
+        definition_field = self.dict_word_fields[WordDefinitions.DEFINITION.value]
+        word_field.value, definition_field.value = definition_field.value, word_field.value
+        self.edited = True
+        self.error_label.value = ""
+        self.error_label.visible = False
+        self.validate_fields()
+
+    def _on_swap_click(self, e):
+        self.swap_word_and_definition()
+        e.page.update()

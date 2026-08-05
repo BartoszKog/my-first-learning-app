@@ -3,7 +3,7 @@
 import flet as ft
 
 from learning_app.ui.route_url import build_route
-from learning_app.ui.route_paths import SEARCH_ROUTE
+from learning_app.ui.route_paths import SEARCH_ROUTE, SET_EDIT_ROUTE
 
 
 def navigate_to(page: ft.Page, route: str, **params: object) -> None:
@@ -59,6 +59,25 @@ def go_back(page: ft.Page) -> None:
     from learning_app.ui.router import pop_route_view
 
     page.run_task(pop_route_view, page)
+
+
+def reanchor_edit_on_home(page: ft.Page, file_name: str) -> None:
+    """Rebuild Home under the active edit view after creating a new set.
+
+    Drops intermediate views such as create-set and refreshes the home tile
+    catalog so Back / system back land on an up-to-date list.
+
+    Args:
+        page: Page whose view stack should be rewritten.
+        file_name: Set file used to build the canonical edit route URL.
+    """
+    from learning_app.ui.router import reanchor_active_deep_view_on_home
+
+    page.run_task(
+        reanchor_active_deep_view_on_home,
+        page,
+        build_route(SET_EDIT_ROUTE, file=file_name),
+    )
 
 
 def go_search(page: ft.Page, mode: str = "home") -> None:

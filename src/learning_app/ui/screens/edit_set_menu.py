@@ -5,7 +5,7 @@ from learning_app.data.app_data import create_empty_set, get_kind_of_file_and_va
 from learning_app.data.constants import MAX_ROWS, PartsOfSpeech, StatsColumns, WordDefinitions
 from learning_app.ui.components.edit_cards import EditCardDefinitions, EditCardWords
 from learning_app.ui.layout_metrics import LayoutMetrics
-from learning_app.ui.navigation import go_back, navigate_to
+from learning_app.ui.navigation import go_back, navigate_to, reanchor_edit_on_home
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.route_paths import HOME_ROUTE
@@ -24,6 +24,7 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
         self.file_name = file_name
         self.title = title
         self.subtitle = subtitle
+        self._from_create = title is not None
         self._form_width = width
 
         self.kind = get_kind_of_file_and_validate(file_name)
@@ -39,16 +40,21 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
             on_click=self.on_back_click,
             icon=ft.Icons.ARROW_BACK,
         )
-        self.ok_button = ft.Button(
-            content="OK",
-            on_click=self.on_ok_click,
-            icon=ft.Icons.CHECK,
+        self.save_button = ft.Button(
+            content="Save",
+            on_click=self.on_save_click,
+            icon=ft.Icons.SAVE,
         )
+        buttons = [self.backButton, self.save_button]
+        if self.kind == "definitions":
+            self.swap_all_button = ft.FilledTonalButton(
+                content="Swap all",
+                icon=ft.Icons.SWAP_VERT,
+                on_click=self.on_swap_all_click,
+            )
+            buttons.append(self.swap_all_button)
         self.buttons_row = ft.Row(
-            controls=[
-                self.backButton,
-                self.ok_button,
-            ],
+            controls=buttons,
             alignment=ft.MainAxisAlignment.CENTER,
         )
 
@@ -72,40 +78,41 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
         else:
             words = create_empty_set(self.kind)
 
-        words_columns = [
-            PartsOfSpeech.VERB.value,
-            PartsOfSpeech.PERSON.value,
-            PartsOfSpeech.THING.value,
-            PartsOfSpeech.ADJECTIVE.value,
-            PartsOfSpeech.ADVERB.value,
-        ]
-
-        definitions_columns = [
-            WordDefinitions.WORD.value,
-            WordDefinitions.DEFINITION.value,
-        ]
-
-        for i in range(len(words)):
-            words_row = words.iloc[i]
-            if self.kind == "words":
-                words_row = words_row[words_columns]
-                self.lv.controls.append(EditCardWords(self.lv, words_row=words.iloc[i]))
-            elif self.kind == "definitions":
-                words_row = words_row[definitions_columns]
-                self.lv.controls.append(EditCardDefinitions(self.lv, words_row=words.iloc[i]))
-        self.lv.controls.remove(self.addButton)
-        self.lv.controls.append(self.addButton)
+        self.__populate_cards(words)
 
         self.controls = [
             self.main_container,
             self.buttons_row,
         ]
 
+    def __populate_cards(self, words):
+        self.lv.controls.clear()
+        self.lv.edited = False
+        self.lv.deleted_indexes = []
+
+        for i in range(len(words)):
+            if self.kind == "words":
+                self.lv.controls.append(EditCardWords(self.lv, words_row=words.iloc[i]))
+            elif self.kind == "definitions":
+                self.lv.controls.append(EditCardDefinitions(self.lv, words_row=words.iloc[i]))
+
+        self.lv.controls.append(self.addButton)
+
+    def __reload_cards(self):
+        words = load_set(self.file_name)
+        self.__populate_cards(words)
+
     def apply_layout(self, metrics: LayoutMetrics | None = None):
         metrics = self.resolve_layout_metrics(metrics)
         self._form_width = metrics.form_width
         self.main_container.width = metrics.form_width
         self.update_if_mounted()
+
+    def on_swap_all_click(self, e):
+        for control in self.lv.controls:
+            if isinstance(control, EditCardDefinitions):
+                control.swap_word_and_definition()
+        e.page.update()
 
     def on_add_click(self, e):
         if len(self.lv.controls) - 1 >= self.MAX_CARDS:
@@ -144,10 +151,17 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
                 close_button_text="OK",
             )
             return True
+        return False
 
-    def on_ok_click(self, e):
+    def __has_changes(self):
+        return self.lv.edited or any(
+            isinstance(control, (EditCardWords, EditCardDefinitions)) and control.has_changes()
+            for control in self.lv.controls
+        )
+
+    def __validate_for_save(self, e):
         if self.__no_cards(e):
-            return
+            return False
 
         if not self.__is_valid():
             create_alert_dialog(
@@ -156,23 +170,20 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
                 content="Some cards have less than two text fields filled.",
                 close_button_text="OK",
             )
+            return False
+
+        return True
+
+    def on_save_click(self, e):
+        if not self.__validate_for_save(e):
             return
 
-        changes_detected = self.lv.edited or any(isinstance(control, (EditCardWords, EditCardDefinitions)) and control.has_changes() for control in self.lv.controls)
+        if not self.__has_changes():
+            return
 
-        if changes_detected:
-            create_alert_dialog(
-                page=e.page,
-                title="Confirm",
-                content="Do you want to save the changes?",
-                close_button_text="Cancel",
-                action_button_text="OK",
-                action_function=self.__save_changes,
-            )
-        else:
-            self.__save_changes(e)
+        self.__save_changes(e, leave=False)
 
-    def __save_changes(self, e, dialog=None):
+    def __save_changes(self, e, *, leave=False):
         def delete_row_at(df, index):
             if index is None:
                 return df
@@ -238,21 +249,50 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
 
         existing_data = existing_data.reset_index(drop=True)
 
-        if self.title is not None:
+        first_create_save = self.title is not None
+        if first_create_save:
             from learning_app.data.app_data import AppData
             AppData.create_data_file_words(
                 self.file_name,
                 title=self.title,
                 subtitle=self.subtitle if self.subtitle is not None else "",
             )
+            self.title = None
+            self.subtitle = None
 
         save_set(existing_data, self.file_name)
 
-        if dialog:
-            e.page.pop_dialog()
+        e.page.show_dialog(ft.SnackBar(
+            content=ft.Text("Changes saved"),
+            bgcolor=ft.Colors.TEAL_600,
+        ))
 
-        navigate_to(e.page, HOME_ROUTE)
+        if leave:
+            navigate_to(e.page, HOME_ROUTE)
+        else:
+            if first_create_save:
+                reanchor_edit_on_home(e.page, self.file_name)
+            self.__reload_cards()
+
         e.page.update()
 
+    def __save_and_leave(self, e):
+        if not self.__validate_for_save(e):
+            return
+        self.__save_changes(e, leave=True)
+
     def on_back_click(self, e):
-        go_back(e.page)
+        if not self.__has_changes():
+            go_back(e.page)
+            return
+
+        create_alert_dialog(
+            page=e.page,
+            title="Unsaved changes",
+            content="You have unsaved changes. Leave without saving?",
+            close_button_text="Cancel",
+            secondary_button_text="Don't save",
+            secondary_action_function=lambda event: go_back(event.page),
+            action_button_text="Save",
+            action_function=self.__save_and_leave,
+        )

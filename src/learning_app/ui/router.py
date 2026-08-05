@@ -380,6 +380,33 @@ async def reset_to_route(page: ft.Page, full_route: str):
     page.update()
 
 
+async def reanchor_active_deep_view_on_home(page: ft.Page, edit_route: str) -> None:
+    """Keep the active deep view and replace everything under it with Home.
+
+    Used after the first save of a newly created set so UI Back and system back
+    reveal a fresh home catalog instead of the create-set form and a stale tile
+    list.
+
+    Args:
+        page: Page whose view stack should be rewritten.
+        edit_route: Canonical edit route URL (typically ``file`` only, no create
+            ``title`` / ``subtitle`` query params).
+    """
+    if not page.views:
+        return
+
+    active = page.views[-1]
+    LayoutMetricsStore.refresh(page)
+    _detach_shared_chrome_from_views(page)
+    home = _build_route_view(HOME_ROUTE, page)
+    active.route = edit_route
+    page.views[:] = [home, active]
+    _sync_chrome_for_route(edit_route, page)
+    await page.push_route(edit_route)
+    AppTheme.apply_to_page(page)
+    page.update()
+
+
 async def push_route_view(page: ft.Page, full_route: str):
     """Push a normalized deep route or reset to a shell route.
 

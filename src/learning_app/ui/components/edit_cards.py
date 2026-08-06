@@ -34,7 +34,7 @@ class EditCardBase(ft.Card):
             word_field.width = width
             word_field.on_change = self.validate_fields
 
-        self.error_label = ft.Text(value="", color="red")
+        self.error_label = ft.Text(value="", color="red", text_align=ft.TextAlign.CENTER)
 
         self.edited = True
 

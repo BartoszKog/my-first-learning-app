@@ -69,9 +69,9 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
             self.title_field.error = None
 
         if not self.kind_dropdown.value:
-            self.kind_dropdown.error = "Choose an option from the dropdown"
+            self.kind_dropdown.error_text = "Choose an option from the dropdown"
         else:
-            self.kind_dropdown.error = None
+            self.kind_dropdown.error_text = None
 
         if not (self.title_field.value or "").strip() or not self.kind_dropdown.value:
             create_alert_dialog(

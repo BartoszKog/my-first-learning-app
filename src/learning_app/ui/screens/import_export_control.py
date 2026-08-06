@@ -138,7 +138,7 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.export_tab_content = ft.Container(
             content=self.export_tab_column,
             expand=True,
-            padding=ft.Padding(left=30, right=30, top=0, bottom=30),
+            padding=ft.Padding(left=5, right=5, top=0, bottom=5),
         )
 
         self.tabs = ft.Tabs(

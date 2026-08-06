@@ -29,7 +29,10 @@ class WordDefinitionField(BaseWordField):
         self._form_width = width
         field_width = learn_definition_field_width(width, page)
 
-        self.definitionLabel = ft.Text(theme_style=ft.TextThemeStyle.TITLE_LARGE)
+        self.definitionLabel = ft.Text(
+            theme_style=ft.TextThemeStyle.TITLE_LARGE,
+            text_align=ft.TextAlign.CENTER,
+        )
         self.word = WordField(label="", width=field_width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER

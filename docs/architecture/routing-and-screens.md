@@ -81,7 +81,7 @@ A Deep route represents a task started from another screen:
 - it hides shared chrome,
 - finish or cancel it with `go_back()` to reveal the previous view.
 
-Create, Edit, Learn, and Search are Deep routes.
+Create, Edit, and Learn are Deep routes.
 
 ![Focused Deep screen](../assets/architecture/deep-screen.png){ .docs-screenshot }
 
@@ -119,7 +119,9 @@ builds a `TilesContainer` and registers it with
 | `/set/edit` | Deep | `EditSetMenu` | Edit cards for one set |
 | `/set/learn` | Deep | `WordFields` or `WordDefinitionField` (`session=False`) | Learn menu / word list |
 | `/set/learn/session` | Deep | Same control (`session=True`) | Active learn session |
-| `/search` | Deep | `SearchScreen` + `SearchControl` | Filter shared Home or export tiles |
+
+Search is not a route: `go_search()` opens in-place search over the Home or
+export `TilesContainer` (see [Body registry](../concepts/body-registry.md)).
 
 ### Learn: menu then session
 

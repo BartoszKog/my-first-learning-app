@@ -2,7 +2,7 @@ import os
 
 import flet as ft
 
-from learning_app.data.app_data import delate_set, get_kind_of_file_and_validate, set_default_progress
+from learning_app.data.app_data import delate_set, get_kind_of_file_and_validate, record_set_use, set_default_progress
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.navigation import push_view
@@ -155,6 +155,7 @@ class ContentTile(ft.Card):
         if not self.__validate_file_before_opening(e):
             return
 
+        record_set_use(self.file_name)
         LayoutMetricsStore.refresh(e.page)
         push_view(e.page, SET_LEARN_ROUTE, file=self.file_name)
 

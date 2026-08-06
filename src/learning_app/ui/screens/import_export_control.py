@@ -106,9 +106,10 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         else:
             self.tiles_of_sets = BodyRegistry.get_export()
 
+        self.export_tip = ft.Text("Choose a set to export.")
         self.export_controls = ft.Column(
             [
-                ft.Text("Choose a set to export."),
+                self.export_tip,
                 self.tiles_of_sets,
             ],
             expand=True,
@@ -496,17 +497,10 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.validation_has_statistics = None
         self.validation_data_type = None
 
-    def __on_change_tab_from_import_to_export_delate_search_control(self):
+    def __on_tab_change(self, e):
+        # Leaving Import: dismiss keyboard / restore import column alignment.
         if self.last_tab_index == 0:
             self.__on_blur_field(None)
-
-    def __on_change_tab_from_export_to_import_delate_search_control(self):
-        if self.last_tab_index == 1:
-            self.remove_space_before_export_controls()
-
-    def __on_tab_change(self, e):
-        self.__on_change_tab_from_import_to_export_delate_search_control()
-        self.__on_change_tab_from_export_to_import_delate_search_control()
         if e.control.selected_index == 0:
             self.__show_search_button(False)
         else:
@@ -516,6 +510,17 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
     def __show_search_button(self, choice: bool):
         AppChrome.get_search_button().visible = choice
         self.page.update()
+
+    def set_tab_bar_visible(self, visible: bool) -> None:
+        """Show or hide the Import/Export tab bar and export tip (e.g. during search)."""
+        tab_bar = self.tabs.content.controls[0]
+        tab_bar.visible = visible
+        self.export_tip.visible = visible
+        try:
+            if self.page is not None:
+                self.update()
+        except RuntimeError:
+            pass
 
     def __disable_menu_button(self):
         # disable menu button in bottom appbar
@@ -570,16 +575,4 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
     def __on_blur_field(self, e=None):
         # change alignment of column with import controls when platform is android
         self.__android_center_import_controls_alignment()
-
-    def add_space_before_export_controls(self):
-        if is_android_platform(self.page) and self.last_tab_index == 1:
-            self.export_tab_column.controls.insert(0, ft.Container(height=40))
-            self.update()
-
-    def remove_space_before_export_controls(self):
-        if is_android_platform(self.page) and self.last_tab_index == 1:
-            if self.export_tab_column.controls and isinstance(self.export_tab_column.controls[0], ft.Container):
-                if getattr(self.export_tab_column.controls[0], "height", None) == 40:
-                    self.export_tab_column.controls.pop(0)
-                    self.update()
 

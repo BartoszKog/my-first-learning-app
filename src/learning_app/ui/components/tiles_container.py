@@ -4,7 +4,7 @@ import threading
 import flet as ft
 
 from learning_app.data.app_data import delate_set, get_file_names_and_titles
-from learning_app.data.constants import FilesColumns
+from learning_app.data.constants import FilesColumns, SetSortMode
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.ui.components.content_tile import ContentTile
 from learning_app.ui.layout_host import control_is_on_page
@@ -18,7 +18,8 @@ class TilesContainer(ft.Container):
 
     Loads catalog entries, builds ``ContentTile`` children, and supports
     search filtering used by ``SearchControl``. Register Home/export instances
-    with ``BodyRegistry`` when the container is shared across routes.
+    with ``BodyRegistry`` when the container is shared (Home, export, and
+    in-place search).
 
     Args:
         page: Optional page used to refresh layout metrics on construction.
@@ -27,40 +28,131 @@ class TilesContainer(ft.Container):
 
     SCROLL_PIXELS_PER_TILE = 95
     SCROLL_OFFSET_CORRECTION = -100
+    _shared_sort_mode: SetSortMode = SetSortMode.LAST_USED
+
+    @classmethod
+    def get_shared_sort_mode(cls) -> SetSortMode:
+        return cls._shared_sort_mode
+
+    @classmethod
+    def set_shared_sort_mode(cls, mode: SetSortMode) -> None:
+        """Update the in-memory sort mode shared for this app session."""
+        cls._shared_sort_mode = mode
+
+    def __create_sort_dropdown(self) -> ft.Dropdown:
+        return ft.Dropdown(
+            value=self.sort_mode.value,
+            options=[
+                ft.DropdownOption(key=SetSortMode.LAST_USED.value, text="Sort by last used"),
+                ft.DropdownOption(key=SetSortMode.CREATED.value, text="Sort by date created"),
+                ft.DropdownOption(key=SetSortMode.TITLE.value, text="Sort alphabetically (A-Z)"),
+                ft.DropdownOption(key=SetSortMode.USE_COUNT.value, text="Sort by most used"),
+            ],
+            on_select=self.__on_sort_change,
+            text_size=14,
+            dense=True,
+            filled=True,
+            expand=True,
+            # fill_color = closed field (blend with Card); bgcolor = open menu panel
+            fill_color=ft.Colors.TRANSPARENT,
+            bgcolor=ft.Colors.SURFACE,
+            border_color=ft.Colors.TRANSPARENT,
+            focused_border_color=ft.Colors.TEAL_ACCENT,
+            border_radius=10,
+            leading_icon=ft.Icons.SORT,
+            text_align=ft.TextAlign.CENTER,
+        )
+
+    def __rebuild_sort_bar(self) -> None:
+        """Create the sort dropdown in a Card matching ContentTile chrome."""
+        self.sort_dropdown = self.__create_sort_dropdown()
+        self.sort_bar = ft.Card(
+            content=ft.Container(
+                content=self.sort_dropdown,
+                padding=ft.Padding.symmetric(horizontal=4, vertical=2),
+            ),
+            margin=5,
+        )
 
     def __init__(self, page=None, export_mode=False):
         super().__init__()
 
         self.export_mode = export_mode
+        self.searching = False
         self.tiles_with_patterns = []
         self.last_pattern = ""
         self.index_of_focused_tile = 0
         self.index_of_all_tiles = 0
         self.lock = threading.Lock()
+        self.sort_mode = self.get_shared_sort_mode()
+        self.__rebuild_sort_bar()
 
         self.files_and_titles = self.__validate_and_get_files(AppSession.get_page())
 
-        lv = ft.ListView(
+        self.list_view = ft.ListView(
             expand=True,
             spacing=10,
-            controls=[
-                self.__create_content_tile(entry)
-                for entry in self.files_and_titles
-            ],
+            controls=self.__build_list_controls(),
         )
 
-        self.content = lv
+        self.content = self.list_view
         self.padding = 10
         self.expand = True
         if page is not None:
             self.apply_flex_layout(LayoutMetricsStore.refresh(page))
 
+    def __build_list_controls(self, pattern: str = "", main_key=None):
+        tiles = [
+            self.__create_content_tile(entry, pattern, main_key)
+            for entry in self.files_and_titles
+        ]
+        if self.searching:
+            return tiles
+        return [self.sort_bar] + tiles
+
+    def __tile_controls(self):
+        return [control for control in self.list_view.controls if isinstance(control, ContentTile)]
+
+    def apply_sort_mode(self, mode: SetSortMode, *, reload_from_disk: bool = True) -> None:
+        """Apply a sort mode locally and keep the dropdown label in sync."""
+        self.sort_mode = mode
+        self.sort_dropdown.value = mode.value
+        if reload_from_disk:
+            self.files_and_titles = get_file_names_and_titles(self.sort_mode)
+        self.__reload_tiles(self.last_pattern)
+
+    def __on_sort_change(self, e):
+        try:
+            mode = SetSortMode(e.control.value)
+        except ValueError:
+            mode = SetSortMode.LAST_USED
+        self.set_shared_sort_mode(mode)
+        self.apply_sort_mode(mode)
+        self.__sync_other_containers(mode)
+        e.page.update()
+
+    def __sync_other_containers(self, mode: SetSortMode) -> None:
+        from learning_app.ui.body_registry import BodyRegistry
+
+        others = []
+        if BodyRegistry.has_home():
+            others.append(BodyRegistry.get_home())
+        if BodyRegistry.has_export():
+            others.append(BodyRegistry.get_export())
+        for container in others:
+            if container is self:
+                continue
+            # Home/Export under a replaced drawer route stays in BodyRegistry but
+            # is detached; updating it raises "Control must be added to the page".
+            if control_is_on_page(container):
+                container.apply_sort_mode(mode)
+
     def refresh_content(self):
+        self.sort_mode = self.get_shared_sort_mode()
         self.files_and_titles = self.__validate_and_get_files(AppSession.get_page())
-        self.content.controls.clear()
-        for entry in self.files_and_titles:
-            self.content.controls.append(self.__create_content_tile(entry))
-        self.update()
+        self.__reload_tiles()
+        if control_is_on_page(self):
+            self.update()
 
     def __create_content_tile(self, entry, pattern: str = "", main_key=None):
         key = entry[FilesColumns.FILE_NAME.value]
@@ -78,14 +170,16 @@ class TilesContainer(ft.Container):
         )
 
     def __reload_tiles(self, pattern: str = "", main_key=None):
-        self.content.controls.clear()
-        for entry in self.files_and_titles:
-            self.content.controls.append(self.__create_content_tile(entry, pattern, main_key))
-        self.update()
+        self.sort_dropdown.value = self.sort_mode.value
+        self.list_view.controls = self.__build_list_controls(pattern, main_key)
+        if control_is_on_page(self):
+            self.update()
 
     def did_mount(self):
         page = self.page or AppSession.get_page()
         self.apply_flex_layout(LayoutMetricsStore.refresh(page))
+        self.sort_mode = self.get_shared_sort_mode()
+        self.sort_dropdown.value = self.sort_mode.value
         self.refresh_content()
 
     def apply_flex_layout(self, metrics: LayoutMetrics | None = None):
@@ -98,7 +192,7 @@ class TilesContainer(ft.Container):
             self.update()
 
     def has_content_tiles(self):
-        return len(self.content.controls) > 0
+        return len(self.__tile_controls()) > 0
 
     @staticmethod
     def __file_exist(file_name):
@@ -141,7 +235,7 @@ class TilesContainer(ft.Container):
                 )
                 return []
 
-        files_and_titles = get_file_names_and_titles()
+        files_and_titles = get_file_names_and_titles(self.sort_mode)
 
         file_has_been_removed = False
         files_to_remove = []
@@ -166,7 +260,7 @@ class TilesContainer(ft.Container):
                 remove_views_for_set_file(page, file_name)
 
         if file_has_been_removed:
-            files_and_titles = get_file_names_and_titles()
+            files_and_titles = get_file_names_and_titles(self.sort_mode)
 
         return files_and_titles
 
@@ -203,13 +297,16 @@ class TilesContainer(ft.Container):
         self.refresh_content()
 
     def trigger_searching_mode(self):
-        self.tiles_with_patterns = self.content.controls.copy()
-        self.index_of_all_tiles = len(self.content.controls) - 1
+        self.searching = True
+        self.__reload_tiles(self.last_pattern)
+        self.tiles_with_patterns = self.__tile_controls().copy()
+        self.index_of_all_tiles = max(len(self.list_view.controls) - 1, 0)
         if len(self.tiles_with_patterns) > 0:
             self.__scroll_to_tile(0, "up")
 
     def turn_off_searching_mode(self):
         with self.lock:
+            self.searching = False
             self.tiles_with_patterns.clear()
             self.last_pattern = ""
             self.index_of_focused_tile = 0
@@ -219,7 +316,7 @@ class TilesContainer(ft.Container):
     def reset_indications(self):
         with self.lock:
             self.__reload_tiles()
-            self.tiles_with_patterns = self.content.controls.copy()
+            self.tiles_with_patterns = self.__tile_controls().copy()
 
     def indicate_patterns_and_scroll_to_first(self, pattern: str):
         with self.lock:
@@ -232,7 +329,7 @@ class TilesContainer(ft.Container):
             main_key = matching_keys[0] if pattern and matching_keys else None
             self.__reload_tiles(pattern, main_key)
             self.tiles_with_patterns = [
-                tile for tile in self.content.controls
+                tile for tile in self.__tile_controls()
                 if tile.key in matching_keys
             ]
 
@@ -243,7 +340,7 @@ class TilesContainer(ft.Container):
             self.last_pattern = pattern
 
     async def __scroll_to_offset(self, offset):
-        await self.content.scroll_to(offset=offset)
+        await self.list_view.scroll_to(offset=offset)
 
     def __schedule_scroll_to_offset(self, offset):
         page = self.page or AppSession.get_page()
@@ -257,8 +354,8 @@ class TilesContainer(ft.Container):
         assert up_or_down == "up" or up_or_down == "down"
 
         target_key = self.tiles_with_patterns[index].key
-        for tile_index, tile in enumerate(self.content.controls):
-            if tile.key == target_key:
+        for tile_index, tile in enumerate(self.list_view.controls):
+            if isinstance(tile, ContentTile) and tile.key == target_key:
                 self.index_of_all_tiles = tile_index
                 offset = max(
                     tile_index * self.SCROLL_PIXELS_PER_TILE + self.SCROLL_OFFSET_CORRECTION,
@@ -276,7 +373,7 @@ class TilesContainer(ft.Container):
                 main_key = self.tiles_with_patterns[self.index_of_focused_tile].key
                 self.__reload_tiles(self.last_pattern, main_key)
                 self.tiles_with_patterns = [
-                    tile for tile in self.content.controls
+                    tile for tile in self.__tile_controls()
                     if tile.contains_pattern(self.last_pattern)
                 ]
                 self.__scroll_to_tile(self.index_of_focused_tile, "down")
@@ -288,7 +385,7 @@ class TilesContainer(ft.Container):
                 main_key = self.tiles_with_patterns[self.index_of_focused_tile].key
                 self.__reload_tiles(self.last_pattern, main_key)
                 self.tiles_with_patterns = [
-                    tile for tile in self.content.controls
+                    tile for tile in self.__tile_controls()
                     if tile.contains_pattern(self.last_pattern)
                 ]
                 self.__scroll_to_tile(self.index_of_focused_tile, "up")

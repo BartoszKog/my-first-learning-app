@@ -562,7 +562,7 @@ class CSVProcessor:
             Dict with ``repair_actions`` (list of human-readable steps) and
             ``success`` (whether any repair was applied or completed).
         """
-        from learning_app.data.app_data import generate_empty_files_data
+        from learning_app.data.app_data import ensure_files_catalog_columns, generate_empty_files_data
 
         validation_result = CSVProcessor.validate_files_csv()
         repair_actions = []
@@ -635,8 +635,11 @@ class CSVProcessor:
 
             # Save the cleaned data if changes were made
             if len(files_data) != original_len or any(["Filled empty" in action for action in repair_actions]):
+                files_data = ensure_files_catalog_columns(files_data, persist=False)
                 files_data.to_csv(FilePathManager.get_files_data_path(), index=False)
                 repair_actions.append(f"Saved repaired files.csv with {len(files_data)} entries (originally {original_len})")
+            else:
+                ensure_files_catalog_columns(files_data)
 
             return {
                 "repair_actions": repair_actions,

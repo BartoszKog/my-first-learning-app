@@ -86,22 +86,6 @@ def build_shell_body(page: ft.Page, *controls: ft.Control) -> ft.Column:
     )
 
 
-def build_search_body(page: ft.Page, *controls: ft.Control) -> ft.SafeArea:
-    """Build search content protected on every safe-area edge.
-
-    Search is a deep view without shared chrome, so its content must account
-    for all system intrusions itself.
-
-    Args:
-        page: Page used to calculate responsive body width.
-        *controls: Controls to place in the search body.
-
-    Returns:
-        A safe-area wrapper containing the responsive search column.
-    """
-    return wrap_safe_area(build_shell_body(page, *controls))
-
-
 def build_bottom_inset_shell_body(page: ft.Page, *controls: ft.Control) -> ft.SafeArea:
     """Build shell content protected below its app bar.
 

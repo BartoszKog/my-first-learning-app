@@ -1,26 +1,27 @@
 import flet as ft
 
 from learning_app.ui.components.tiles_container import TilesContainer
-from learning_app.ui.navigation import go_back
 
 
 class SearchControl(ft.Row):
     """Search field and next/previous controls over a shared ``TilesContainer``.
 
-    Drives pattern filtering and focus on the existing tile body; closing
-    returns via ``go_back``. Used by ``SearchScreen``.
+    Used by in-place search on Home/Export. Closing calls ``on_close`` when
+    provided (preferred), otherwise does nothing.
 
     Args:
-        page: Application page for navigation.
+        page: Unused; kept for call-site compatibility.
         tiles_container: Home or export tile list to filter.
+        on_close: Optional callback invoked by the close button.
     """
 
     COLOR = ft.Colors.CYAN
 
-    def __init__(self, page, tiles_container: TilesContainer):
+    def __init__(self, page, tiles_container: TilesContainer, on_close=None):
         super().__init__()
-        self._app_page = page
+        _ = page
         self.tiles_container = tiles_container
+        self._on_close = on_close
 
         self.vertical_alignment = ft.CrossAxisAlignment.CENTER
         self.tight = True
@@ -57,9 +58,6 @@ class SearchControl(ft.Row):
             self.close_button,
         ])
 
-    def _get_page(self):
-        return self.page or self._app_page
-
     def on_next_pattern_click(self, e):
         self.tiles_container.scroll_to_next()
 
@@ -67,14 +65,9 @@ class SearchControl(ft.Row):
         self.tiles_container.scroll_to_previous()
 
     def on_close_click(self, e):
-        go_back(self._get_page())
+        if self._on_close is not None:
+            self._on_close(e)
 
     def change_text_field(self, e):
         pattern = self.search_field.value
         self.tiles_container.indicate_patterns_and_scroll_to_first(pattern)
-
-    def did_mount(self):
-        self.tiles_container.trigger_searching_mode()
-
-    def will_unmount(self):
-        self.tiles_container.turn_off_searching_mode()

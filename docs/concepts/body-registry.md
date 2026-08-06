@@ -2,9 +2,10 @@
 
 Source: `ui/body_registry.py`
 
-Home and Import/Export each own a `TilesContainer`. Search should filter the
-same container the user was already viewing: constructing a second copy would
-duplicate controls and could show state different from the source screen.
+Home and Import/Export each own a `TilesContainer`. In-place search should
+filter the same container the user was already viewing: constructing a second
+copy would duplicate controls and could show state different from the source
+screen.
 
 `BodyRegistry` solves this narrow coordination problem by retaining references
 to the active Home and export tile bodies.
@@ -20,22 +21,23 @@ return [body]
 ```
 
 Screen code calls `go_search(page, mode="home")`. Internally, the helper
-selects that same instance before pushing Search:
+selects that same instance and opens in-place search:
 
 ```python
 body = BodyRegistry.get_home()
 if body.has_content_tiles():
-    push_view(page, SEARCH_ROUTE, mode="home")
+    ensure_inplace_search(page, body)
 ```
 
 The complete flow is:
 
 ```text
-TilesContainer → BodyRegistry.set_home() → go_search(mode="home") → SearchScreen
+TilesContainer → BodyRegistry.set_home() → go_search(mode="home") → inplace_search
 ```
 
-Search is a Deep route: it reuses the same tile body, without shared Shell
-chrome.
+Search is not a route. `ui/inplace_search.py` inserts `SearchControl` above
+the existing tile body in its shell column, hides shared chrome, and restores
+it on close. The tile body is never reparented.
 
 ![Search filtering the Home tile body](../assets/architecture/search-screen.png){ .docs-screenshot-sm }
 
@@ -57,24 +59,22 @@ Likewise, `go_search(page, mode="export")` internally selects the export body:
 ```python
 body = BodyRegistry.get_export()
 if body.has_content_tiles():
-    push_view(page, SEARCH_ROUTE, mode="export")
+    ensure_inplace_search(page, body)
 ```
 
 The flow is:
 
 ```text
-TilesContainer → BodyRegistry.set_export() → go_search(mode="export") → SearchScreen
+TilesContainer → BodyRegistry.set_export() → go_search(mode="export") → inplace_search
 ```
 
 `get_export()` asserts if the export body was never registered, so call
 export search only after Import/Export has run its constructor at least once.
-Before pushing Search, `go_search()` also verifies that the selected body
+Before opening search, `go_search()` also verifies that the selected body
 contains tiles.
 
-The Search route factory prefers the export body when `mode="export"` and
-`BodyRegistry.has_export()` is true. If export is missing but home is
-registered, it falls back to the home `TilesContainer`. If neither body
-exists, the factory returns `None` and the route fallback is used.
+On Export, in-place search also hides the Import/Export tab bar and the
+“Choose a set to export.” tip while the search field is open.
 
 ## Scope of the registry
 

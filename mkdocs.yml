@@ -117,6 +117,7 @@ nav:
           - Route URLs: reference/route_url.md
           - Route registry: reference/route_registry.md
           - Navigation API: reference/navigation.md
+          - In-place search: reference/inplace_search.md
           - Router: reference/router.md
       - Layout & chrome:
           - Routable screens: reference/routable_screen.md

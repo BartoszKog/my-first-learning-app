@@ -7,11 +7,140 @@ practice groups from statistics columns, and persists answers with ``save_set``.
 
 import os
 import random as rd
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
-from learning_app.data.constants import FilesColumns, PartsOfSpeech, StatsColumns, WordDefinitions
+from learning_app.data.constants import FilesColumns, PartsOfSpeech, SetSortMode, StatsColumns, WordDefinitions
 from learning_app.data.file_path_manager import FilePathManager
+
+_CATALOG_COLUMN_ORDER = [
+    FilesColumns.FILE_NAME.value,
+    FilesColumns.TITLE.value,
+    FilesColumns.SUBTITLE.value,
+    FilesColumns.CREATED_AT.value,
+    FilesColumns.LAST_USED.value,
+    FilesColumns.USE_COUNT.value,
+]
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def ensure_files_catalog_columns(df: pd.DataFrame | None = None, *, persist: bool = True) -> pd.DataFrame:
+    """Ensure catalog DataFrame has usage/creation columns; optionally rewrite CSV.
+
+    Missing columns are added with defaults. Rows missing ``created_at`` get
+    stable timestamps in existing row order so creation sort matches historical
+    append order. Older catalogs without usage fields get empty ``last_used``
+    and ``use_count`` of ``0``.
+
+    Args:
+        df: Catalog table to migrate. When ``None``, loads ``files.csv`` (or
+            creates an empty catalog first).
+        persist: When ``True`` and columns/values changed, write ``files.csv``.
+
+    Returns:
+        Catalog DataFrame with the full column set.
+    """
+    files_data_path = FilePathManager.get_files_data_path()
+
+    if df is None:
+        if not os.path.exists(files_data_path):
+            generate_empty_files_data()
+        df = pd.read_csv(files_data_path)
+
+    changed = False
+    base_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
+
+    if FilesColumns.CREATED_AT.value not in df.columns:
+        df[FilesColumns.CREATED_AT.value] = [
+            (base_created + timedelta(seconds=i)).isoformat() for i in range(len(df))
+        ]
+        changed = True
+    else:
+        for position, i in enumerate(df.index):
+            value = df.at[i, FilesColumns.CREATED_AT.value]
+            if pd.isna(value) or str(value).strip() == "":
+                df.at[i, FilesColumns.CREATED_AT.value] = (
+                    base_created + timedelta(seconds=position)
+                ).isoformat()
+                changed = True
+
+    if FilesColumns.LAST_USED.value not in df.columns:
+        df[FilesColumns.LAST_USED.value] = ""
+        changed = True
+    else:
+        df[FilesColumns.LAST_USED.value] = df[FilesColumns.LAST_USED.value].apply(
+            lambda x: "" if pd.isna(x) else str(x)
+        )
+
+    if FilesColumns.USE_COUNT.value not in df.columns:
+        df[FilesColumns.USE_COUNT.value] = 0
+        changed = True
+    else:
+        df[FilesColumns.USE_COUNT.value] = (
+            pd.to_numeric(df[FilesColumns.USE_COUNT.value], errors="coerce").fillna(0).astype(int)
+        )
+
+    ordered = [col for col in _CATALOG_COLUMN_ORDER if col in df.columns]
+    ordered.extend(col for col in df.columns if col not in _CATALOG_COLUMN_ORDER)
+    df = df.reindex(columns=ordered)
+
+    if persist and changed:
+        df.to_csv(files_data_path, index=False)
+
+    return df
+
+
+def sort_catalog_entries(entries: list[dict], sort_mode: SetSortMode) -> list[dict]:
+    """Return catalog entry dicts ordered by ``sort_mode``."""
+    if sort_mode is SetSortMode.LAST_USED:
+        used = [e for e in entries if e.get(FilesColumns.LAST_USED.value)]
+        unused = [e for e in entries if not e.get(FilesColumns.LAST_USED.value)]
+        used.sort(
+            key=lambda e: (
+                e[FilesColumns.LAST_USED.value],
+                e.get(FilesColumns.CREATED_AT.value) or "",
+                (e.get(FilesColumns.TITLE.value) or "").lower(),
+            ),
+            reverse=True,
+        )
+        unused.sort(
+            key=lambda e: (
+                e.get(FilesColumns.CREATED_AT.value) or "",
+                (e.get(FilesColumns.TITLE.value) or "").lower(),
+            )
+        )
+        return used + unused
+
+    if sort_mode is SetSortMode.CREATED:
+        return sorted(
+            entries,
+            key=lambda e: (
+                e.get(FilesColumns.CREATED_AT.value) or "",
+                (e.get(FilesColumns.TITLE.value) or "").lower(),
+            ),
+            reverse=True,
+        )
+
+    if sort_mode is SetSortMode.TITLE:
+        return sorted(
+            entries,
+            key=lambda e: (e.get(FilesColumns.TITLE.value) or "").lower(),
+        )
+
+    if sort_mode is SetSortMode.USE_COUNT:
+        return sorted(
+            entries,
+            key=lambda e: (
+                -int(e.get(FilesColumns.USE_COUNT.value) or 0),
+                (e.get(FilesColumns.TITLE.value) or "").lower(),
+            ),
+        )
+
+    return list(entries)
 
 
 def get_kind_of_file_and_validate(file_name: str) -> str:
@@ -86,13 +215,18 @@ def sanitize_file_name(file_name: str, kind: str) -> str:
     return file_name
 
 
-def get_file_names_and_titles() -> list[dict]:
-    """Return catalog entries with absolute CSV paths, titles, and subtitles.
+def get_file_names_and_titles(sort_mode: SetSortMode = SetSortMode.LAST_USED) -> list[dict]:
+    """Return catalog entries with absolute CSV paths, titles, and metadata.
 
-    Creates an empty ``files.csv`` when the catalog is missing.
+    Creates an empty ``files.csv`` when the catalog is missing and migrates
+    older catalogs that lack creation/usage columns.
+
+    Args:
+        sort_mode: Ordering applied before returning entries.
 
     Returns:
-        List of dicts with ``file_name``, ``title``, and ``subtitle`` keys.
+        List of dicts with ``file_name``, ``title``, ``subtitle``,
+        ``created_at``, ``last_used``, and ``use_count`` keys.
         ``file_name`` values are absolute paths.
     """
     files_data_path = FilePathManager.get_files_data_path()
@@ -100,7 +234,7 @@ def get_file_names_and_titles() -> list[dict]:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = pd.read_csv(files_data_path)
+    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
     df_files[FilesColumns.SUBTITLE.value] = df_files[FilesColumns.SUBTITLE.value].apply(
         lambda x: "" if pd.isna(x) else x
     )
@@ -111,9 +245,16 @@ def get_file_names_and_titles() -> list[dict]:
             FilesColumns.FILE_NAME.value: FilePathManager.get_csv_path(row[FilesColumns.FILE_NAME.value]),
             FilesColumns.TITLE.value: row[FilesColumns.TITLE.value],
             FilesColumns.SUBTITLE.value: row[FilesColumns.SUBTITLE.value],
+            FilesColumns.CREATED_AT.value: (
+                "" if pd.isna(row[FilesColumns.CREATED_AT.value]) else str(row[FilesColumns.CREATED_AT.value])
+            ),
+            FilesColumns.LAST_USED.value: (
+                "" if pd.isna(row[FilesColumns.LAST_USED.value]) else str(row[FilesColumns.LAST_USED.value])
+            ),
+            FilesColumns.USE_COUNT.value: int(row[FilesColumns.USE_COUNT.value] or 0),
         }
         result.append(entry)
-    return result
+    return sort_catalog_entries(result, sort_mode)
 
 
 def get_file_names() -> list:
@@ -129,7 +270,7 @@ def get_file_names() -> list:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = pd.read_csv(files_data_path)
+    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
     return df_files[FilesColumns.FILE_NAME.value].tolist()
 
 
@@ -137,11 +278,7 @@ def generate_empty_files_data() -> None:
     """Create an empty ``files.csv`` catalog with the expected columns."""
     files_data_path = FilePathManager.get_files_data_path()
 
-    df = pd.DataFrame(columns=[
-        FilesColumns.FILE_NAME.value,
-        FilesColumns.TITLE.value,
-        FilesColumns.SUBTITLE.value,
-    ])
+    df = pd.DataFrame(columns=_CATALOG_COLUMN_ORDER)
     df.to_csv(files_data_path, index=False)
 
 
@@ -178,7 +315,7 @@ def delate_set(file_name: str, file_not_exist: bool = False) -> None:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = pd.read_csv(files_data_path)
+    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
     df_files = df_files[df_files[FilesColumns.FILE_NAME.value] != os.path.basename(file_name)]
     df_files.to_csv(files_data_path, index=False)
 
@@ -200,13 +337,42 @@ def add_new_file(file_name: str, title: str, subtitle: str = "") -> None:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = pd.read_csv(files_data_path)
+    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
     new_row = {
         FilesColumns.FILE_NAME.value: os.path.basename(file_name),
         FilesColumns.TITLE.value: title,
         FilesColumns.SUBTITLE.value: subtitle,
+        FilesColumns.CREATED_AT.value: _utc_now_iso(),
+        FilesColumns.LAST_USED.value: "",
+        FilesColumns.USE_COUNT.value: 0,
     }
     df_files = pd.concat([df_files, pd.DataFrame([new_row])], ignore_index=True)
+    df_files.to_csv(files_data_path, index=False)
+
+
+def record_set_use(file_name: str) -> None:
+    """Increment use count and set last-used time for a catalog entry.
+
+    Called when the user opens a set's learn screen.
+
+    Args:
+        file_name: Set basename or path whose basename is matched in the catalog.
+    """
+    files_data_path = FilePathManager.get_files_data_path()
+
+    if not os.path.exists(files_data_path):
+        return
+
+    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    basename = os.path.basename(file_name)
+    mask = df_files[FilesColumns.FILE_NAME.value] == basename
+    if not mask.any():
+        return
+
+    df_files.loc[mask, FilesColumns.LAST_USED.value] = _utc_now_iso()
+    df_files.loc[mask, FilesColumns.USE_COUNT.value] = (
+        pd.to_numeric(df_files.loc[mask, FilesColumns.USE_COUNT.value], errors="coerce").fillna(0).astype(int) + 1
+    )
     df_files.to_csv(files_data_path, index=False)
 
 

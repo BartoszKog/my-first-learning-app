@@ -24,7 +24,6 @@ from learning_app.ui.route_paths import (
     HOME_ROUTE,
     IMPORT_EXPORT_ROUTE,
     INFO_ROUTE,
-    SEARCH_ROUTE,
     SET_EDIT_ROUTE,
     SET_LEARN_ROUTE,
     SET_LEARN_SESSION_ROUTE,
@@ -56,13 +55,11 @@ class BodyWrapperKind(Enum):
         BOTTOM_INSET_SHELL: Shell column protected from side and bottom
             intrusions while allowing the app bar to own the top inset.
         DEEP: Width-constrained form container for a deep route.
-        SEARCH: Shell-width column protected on every safe-area edge.
     """
 
     SHELL = "shell"
     BOTTOM_INSET_SHELL = "bottom_inset_shell"
     DEEP = "deep"
-    SEARCH = "search"
 
 
 class LayoutKind(Enum):
@@ -71,14 +68,12 @@ class LayoutKind(Enum):
     Attributes:
         HOME: Refresh the home tile collection's flex layout.
         IMPORT_EXPORT: Apply routable shell sizing to import/export content.
-        SEARCH: Apply routable shell sizing to search content.
         SHELL: Apply shell sizing to the route's declared layout control.
         DEEP_FORM: Apply form sizing to a routable deep-screen control.
     """
 
     HOME = "home"
     IMPORT_EXPORT = "import_export"
-    SEARCH = "search"
     SHELL = "shell"
     DEEP_FORM = "deep_form"
 
@@ -172,21 +167,6 @@ def _build_learn_session_controls(page: ft.Page, params: dict[str, str]) -> list
         return None
     session = _build_learn_control(page, file_name, session=True)
     return [session]
-
-
-def _build_search_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
-    from learning_app.ui.body_registry import BodyRegistry
-    from learning_app.ui.screens.search_screen import SearchScreen
-
-    mode = params.get("mode", "home")
-    if mode == "export" and BodyRegistry.has_export():
-        tiles_container = BodyRegistry.get_export()
-    elif BodyRegistry.has_home():
-        tiles_container = BodyRegistry.get_home()
-    else:
-        return None
-    search = SearchScreen(page, tiles_container)
-    return [search]
 
 
 @dataclass(frozen=True)
@@ -309,15 +289,6 @@ ROUTE_REGISTRY: tuple[RouteDef, ...] = (
         chrome=None,
         build_factory=_build_learn_session_controls,
         vertical_alignment=ft.MainAxisAlignment.CENTER,
-        fallback_path=HOME_ROUTE,
-    ),
-    RouteDef(
-        path=SEARCH_ROUTE,
-        kind=RouteKind.DEEP,
-        body_wrapper=BodyWrapperKind.SEARCH,
-        layout_kind=LayoutKind.SEARCH,
-        chrome=None,
-        build_factory=_build_search_controls,
         fallback_path=HOME_ROUTE,
     ),
 )

@@ -15,8 +15,8 @@ flowchart TD
 ```
 
 `BodyRegistry` in `ui/body_registry.py` is a separate, narrowly
-scoped exception for sharing Home and Import/Export tile bodies with Search.
-It is not a general state store.
+scoped exception for sharing Home and Import/Export tile bodies with
+in-place search. It is not a general state store.
 
 Learning-set content and progress do **not** belong in `AppSession`,
 preferences, or `BodyRegistry`. They live as CSV files under application
@@ -181,9 +181,9 @@ intentionally design a second prefs surface for them.
 ## Where `BodyRegistry` fits
 
 `BodyRegistry` in `ui/body_registry.py` stores only the active
-Home and Import/Export `TilesContainer` instances so Search can filter the
-same controls the user was already viewing. It should not hold preferences,
-route parameters, form state, or general domain data. See
+Home and Import/Export `TilesContainer` instances so in-place search can
+filter the same controls the user was already viewing. It should not hold
+preferences, route parameters, form state, or general domain data. See
 [Body registry](../concepts/body-registry.md).
 
 ## Where set data fits

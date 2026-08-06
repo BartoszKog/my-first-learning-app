@@ -8,7 +8,6 @@ from learning_app.ui.chrome_config import SHELL_CHROME
 from learning_app.ui.layout_host import (
     build_bottom_inset_shell_body,
     build_deep_body,
-    build_search_body,
     build_shell_body,
     sync_body_column_width,
 )
@@ -95,10 +94,6 @@ def _layout_import_export(page: ft.Page, _route_def):
     _layout_routable_shell(page, _route_def)
 
 
-def _layout_search(page: ft.Page, route_def):
-    _layout_routable_shell(page, route_def)
-
-
 def _layout_shell(page: ft.Page, route_def):
     _layout_routable_shell(page, route_def, control_type=route_def.shell_layout_control)
 
@@ -111,7 +106,6 @@ def _layout_deep_form(page: ft.Page, _route_def):
 _LAYOUT_DISPATCH = {
     LayoutKind.HOME: _layout_home,
     LayoutKind.IMPORT_EXPORT: _layout_import_export,
-    LayoutKind.SEARCH: _layout_search,
     LayoutKind.SHELL: _layout_shell,
     LayoutKind.DEEP_FORM: _layout_deep_form,
 }
@@ -274,19 +268,10 @@ def _wrap_deep_body(
     )
 
 
-def _wrap_search_body(
-    page: ft.Page,
-    controls: list[ft.Control],
-    _route_def: RouteDef,
-) -> ft.Control:
-    return build_search_body(page, *controls)
-
-
 _BODY_WRAPPER_DISPATCH = {
     BodyWrapperKind.SHELL: _wrap_shell_body,
     BodyWrapperKind.BOTTOM_INSET_SHELL: _wrap_bottom_inset_shell_body,
     BodyWrapperKind.DEEP: _wrap_deep_body,
-    BodyWrapperKind.SEARCH: _wrap_search_body,
 }
 
 
@@ -316,15 +301,6 @@ def _build_route_view(full_route: str, page: ft.Page) -> ft.View:
 
     if route_def.kind is RouteKind.DEEP:
         _configure_deep_chrome(page)
-        if route_def.body_wrapper is BodyWrapperKind.SEARCH:
-            return ft.View(
-                route=full_route,
-                controls=wrapped_controls,
-                horizontal_alignment=AppChrome.get_horizontal_alignment(),
-                vertical_alignment=ft.MainAxisAlignment.START,
-                padding=ft.Padding.all(0),
-                bgcolor=AppTheme.current_bgcolor(),
-            )
         return _build_deep_view(
             page,
             full_route,
@@ -363,6 +339,9 @@ async def reset_to_route(page: ft.Page, full_route: str):
         page: Page whose view stack should be replaced.
         full_route: Route path with optional encoded query parameters.
     """
+    from learning_app.ui.inplace_search import close_inplace_search
+
+    close_inplace_search(page)
     requested_route = _normalize_full_route(full_route)
 
     LayoutMetricsStore.refresh(page)
@@ -419,6 +398,9 @@ async def push_route_view(page: ft.Page, full_route: str):
         page: Page whose view stack should be updated.
         full_route: Route path with optional encoded query parameters.
     """
+    from learning_app.ui.inplace_search import close_inplace_search
+
+    close_inplace_search(page)
     full_route = _normalize_full_route(full_route)
     path = route_path(full_route)
 
@@ -575,10 +557,19 @@ def handle_route_change(e: ft.RouteChangeEvent):
 async def handle_view_pop(e: ft.ViewPopEvent):
     """Remove the popped view and restore the route exposed underneath.
 
+    When in-place search is open, close it instead of popping the shell view
+    (search is not a route).
+
     Args:
         e: View-pop event containing the affected page.
     """
+    from learning_app.ui.inplace_search import close_inplace_search, is_inplace_search_active
+
     page = e.page
+
+    if is_inplace_search_active(page):
+        close_inplace_search(page)
+        return
 
     if e.view is not None and e.view in page.views:
         page.views.remove(e.view)

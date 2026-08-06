@@ -32,12 +32,11 @@ wrappers and safe-area reasoning.
 
 - `HOME` refreshes the Home tile body's flex layout.
 - `IMPORT_EXPORT` updates the Import/Export routable body.
-- `SEARCH` updates the shared tile body used by Search.
 - `SHELL` updates a normal routable Shell control.
 - `DEEP_FORM` synchronizes the form wrapper and updates a Deep control.
 
-The specialized `HOME`, `IMPORT_EXPORT`, and `SEARCH` strategies match
-existing application flows. New routes normally use `SHELL` or `DEEP_FORM`.
+The specialized `HOME` and `IMPORT_EXPORT` strategies match existing
+application flows. New routes normally use `SHELL` or `DEEP_FORM`.
 See [Adding a screen](adding-a-screen.md#choose-layoutkind) for production
 examples.
 

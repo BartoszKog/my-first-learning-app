@@ -49,12 +49,21 @@ Columns come from `FilesColumns` in `data/constants.py`:
 | `file_name` | Basename of the set CSV (`…_words.csv` or `…_definitions.csv`) |
 | `title` | Display title on tiles |
 | `subtitle` | Optional secondary text |
+| `created_at` | ISO timestamp used for creation-order sorting (newest first) |
+| `last_used` | ISO timestamp of last open of the learn screen (empty if never) |
+| `use_count` | How many times the learn screen was opened |
+
+Older catalogs that only have the first three columns are migrated on read:
+missing fields are filled with defaults and the file is rewritten. Validation
+still requires only `file_name`, `title`, and `subtitle`.
 
 Catalog helpers in `data/app_data.py`:
 
-- `get_file_names_and_titles()` / `get_file_names()` — read the catalog
-  (creating an empty `files.csv` when missing).
+- `get_file_names_and_titles(sort_mode=…)` / `get_file_names()` — read the
+  catalog (creating an empty `files.csv` when missing) and optionally sort.
+- `ensure_files_catalog_columns()` — soft-migrate optional catalog columns.
 - `add_new_file()` — append a catalog row after a new set file exists.
+- `record_set_use()` — bump `use_count` / `last_used` when opening learn.
 - `delate_set()` — remove the catalog row and delete the set file when present.
 - `generate_empty_files_data()` — create an empty catalog with the expected
   columns.

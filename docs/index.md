@@ -116,7 +116,8 @@ src/
       route_url.py          # build and parse route URLs
       route_registry.py     # RouteDef registry, drawer, build factories
       router.py             # view stack, layout dispatch, route events
-      navigation.py         # navigate_to, push_view, go_back (screen authors)
+      navigation.py         # navigate_to, push_view, go_back, go_search
+      inplace_search.py     # in-place SearchControl over Home/export tiles
       chrome_config.py      # ShellChromeConfig per shell route
       app_chrome.py         # Live AppBar / bottom bar / FAB / drawer registry
       app_drawer.py         # Shared NavigationDrawer for Shell destinations

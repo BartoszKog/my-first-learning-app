@@ -3,7 +3,7 @@
 import flet as ft
 
 from learning_app.ui.route_url import build_route
-from learning_app.ui.route_paths import SEARCH_ROUTE, SET_EDIT_ROUTE
+from learning_app.ui.route_paths import SET_EDIT_ROUTE
 
 
 def navigate_to(page: ft.Page, route: str, **params: object) -> None:
@@ -51,12 +51,17 @@ def push_view(page: ft.Page, route: str, **params: object) -> None:
 
 
 def go_back(page: ft.Page) -> None:
-    """Pop the active route view in a scheduled page task.
+    """Pop the active route view, or close in-place search when it is open.
 
     Args:
         page: Page whose active view should be popped.
     """
+    from learning_app.ui.inplace_search import close_inplace_search, is_inplace_search_active
     from learning_app.ui.router import pop_route_view
+
+    if is_inplace_search_active(page):
+        close_inplace_search(page)
+        return
 
     page.run_task(pop_route_view, page)
 
@@ -81,19 +86,22 @@ def reanchor_edit_on_home(page: ft.Page, file_name: str) -> None:
 
 
 def go_search(page: ft.Page, mode: str = "home") -> None:
-    """Open search for the selected tile collection when it has content.
+    """Open in-place search over the selected tile collection.
 
-    When the chosen body has no content tiles, the call returns without
-    changing the route.
+    Search UI is inserted above the tiles in their existing shell column so the
+    tile body is never reparented (which breaks the sort dropdown after return).
+
+    When the chosen body has no content tiles, the call returns without changes.
 
     Args:
-        page: Page on which to open the search route.
+        page: Page on which to open search.
         mode: Tile collection to search. ``"export"`` selects the export
             collection; every other value selects the home collection.
     """
     from learning_app.ui.body_registry import BodyRegistry
+    from learning_app.ui.inplace_search import ensure_inplace_search
 
     body = BodyRegistry.get_export() if mode == "export" else BodyRegistry.get_home()
     if not body.has_content_tiles():
         return
-    push_view(page, SEARCH_ROUTE, mode=mode)
+    ensure_inplace_search(page, body)

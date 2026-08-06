@@ -1,4 +1,4 @@
-"""Store shared tile bodies used by home, export, and search routes."""
+"""Store shared tile bodies used by home and export screens (and in-place search)."""
 
 from learning_app.ui.components.tiles_container import TilesContainer
 

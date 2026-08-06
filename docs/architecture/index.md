@@ -63,7 +63,7 @@ and the screen map.
 
 | Module | Responsibility |
 | --- | --- |
-| `ui/body_registry.py` | Shared Home and export `TilesContainer` accessors for Search. |
+| `ui/body_registry.py` | Shared Home and export `TilesContainer` accessors for in-place search. |
 | `ui/app_session.py` | In-memory session bag for app-wide runtime UI services. |
 | `ui/preferences.py` | `SharedPreferences` factory for durable settings. |
 

@@ -40,6 +40,18 @@ class FilesColumns(Enum):
     FILE_NAME = "file_name"
     TITLE = "title"
     SUBTITLE = "subtitle"
+    CREATED_AT = "created_at"
+    LAST_USED = "last_used"
+    USE_COUNT = "use_count"
+
+
+class SetSortMode(Enum):
+    """Ordering modes for Home and export set tile lists."""
+
+    LAST_USED = "last_used"
+    CREATED = "created"
+    TITLE = "title"
+    USE_COUNT = "use_count"
 
 
 class Warnings(Enum):

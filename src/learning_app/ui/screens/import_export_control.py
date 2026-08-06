@@ -5,6 +5,7 @@ from pathlib import Path
 import flet as ft
 
 from learning_app.data.csv_processor import CSVProcessor
+from learning_app.data.constants import TITLE_MAX_LENGTH
 from learning_app.ui.components.tiles_container import TilesContainer
 from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.body_registry import BodyRegistry
@@ -28,6 +29,7 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.title_field = ft.TextField(
             label="Title",
             value="",
+            max_length=TITLE_MAX_LENGTH,
             border_color=ft.Colors.CYAN,
             on_focus=self.__on_focus_field,
             on_blur=self.__on_blur_field,
@@ -37,6 +39,9 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.subtitle_field = ft.TextField(
             label="Subtitle",
             value="",
+            multiline=True,
+            min_lines=1,
+            max_lines=2,
             border_color=ft.Colors.CYAN,
             on_focus=self.__on_focus_field,
             on_blur=self.__on_blur_field,
@@ -200,7 +205,7 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
             ft.TextSpan(text=selected_file, style=ft.TextStyle(color=ft.Colors.TEAL)),
         ]
         # if there is some error text in title_field remove it
-        self.title_field.error_text = ""
+        self.title_field.error = None
 
         self.title_field.visible = True
         self.subtitle_field.visible = True
@@ -302,7 +307,8 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
             )
 
             if validation_result["is_valid"]:
-                self.title_field.value = validation_result["name_suggestion"]
+                suggestion = (validation_result["name_suggestion"] or "")[:TITLE_MAX_LENGTH]
+                self.title_field.value = suggestion.capitalize() if suggestion else ""
                 self.subtitle_field.value = ""
                 self.__make_layout_for_chosen_file(file.name, resolved_path)
                 self.__set_validation_properties(validation_result)
@@ -354,8 +360,8 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         if AppSession.is_navigation_disabled():
             return
 
-        if not self.title_field.value.strip():
-            self.title_field.error_text = "Title cannot be empty."
+        if not (self.title_field.value or "").strip():
+            self.title_field.error = "This field is required"
             self.update()
         else:
             # asserts too make sure that attributes with file name and path are set
@@ -363,8 +369,8 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
             assert self.chosen_file_path is not None, "chosen_file_path must be not None"
             chosen_file_path = self.chosen_file_path
             chosen_file = self.chosen_file
-            title = self.title_field.value
-            subtitle = self.subtitle_field.value
+            title = self.title_field.value.strip().capitalize()
+            subtitle = (self.subtitle_field.value or "").strip().capitalize()
             validation_data_type = self.validation_data_type
             validation_warnings = self.validation_warnings
 

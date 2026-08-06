@@ -2,7 +2,14 @@ import os
 
 import flet as ft
 
-from learning_app.data.app_data import delate_set, get_kind_of_file_and_validate, record_set_use, set_default_progress
+from learning_app.data.app_data import (
+    delate_set,
+    get_kind_of_file_and_validate,
+    record_set_use,
+    set_default_progress,
+    update_set_metadata,
+)
+from learning_app.data.constants import TITLE_MAX_LENGTH
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.navigation import push_view
@@ -12,7 +19,7 @@ from learning_app.ui.route_paths import SET_EDIT_ROUTE, SET_LEARN_ROUTE
 
 
 class ContentTile(ft.Card):
-    """One catalog entry with learn, edit, delete, reset, or export actions.
+    """One catalog entry with learn, edit, title change, delete, reset, or export actions.
 
     Home mode opens learn/edit flows and management menus. Export mode focuses
     on saving the set through the shared export file picker.
@@ -49,6 +56,7 @@ class ContentTile(ft.Card):
             icon=ft.Icons.MORE_VERT,
             items=[
                 ft.PopupMenuItem(content="Edit", on_click=self.edit),
+                ft.PopupMenuItem(content="Change title", on_click=self.show_change_title_dialog),
                 ft.PopupMenuItem(content="Set default progress", on_click=self.show_set_default_progress_dialog),
                 ft.PopupMenuItem(content="Delete", on_click=self.show_delete_dialog),
             ],
@@ -70,6 +78,67 @@ class ContentTile(ft.Card):
 
     def edit(self, e):
         push_view(e.page, SET_EDIT_ROUTE, file=self.file_name)
+
+    def show_change_title_dialog(self, e):
+        title_field = ft.TextField(
+            label="Title",
+            value=(self.title or "")[:TITLE_MAX_LENGTH],
+            max_length=TITLE_MAX_LENGTH,
+            autofocus=True,
+        )
+        subtitle_field = ft.TextField(
+            label="Subtitle",
+            value=self.subtitle or "",
+            multiline=True,
+            min_lines=1,
+            max_lines=2,
+        )
+
+        def on_cancel(e):
+            e.page.pop_dialog()
+
+        def on_save(e):
+            if not (title_field.value or "").strip():
+                title_field.error = "This field is required"
+                title_field.update()
+                return
+
+            title_field.error = None
+
+            from learning_app.data.csv_processor import CSVProcessor
+
+            if not CSVProcessor.validate_files_csv()["is_valid"]:
+                e.page.pop_dialog()
+                create_alert_dialog(
+                    page=e.page,
+                    title="Error",
+                    content="files.csv has been changed. \nPlease restore it to its original state.",
+                    close_button_text="OK",
+                )
+                return
+
+            title = title_field.value.strip().capitalize()
+            subtitle = (subtitle_field.value or "").strip().capitalize()
+            update_set_metadata(self.file_name, title, subtitle)
+            e.page.pop_dialog()
+            if self.parent_container is not None:
+                self.parent_container.refresh_content()
+            e.page.update()
+
+        dialog = ft.AlertDialog(
+            title=ft.Text("Change title"),
+            content=ft.Column(
+                controls=[title_field, subtitle_field],
+                tight=True,
+                spacing=10,
+            ),
+            actions=[
+                ft.TextButton("Cancel", on_click=on_cancel),
+                ft.TextButton("Save", on_click=on_save),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        e.page.show_dialog(dialog)
 
     def show_delete_dialog(self, e):
         create_alert_dialog(

@@ -70,6 +70,9 @@ class Warnings(Enum):
 MAX_ROWS = 40
 """Maximum number of content rows allowed in one learning set."""
 
+TITLE_MAX_LENGTH = 20
+"""Maximum display title length for create, import, and rename."""
+
 
 class Errors(Enum):
     """Fatal import validation messages from ``CSVProcessor``."""

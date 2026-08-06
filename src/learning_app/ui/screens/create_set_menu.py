@@ -1,7 +1,7 @@
 import flet as ft
 
 from learning_app.data.app_data import get_file_names, sanitize_file_name
-from learning_app.data.constants import FilesColumns
+from learning_app.data.constants import TITLE_MAX_LENGTH
 from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
@@ -15,7 +15,7 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
         self._form_width = width
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-        self.title_field = ft.TextField(label="Title", width=width, max_length=20)
+        self.title_field = ft.TextField(label="Title", width=width, max_length=TITLE_MAX_LENGTH)
 
         self.subtitle_field = ft.TextField(label="Subtitle", width=width, multiline=True, min_lines=1, max_lines=2)
 
@@ -63,17 +63,17 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
             )
             return
 
-        if not self.title_field.value:
-            self.title_field.error_text = "This field is required"
+        if not (self.title_field.value or "").strip():
+            self.title_field.error = "This field is required"
         else:
-            self.title_field.error_text = ""
+            self.title_field.error = None
 
         if not self.kind_dropdown.value:
-            self.kind_dropdown.error_text = "Choose an option from the dropdown"
+            self.kind_dropdown.error = "Choose an option from the dropdown"
         else:
-            self.kind_dropdown.error_text = ""
+            self.kind_dropdown.error = None
 
-        if not self.title_field.value or not self.kind_dropdown.value:
+        if not (self.title_field.value or "").strip() or not self.kind_dropdown.value:
             create_alert_dialog(
                 page=e.page,
                 title="Error",
@@ -104,7 +104,7 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
                 else:
                     checking = False
 
-            title = self.title_field.value.capitalize()
-            subtitle = self.subtitle_field.value.capitalize()
+            title = self.title_field.value.strip().capitalize()
+            subtitle = (self.subtitle_field.value or "").strip().capitalize()
 
             push_view(e.page, SET_EDIT_ROUTE, file=new_file_name, title=title, subtitle=subtitle)

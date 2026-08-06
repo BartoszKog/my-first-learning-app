@@ -350,6 +350,32 @@ def add_new_file(file_name: str, title: str, subtitle: str = "") -> None:
     df_files.to_csv(files_data_path, index=False)
 
 
+def update_set_metadata(file_name: str, title: str, subtitle: str = "") -> None:
+    """Update display title and subtitle for a catalog entry in ``files.csv``.
+
+    Does not rename the set file; only the tile metadata changes.
+
+    Args:
+        file_name: Set basename or path whose basename is matched in the catalog.
+        title: New display title.
+        subtitle: New secondary text (may be empty).
+    """
+    files_data_path = FilePathManager.get_files_data_path()
+
+    if not os.path.exists(files_data_path):
+        return
+
+    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    basename = os.path.basename(file_name)
+    mask = df_files[FilesColumns.FILE_NAME.value] == basename
+    if not mask.any():
+        return
+
+    df_files.loc[mask, FilesColumns.TITLE.value] = title
+    df_files.loc[mask, FilesColumns.SUBTITLE.value] = subtitle
+    df_files.to_csv(files_data_path, index=False)
+
+
 def record_set_use(file_name: str) -> None:
     """Increment use count and set last-used time for a catalog entry.
 

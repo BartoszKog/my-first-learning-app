@@ -113,7 +113,7 @@ builds a `TilesContainer` and registers it with
 | --- | --- | --- | --- |
 | `/` | Shell | `TilesContainer` | Learning-set list (Home) |
 | `/import-export` | Shell | `ImportExportControl` | Import CSV and export tiles |
-| `/settings` | Shell | `SettingsControl` | Theme preferences ([Theming](../guides/state-and-persistence.md#theming)) |
+| `/settings` | Shell | `SettingsControl` | Appearance (theme) and demo-set install ([Theming](../guides/state-and-persistence.md#theming), [Demo sets](data-and-storage.md#demo-sets)) |
 | `/info` | Shell | `InfoControl` | In-app product information |
 | `/create-set` | Deep | `CreateSetMenu` | Create an empty set, then open edit |
 | `/set/edit` | Deep | `EditSetMenu` | Edit cards for one set |

@@ -45,6 +45,7 @@ to confirm types, parameters, and return values.
 | [App data](app_data.md) | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData`. | Creating, listing, or learning a set on disk. | [Data and storage](../architecture/data-and-storage.md), [Learning algorithm](../concepts/learning-algorithm.md) |
 | [Constants](constants.md) | `data/constants.py` | Column enums, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
 | [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate, repair catalog, import save helpers. | Importing a set or checking `files.csv`. | [Import and export](../guides/import-export.md) |
+| [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into storage. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
 
 ## Suggested order for new contributors
 
@@ -55,7 +56,7 @@ to confirm types, parameters, and return values.
 5. [Routable screens](routable_screen.md), [Layout metrics](layout_metrics.md), and [Layout host](layout_host.md) — responsive behavior.
 6. [Chrome configuration](chrome_config.md) and [App chrome](app_chrome.md) — declarative Shell chrome vs live control registry ([App drawer](app_drawer.md) when changing drawer navigation).
 7. [File path manager](file_path_manager.md), [Constants](constants.md), and [App data](app_data.md) — where sets live on disk; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
-8. [CSV processor](csv_processor.md) — when adding import or catalog repair behavior.
+8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — import/catalog repair and bundled sample install.
 9. [Preferences](preferences.md) and [App theme](app_theme.md) — durable settings and content background.
 10. [Router](router.md) — only when you change startup wiring or trace a route event.
 

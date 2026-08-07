@@ -101,7 +101,10 @@ Both helpers:
 2. Normalize or rebuild statistics columns according to `has_statistics` and
    `keep_statistics`.
 3. Rebuild a contiguous index from zero.
-4. Allocate a unique basename under `csv_files/`.
+4. Allocate a unique basename under `csv_files/` via
+   `allocate_unique_set_basename()` from `data/demo_sets.py` (also used when
+   creating a set). Catalog entries, on-disk files, and **reserved demo
+   basenames** count as taken, so import/create cannot claim a demo slot.
 5. Call `add_new_file` and `save_set`.
 
 ```python
@@ -184,6 +187,7 @@ Import/Export — see [Navigation guide](navigation.md#open-search) and
 | Concern | Owner |
 | --- | --- |
 | Validate / repair / import save | `CSVProcessor` |
+| Unique basename (incl. reserved demos) | `allocate_unique_set_basename` in `demo_sets` |
 | Dialogs and form state | `ImportExportControl` (+ `create_alert_dialog`) |
 | Import file picker | `ImportExportControl.csv_file_selector` |
 | Shared export picker | `AppSession` |
@@ -197,5 +201,6 @@ Do not keep imported DataFrames or catalog rows in `AppSession`.
 - [Learning algorithm](../concepts/learning-algorithm.md)
 - [State and persistence](state-and-persistence.md)
 - [CSV processor API](../reference/csv_processor.md)
+- [Demo sets API](../reference/demo_sets.md)
 - [Constants API](../reference/constants.md)
 - [App session API](../reference/app_session.md)

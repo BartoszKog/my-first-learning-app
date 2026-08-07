@@ -87,6 +87,7 @@ Both file types can include statistics columns, which were previously mentioned 
 ### Tips
 - Ensure your CSV files have the correct format and appropriate columns.
 - Data import/export is available from the app's main menu.
+- From **Settings**, you can use **Add demo sets** to install three sample learning sets (word formation, English definitions, and English–Polish). They behave like normal sets: delete any of them anytime; tapping Add again only installs the ones that are missing.
 - Words marked as "learned" will appear less frequently.
 - The app automatically prioritizes words you find challenging.
 - For definitions with multiple correct answers or word forms, you can use the slash symbol (/) to separate them. For example: "go/goes/went". During a learning session, entering any one of these words will be marked as correct.

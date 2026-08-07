@@ -20,10 +20,10 @@ The thin launcher `src/main.py` calls `ft.run` on the `learning_app` package
 ```text
 src/
   main.py                 # thin launcher: ft.run(learning_app.app.main)
-  assets/                 # app icons / splash assets for flet build
+  assets/                 # app icons / splash / bundled demo CSVs for flet build
   learning_app/
     app.py                # Flet application entrypoint
-    data/                 # CSV processing, data model, file paths, constants
+    data/                 # CSV processing, data model, file paths, demo sets, constants
     ui/
       components/         # reusable Flet controls
       screens/            # larger application screens and menus
@@ -48,6 +48,7 @@ Full developer documentation available on GitHub Pages:
 This application was designed with effective vocabulary and definition learning in mind. It allows you to:
 
 - ✅ Import your own study sets
+- ✅ Add built-in demo sets from Settings
 - ✅ Track your progress
 - ✅ Intelligently schedule repetitions
 - ✅ Export data and statistics
@@ -136,6 +137,7 @@ Contain definitions and their corresponding words:
 
 - Make sure your CSV files have the correct format and columns
 - Data import/export is available from the app's main menu
+- From **Settings**, use **Add demo sets** to install three sample learning sets (word formation, English definitions, English–Polish). Delete them like any other set; Add again only installs missing ones
 - Words marked as "learned" will appear less frequently
 - The app automatically prioritizes words you find challenging
 - For definitions with multiple correct answers or word forms, you can use the slash symbol (/) to separate them. For example: "go/goes/went". During a learning session, entering any one of these words will be marked as correct.

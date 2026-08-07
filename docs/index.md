@@ -101,7 +101,7 @@ To clone the repo and run the app or docs locally, see
 ```text
 src/
   main.py                   # thin launcher: ft.run(learning_app.app.main)
-  assets/                   # icons / splash for flet build
+  assets/                   # icons / splash / demos/ for flet build
   learning_app/
     app.py                  # app.main; wires chrome, theme, router handlers
     utils/
@@ -111,6 +111,7 @@ src/
       app_data.py           # catalog CRUD, load/save, AppData session
       constants.py          # CSV column enums, MAX_ROWS, import messages
       csv_processor.py      # import validation and specialized saves
+      demo_sets.py          # bundled demo registry, reserved names, install
     ui/
       route_paths.py        # canonical path constants
       route_url.py          # build and parse route URLs

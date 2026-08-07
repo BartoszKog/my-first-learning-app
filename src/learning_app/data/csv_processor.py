@@ -10,8 +10,9 @@ import os
 
 import pandas as pd
 
-from learning_app.data.app_data import add_new_file, get_file_names, save_set
+from learning_app.data.app_data import add_new_file, save_set
 from learning_app.data.constants import Errors, FilesColumns, MAX_ROWS, PartsOfSpeech, StatsColumns, Warnings, WordDefinitions
+from learning_app.data.demo_sets import allocate_unique_set_basename
 from learning_app.data.file_path_manager import FilePathManager
 
 
@@ -58,16 +59,7 @@ class CSVProcessor:
 
         chosen_suffix = next((suffix for suffix in suffixes if imported_file_name.endswith(suffix)), None)
         base_name = CSVProcessor.__sanitize_file_name(imported_file_name, chosen_suffix)
-
-        # check if the file name is occupied by another file, if so, add a number before the suffix
-        file_names_in_app_data = get_file_names()
-        if base_name in file_names_in_app_data:
-            i = 1
-            base_without_suffix = base_name[:-len(chosen_suffix)] if chosen_suffix else base_name
-            while f"{base_without_suffix}{i}{chosen_suffix}" in file_names_in_app_data:
-                i += 1
-            base_name = f"{base_without_suffix}{i}{chosen_suffix}"
-        return base_name
+        return allocate_unique_set_basename(base_name)
 
     @staticmethod
     def __make_index_from_zero_increasing_by_one(df: pd.DataFrame) -> pd.DataFrame:

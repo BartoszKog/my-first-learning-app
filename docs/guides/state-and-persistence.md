@@ -121,17 +121,20 @@ await storage.set("theme_mode", ft.ThemeMode.DARK.value)
 theme_mode = await storage.get("theme_mode")
 ```
 
-Theme mode and background-shade keys are the main consumers today; see
-[Theming](#theming) below. Keep large domain data and temporary controls out
-of this store.
+Theme mode and background-shade keys are the main preference consumers today;
+see [Theming](#theming) below. Keep large domain data and temporary controls
+out of this store.
 
 ## Theming
 
 Theme **mode** and **content background** are preference-backed and owned at
 runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
-`ui/screens/settings_control.py`) is the only UI that edits them. Startup
-restores them before the first route so Home does not flash the wrong look;
+`ui/screens/settings_control.py`) is the UI that edits them. The same screen
+also hosts **Demo sets** (install bundled samples via `install_demo_sets()`;
+that path writes CSVs and `files.csv`, not preferences — see
+[Demo sets](../architecture/data-and-storage.md#demo-sets)). Startup
+restores theme before the first route so Home does not flash the wrong look;
 see [Startup](../architecture/startup.md).
 
 ### Preference keys
@@ -175,6 +178,8 @@ intentionally design a second prefs surface for them.
 
 - Screen: `/settings` in
   [Routing and screens](../architecture/routing-and-screens.md)
+- Demo install: [Demo sets](../architecture/data-and-storage.md#demo-sets),
+  [Demo sets API](../reference/demo_sets.md)
 - APIs: [App theme](../reference/app_theme.md),
   [Preferences](../reference/preferences.md)
 

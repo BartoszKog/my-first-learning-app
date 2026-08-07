@@ -31,6 +31,7 @@ is described in [Startup and lifecycle](startup.md).
 | `data/app_data.py` | Set catalog CRUD, load/save, and in-memory learning session state. |
 | `data/constants.py` | CSV column enums, row cap, and import error/warning messages. |
 | `data/csv_processor.py` | Import validation, repair, and save paths for CSV sets. |
+| `data/demo_sets.py` | Bundled demo templates, reserved basenames, and install into storage. |
 
 See [Data and storage](data-and-storage.md) for how these modules fit together.
 

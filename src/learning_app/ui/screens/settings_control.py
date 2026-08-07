@@ -1,8 +1,11 @@
 import flet as ft
 
+from learning_app.data.demo_sets import install_demo_sets
+from learning_app.ui.body_registry import BodyRegistry
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.app_theme import AppTheme
+from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.preferences import get_shared_preferences
 from learning_app.ui.routable_screen import RoutableScreenMixin
 
@@ -78,17 +81,20 @@ class BackgroundShadeSlider(ft.Column):
 
 
 class SettingsControl(RoutableScreenMixin, ft.Column):
-    """Settings shell screen for theme mode and background shade.
+    """Settings shell screen with Appearance and Demo sets sections.
 
-    Owns the light/dark switch and ``BackgroundShadeSlider``. Persistence goes
-    through preferences and ``AppTheme``; Shell chrome colors stay in ``app.py``.
+    Owns the light/dark switch, ``BackgroundShadeSlider``, and demo-set
+    installation. Persistence goes through preferences and ``AppTheme``;
+    Shell chrome colors stay in ``app.py``.
     """
 
     def __init__(self, page):
         super().__init__()
         self.expand = True
-        self.alignment = ft.MainAxisAlignment.CENTER
-        self.spacing = 60
+        self.scroll = ft.ScrollMode.AUTO
+        self.alignment = ft.MainAxisAlignment.START
+        self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        self.spacing = 28
         self._app_page = page
         self._content_width = 300
 
@@ -112,9 +118,52 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             alignment=ft.MainAxisAlignment.START,
         )
 
+        self.appearance_heading = ft.Text(
+            "Appearance",
+            size=18,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.demo_heading = ft.Text(
+            "Demo sets",
+            size=18,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.demo_description = ft.Text(
+            "Add sample learning sets so you can try the app quickly.",
+            size=14,
+            width=self._content_width,
+        )
+        self.add_demo_button = ft.Button(
+            content="Add demo sets",
+            on_click=self.on_add_demo_sets_click,
+            width=self._content_width,
+        )
+
+        self.appearance_section = ft.Column(
+            controls=[
+                self.appearance_heading,
+                self.theme_switch_row,
+                self.background_shade_slider,
+            ],
+            spacing=16,
+            width=self._content_width,
+        )
+        self.demo_section = ft.Column(
+            controls=[
+                self.demo_heading,
+                self.demo_description,
+                self.add_demo_button,
+            ],
+            spacing=12,
+            width=self._content_width,
+        )
+
         self.controls = [
-            self.theme_switch_row,
-            self.background_shade_slider,
+            ft.Container(height=24),
+            self.appearance_section,
+            self.demo_section,
         ]
 
     def _get_page(self):
@@ -126,7 +175,16 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         metrics = self.resolve_layout_metrics(metrics)
 
         self._content_width = metrics.settings_width
-        self.theme_switch_row.width = metrics.settings_width
+        for control in (
+            self.appearance_heading,
+            self.demo_heading,
+            self.demo_description,
+            self.add_demo_button,
+            self.appearance_section,
+            self.demo_section,
+            self.theme_switch_row,
+        ):
+            control.width = metrics.settings_width
         self.background_shade_slider.apply_layout(metrics.settings_width)
 
         self.update_if_mounted()
@@ -149,9 +207,62 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
     async def _save_theme_mode(self, theme_mode_value):
         await get_shared_preferences().set("theme_mode", theme_mode_value)
 
+    def on_add_demo_sets_click(self, e):
+        page = self._get_page()
+        try:
+            result = install_demo_sets()
+        except FileNotFoundError as exc:
+            create_alert_dialog(
+                page=page,
+                title="Demo sets",
+                content=f"Could not find demo files.\n{exc}",
+                close_button_text="OK",
+            )
+            return
+        except Exception as exc:
+            create_alert_dialog(
+                page=page,
+                title="Demo sets",
+                content=f"Failed to add demo sets.\n{exc}",
+                close_button_text="OK",
+            )
+            return
+
+        if result.added and BodyRegistry.has_home():
+            BodyRegistry.get_home().refresh_content()
+        if result.added and BodyRegistry.has_export():
+            BodyRegistry.get_export().refresh_content()
+
+        create_alert_dialog(
+            page=page,
+            title="Demo sets",
+            content=self._format_install_message(result.added, result.skipped),
+            close_button_text="OK",
+        )
+
+    @staticmethod
+    def _format_install_message(added: list[str], skipped: list[str]) -> str:
+        if added and not skipped:
+            lines = ["Added all demo sets:"]
+            lines.extend(f"• {title}" for title in added)
+            return "\n".join(lines)
+
+        if added and skipped:
+            lines = ["Added:"]
+            lines.extend(f"• {title}" for title in added)
+            lines.append("")
+            lines.append("Skipped (already present):")
+            lines.extend(f"• {title}" for title in skipped)
+            return "\n".join(lines)
+
+        if skipped and not added:
+            lines = ["No demo sets were added. All are already present:"]
+            lines.extend(f"• {title}" for title in skipped)
+            return "\n".join(lines)
+
+        return "No demo sets were added."
+
     def did_mount(self):
         AppTheme.apply_to_page(self._get_page())
         super().did_mount()
         self.background_shade_slider.update_slider_position()
-
-

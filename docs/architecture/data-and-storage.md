@@ -132,6 +132,33 @@ stays in this layer either way.
 full task flow is in the [Import and export guide](../guides/import-export.md).
 Column and message enums for errors and warnings live in `data/constants.py`.
 
+## Demo sets
+
+Bundled sample CSVs live under `src/assets/demos/` (read-only templates). They
+are not user storage: Settings calls `install_demo_sets()` in
+`data/demo_sets.py`, which copies each missing template into `csv_files/`,
+resets statistics columns, and registers a catalog row with a **fixed**
+basename (for example `DemoWordFormation_words.csv`).
+
+```mermaid
+flowchart LR
+    Assets["assets/demos/*.csv"] --> Install["install_demo_sets()"]
+    Install -->|skip if already catalogued or on disk| Done[Result lists]
+    Install -->|copy reset stats add_new_file| Storage["csv_files/ + files.csv"]
+```
+
+Resolution uses `FLET_ASSETS_DIR` after `flet build`, with a local fallback to
+`src/assets`. Create and import must not claim those basenames:
+`allocate_unique_set_basename()` treats `RESERVED_DEMO_SET_NAMES` as occupied
+even when a demo is not installed yet, so a user set gets a numbered variant
+instead. Installation itself uses `is_demo_already_installed()` (catalog or
+disk only), so Add can recreate a demo after the user deletes it.
+
+After a successful install, Settings refreshes Home and export tile lists
+through `BodyRegistry` when those bodies exist.
+
+See the [Demo sets API](../reference/demo_sets.md).
+
 ## Module map
 
 | Module | Responsibility |
@@ -140,6 +167,7 @@ Column and message enums for errors and warnings live in `data/constants.py`.
 | `data/constants.py` | Schema enums, `MAX_ROWS`, import messages |
 | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData` |
 | `data/csv_processor.py` | Import validation and specialized save paths |
+| `data/demo_sets.py` | Bundled demo registry, reserved names, install |
 
 ## Continue reading
 
@@ -151,3 +179,4 @@ Column and message enums for errors and warnings live in `data/constants.py`.
 - [App data API](../reference/app_data.md)
 - [Constants API](../reference/constants.md)
 - [CSV processor API](../reference/csv_processor.md)
+- [Demo sets API](../reference/demo_sets.md)

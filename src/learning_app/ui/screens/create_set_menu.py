@@ -1,7 +1,8 @@
 import flet as ft
 
-from learning_app.data.app_data import get_file_names, sanitize_file_name
+from learning_app.data.app_data import sanitize_file_name
 from learning_app.data.constants import TITLE_MAX_LENGTH
+from learning_app.data.demo_sets import allocate_unique_set_basename
 from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
@@ -81,28 +82,13 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
                 close_button_text="OK",
             )
         else:
-            # load list of file_names to create new file_name
-            filenames = get_file_names()
-
             kind = self.kind_dropdown.value.lower()
 
             if kind == "word formations":
                 kind = "words"
 
-            # create sanitized file name
             sanitized_title = sanitize_file_name(self.title_field.value, kind)
-
-            # check if file_name already exists
-            checking = True
-            counter = 1
-            new_file_name = sanitized_title
-            while checking:
-                if new_file_name in filenames:
-                    base_name = sanitized_title.replace(f"_{kind}.csv", "")
-                    new_file_name = sanitize_file_name(f"{base_name}{counter}", kind)
-                    counter += 1
-                else:
-                    checking = False
+            new_file_name = allocate_unique_set_basename(sanitized_title)
 
             title = self.title_field.value.strip().capitalize()
             subtitle = (self.subtitle_field.value or "").strip().capitalize()

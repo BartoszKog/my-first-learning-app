@@ -84,7 +84,10 @@ A Deep route represents a task started from another screen:
 - it hides shared chrome,
 - finish or cancel it with `go_back()` to reveal the previous view.
 
-Create, Edit, and Learn are Deep routes.
+Create, Edit, and Learn are Deep routes. Create opens Edit with `push_view()`.
+After the first Save, `reanchor_edit_on_home()` rebuilds the stack as Home →
+Edit so Back returns to a fresh catalog instead of the create form. See
+[Navigation](../guides/navigation.md).
 
 ![Focused Deep screen](../assets/architecture/deep-screen.png){ .docs-screenshot }
 

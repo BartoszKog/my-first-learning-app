@@ -269,9 +269,9 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
 
         if leave:
             navigate_to(e.page, HOME_ROUTE)
+        elif first_create_save:
+            reanchor_edit_on_home(e.page, self.file_name)
         else:
-            if first_create_save:
-                reanchor_edit_on_home(e.page, self.file_name)
             self.__reload_cards()
 
         e.page.update()

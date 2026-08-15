@@ -361,28 +361,35 @@ async def reset_to_route(page: ft.Page, full_route: str):
 
 
 async def reanchor_active_deep_view_on_home(page: ft.Page, edit_route: str) -> None:
-    """Keep the active deep view and replace everything under it with Home.
+    """Replace the stack with a rebuilt Home and a rebuilt edit view.
 
     Used after the first save of a newly created set so UI Back and system back
     reveal a fresh home catalog instead of the create-set form and a stale tile
-    list.
+    list. Both views are new objects assigned in one update so Flutter's
+    navigator is not left with the previous create-set stack under a mutated
+    live edit view.
 
     Args:
         page: Page whose view stack should be rewritten.
         edit_route: Canonical edit route URL (typically ``file`` only, no create
             ``title`` / ``subtitle`` query params).
     """
-    if not page.views:
-        return
+    from learning_app.ui.inplace_search import close_inplace_search
 
-    active = page.views[-1]
+    close_inplace_search(page)
     LayoutMetricsStore.refresh(page)
     _detach_shared_chrome_from_views(page)
+
     home = _build_route_view(HOME_ROUTE, page)
-    active.route = edit_route
-    page.views[:] = [home, active]
-    _sync_chrome_for_route(edit_route, page)
-    await page.push_route(edit_route)
+    edit = _build_route_view(edit_route, page)
+    resolved_edit = edit.route or HOME_ROUTE
+    if not routes_match(resolved_edit, edit_route):
+        await reset_to_route(page, resolved_edit)
+        return
+
+    page.views[:] = [home, edit]
+    _sync_chrome_for_route(resolved_edit, page)
+    await page.push_route(resolved_edit)
     AppTheme.apply_to_page(page)
     page.update()
 
@@ -574,6 +581,28 @@ def handle_route_change(e: ft.RouteChangeEvent):
         page.run_task(push_route_view, page, full_route)
 
 
+def _drop_popped_view(page: ft.Page, e: ft.ViewPopEvent) -> None:
+    """Drop the view that Flutter already popped from ``page.views``.
+
+    ``ViewPopEvent.view`` is matched by route. After a stack rewrite the event
+    object or route may not match the Python view, so fall back to route
+    comparison and finally the current top view.
+    """
+    if e.view is not None and e.view in page.views:
+        page.views.remove(e.view)
+        return
+
+    popped_route = getattr(e, "route", None) or getattr(e.view, "route", None)
+    if popped_route:
+        for view in reversed(page.views):
+            if routes_match(view.route, popped_route):
+                page.views.remove(view)
+                return
+
+    if len(page.views) > 1:
+        page.views.pop()
+
+
 async def handle_view_pop(e: ft.ViewPopEvent):
     """Remove the popped view and restore the route exposed underneath.
 
@@ -591,8 +620,7 @@ async def handle_view_pop(e: ft.ViewPopEvent):
         close_inplace_search(page)
         return
 
-    if e.view is not None and e.view in page.views:
-        page.views.remove(e.view)
+    _drop_popped_view(page, e)
 
     if not page.views:
         await initialize_routes(page)

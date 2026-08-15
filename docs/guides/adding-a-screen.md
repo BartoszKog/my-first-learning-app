@@ -206,7 +206,10 @@ the intended stack behavior without exposing router internals. See the
 Before considering the route complete, verify:
 
 - The screen opens through its intended action.
-- Back, Cancel, or Save reveals the expected previous screen.
+- Back, Cancel, or Save reveals the expected previous screen. On an Android
+  APK, also press the **system** Back button: the previous Shell must still
+  show its AppBar and bottom bar. Browser Back and `flet run --android` do not
+  cover that path.
 - Missing required route parameters use the expected fallback.
 - The layout updates after resizing.
 - AppBar, bottom bar, FAB, search, and safe-area behavior are correct.

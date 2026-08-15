@@ -67,7 +67,7 @@ def go_back(page: ft.Page) -> None:
 
 
 def reanchor_edit_on_home(page: ft.Page, file_name: str) -> None:
-    """Rebuild Home under the active edit view after creating a new set.
+    """Rebuild Home, then the canonical edit view, after creating a new set.
 
     Drops intermediate views such as create-set and refreshes the home tile
     catalog so Back / system back land on an up-to-date list.

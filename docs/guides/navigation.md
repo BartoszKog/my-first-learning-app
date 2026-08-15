@@ -127,6 +127,15 @@ Close a Deep screen with `go_back()`:
 ft.Button(content="Cancel", on_click=lambda e: go_back(e.page))
 ```
 
+Android's system Back button must do the same thing: reveal the previous
+screen **with** its Shell chrome. Check that on an APK or emulator; browser
+Back is a different mechanism.
+
+After the first Save of a set that was just created, call
+`reanchor_edit_on_home(page, file_name)` instead of editing `page.views`.
+That helper rebuilds Home and Edit so Back skips the create form and lands on
+a fresh catalog.
+
 ## Open search
 
 `go_search(page, mode="home")` opens in-place search for the active tile

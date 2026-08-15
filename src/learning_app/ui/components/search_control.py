@@ -15,7 +15,7 @@ class SearchControl(ft.Row):
         on_close: Optional callback invoked by the close button.
     """
 
-    COLOR = ft.Colors.CYAN
+    COLOR = ft.Colors.TEAL_800
 
     def __init__(self, page, tiles_container: TilesContainer, on_close=None):
         super().__init__()
@@ -25,12 +25,16 @@ class SearchControl(ft.Row):
 
         self.vertical_alignment = ft.CrossAxisAlignment.CENTER
         self.tight = True
+        self.margin = ft.Margin.only(top=3)
         self.search_field = ft.TextField(
             label="Search",
             expand=True,
             autofocus=True,
             on_change=self.change_text_field,
             border_color=self.COLOR,
+            focused_border_color=self.COLOR,
+            cursor_color=self.COLOR,
+            label_style=ft.TextStyle(color=self.COLOR),
         )
 
         self.next_pattern_button = ft.IconButton(

@@ -35,7 +35,7 @@ tests/                    # tests (not packaged into the app)
 
 You can also download the Android version of the application:
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android&logoColor=white)](https://github.com/BartoszKog/my-first-learning-app/releases/latest) 
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android&logoColor=white)](https://github.com/BartoszKog/my-first-learning-app/releases/latest/download/learning-app.apk) 
 
 ## 📖 Documentation
 

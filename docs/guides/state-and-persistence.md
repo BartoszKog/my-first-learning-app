@@ -97,8 +97,8 @@ finally:
     AppSession.enable_all_navigation_controls()
 ```
 
-This coordinates the drawer, bottom-bar buttons, and FAB while an operation
-must not be interrupted.
+This coordinates the drawer, bottom-bar buttons, FAB, and home/export sort
+dropdowns while an operation must not be interrupted.
 
 Do not put these values in `AppSession`:
 

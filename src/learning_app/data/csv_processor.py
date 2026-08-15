@@ -6,7 +6,9 @@ static methods from Import/Export UI code; private ``__`` helpers stay
 internal.
 """
 
+import csv
 import os
+import warnings as py_warnings
 
 import pandas as pd
 
@@ -14,6 +16,122 @@ from learning_app.data.app_data import add_new_file, save_set
 from learning_app.data.constants import Errors, FilesColumns, MAX_ROWS, PartsOfSpeech, StatsColumns, Warnings, WordDefinitions
 from learning_app.data.demo_sets import allocate_unique_set_basename
 from learning_app.data.file_path_manager import FilePathManager
+
+_SET_SUFFIXES = ("_words.csv", "_definitions.csv")
+_REQUIRED_CATALOG_COLUMNS = (
+    FilesColumns.FILE_NAME.value,
+    FilesColumns.TITLE.value,
+    FilesColumns.SUBTITLE.value,
+)
+
+
+def _title_from_set_basename(file_name: str) -> str:
+    name = os.path.basename(str(file_name))
+    for suffix in _SET_SUFFIXES:
+        if name.endswith(suffix):
+            stem = name[: -len(suffix)]
+            return stem.capitalize() if stem else name
+    return name
+
+
+def _catalog_from_set_files_on_disk() -> pd.DataFrame:
+    csv_dir = FilePathManager.get_csv_dir()
+    rows = []
+    if os.path.isdir(csv_dir):
+        for name in sorted(os.listdir(csv_dir)):
+            if name.endswith(_SET_SUFFIXES):
+                rows.append({
+                    FilesColumns.FILE_NAME.value: name,
+                    FilesColumns.TITLE.value: _title_from_set_basename(name),
+                    FilesColumns.SUBTITLE.value: "",
+                })
+    return pd.DataFrame(rows, columns=list(_REQUIRED_CATALOG_COLUMNS))
+
+
+def _fill_missing_required_catalog_columns(files_data: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
+    """Add required catalog columns without wiping existing rows.
+
+    When ``file_name`` is missing, rows cannot be matched to set files, so the
+    catalog is rebuilt from ``*_words.csv`` / ``*_definitions.csv`` on disk.
+    """
+    actions: list[str] = []
+    missing = [col for col in _REQUIRED_CATALOG_COLUMNS if col not in files_data.columns]
+    if not missing:
+        return files_data, actions
+
+    if FilesColumns.FILE_NAME.value not in files_data.columns:
+        rebuilt = _catalog_from_set_files_on_disk()
+        actions.append(
+            "Rebuilt catalog from set files on disk because the file_name column was missing"
+        )
+        return rebuilt, actions
+
+    files_data = files_data.copy()
+    if FilesColumns.TITLE.value not in files_data.columns:
+        files_data[FilesColumns.TITLE.value] = files_data[FilesColumns.FILE_NAME.value].map(
+            lambda value: _title_from_set_basename(value) if pd.notna(value) else ""
+        )
+        actions.append("Added missing title column from file names")
+    if FilesColumns.SUBTITLE.value not in files_data.columns:
+        files_data[FilesColumns.SUBTITLE.value] = ""
+        actions.append("Added missing subtitle column")
+    return files_data, actions
+
+
+def _recover_catalog_csv(path: str) -> tuple[pd.DataFrame | None, list[str]]:
+    """Rebuild a catalog DataFrame from a CSV pandas refused to parse.
+
+    Extra fields (for example a stray comma) are trimmed to the header width;
+    short rows are padded. Returns ``None`` when the file cannot be read as
+    text or has no usable header.
+    """
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as handle:
+            rows = list(csv.reader(handle))
+    except (OSError, UnicodeError, csv.Error):
+        return None, []
+
+    rows = [row for row in rows if any(str(cell).strip() for cell in row)]
+    if not rows:
+        return None, []
+
+    header = [cell.strip() for cell in rows[0]]
+    while header and header[-1] == "":
+        header.pop()
+    if not header:
+        return None, []
+
+    width = len(header)
+    truncated = 0
+    padded = 0
+    data = []
+    for row in rows[1:]:
+        if len(row) > width:
+            row = row[:width]
+            truncated += 1
+        elif len(row) < width:
+            row = row + [""] * (width - len(row))
+            padded += 1
+        data.append(row)
+
+    actions = ["Recovered catalog rows from a CSV that pandas could not parse"]
+    if truncated:
+        actions.append(f"Trimmed extra fields on {truncated} row(s)")
+    if padded:
+        actions.append(f"Padded missing fields on {padded} row(s)")
+    return pd.DataFrame(data, columns=header), actions
+
+
+def _is_set_basename(name: object) -> bool:
+    return str(name).endswith(_SET_SUFFIXES)
+
+
+def _catalog_file_names_are_valid(files_data: pd.DataFrame | None) -> bool:
+    if files_data is None or FilesColumns.FILE_NAME.value not in files_data.columns:
+        return False
+    if files_data.empty:
+        return True
+    return bool(files_data[FilesColumns.FILE_NAME.value].map(_is_set_basename).all())
 
 
 class CSVProcessor:
@@ -449,6 +567,8 @@ class CSVProcessor:
         """Validate the set catalog ``files.csv``.
 
         A missing catalog is treated as valid because helpers create it later.
+        Repair does not recreate a missing ``files.csv``; that stays with
+        catalog readers such as ``get_file_names_and_titles``.
         Missing set files on disk produce warnings; structural problems produce
         errors.
 
@@ -475,7 +595,9 @@ class CSVProcessor:
 
         # Try to load the file with pandas
         try:
-            files_data = pd.read_csv(files_data_path)
+            with py_warnings.catch_warnings():
+                py_warnings.simplefilter("ignore", pd.errors.ParserWarning)
+                files_data = pd.read_csv(files_data_path, index_col=False)
         except Exception as e:
             errors.append(f"Error loading files.csv: {str(e)}")
             is_valid = False
@@ -547,86 +669,111 @@ class CSVProcessor:
     def repair_files_csv() -> dict:
         """Attempt to repair ``files.csv`` after a failed validation.
 
-        May recreate an empty catalog, drop invalid or duplicate rows, fill
-        empty subtitles, and remove entries for missing files.
+        May recover rows from a CSV pandas cannot parse (extra or missing
+        commas), add missing required columns (or rebuild from set files when
+        ``file_name`` is absent), drop invalid or duplicate rows, fill empty
+        subtitle cells when they are missing, and remove entries for missing
+        files. A catalog that cannot be read as text is left unchanged. A
+        missing catalog is not created here; catalog readers create it when
+        needed.
 
         Returns:
             Dict with ``repair_actions`` (list of human-readable steps) and
             ``success`` (whether any repair was applied or completed).
         """
-        from learning_app.data.app_data import ensure_files_catalog_columns, generate_empty_files_data
+        from learning_app.data.app_data import ensure_files_catalog_columns
 
         validation_result = CSVProcessor.validate_files_csv()
         repair_actions = []
 
-        # If the file doesn't exist, create it
-        if "The files.csv file does not exist." in validation_result["errors"]:
-            generate_empty_files_data()
-            repair_actions.append("Created a new empty files.csv file")
-            return {
-                "repair_actions": repair_actions,
-                "success": True,
-            }
+        files_data = validation_result["files_data"]
+        recovered_from_parse_error = False
+        catalog_path = FilePathManager.get_files_data_path()
+        pandas_failed = any("Error loading files.csv" in error for error in validation_result["errors"])
 
-        # If the file can't be loaded, recreate it
-        if any("Error loading files.csv" in error for error in validation_result["errors"]):
-            generate_empty_files_data()
-            repair_actions.append("Recreated files.csv due to loading errors")
-            return {
-                "repair_actions": repair_actions,
-                "success": True,
-            }
-
-        # If columns are missing, recreate the file
-        if any("Missing required columns" in error for error in validation_result["errors"]):
-            generate_empty_files_data()
-            repair_actions.append("Recreated files.csv due to missing required columns")
-            return {
-                "repair_actions": repair_actions,
-                "success": True,
-            }
+        # csv.reader keeps columns aligned when pandas treats extra commas as an index.
+        if os.path.exists(catalog_path):
+            recovered, recover_actions = _recover_catalog_csv(catalog_path)
+            if recovered is None:
+                if pandas_failed or files_data is None:
+                    return {
+                        "repair_actions": [
+                            "Could not load files.csv; left the existing file unchanged",
+                        ],
+                        "success": False,
+                    }
+            elif pandas_failed or not _catalog_file_names_are_valid(files_data):
+                files_data = recovered
+                repair_actions.extend(recover_actions)
+                recovered_from_parse_error = True
 
         # If we have data to work with
-        if validation_result["files_data"] is not None:
-            files_data = validation_result["files_data"]
+        if files_data is not None:
             original_len = len(files_data)
 
+            files_data, column_actions = _fill_missing_required_catalog_columns(files_data)
+            repair_actions.extend(column_actions)
+
+            errors = validation_result["errors"]
             # Remove rows with empty file names or titles
-            if any("Found empty file names" in error for error in validation_result["errors"]):
-                files_data = files_data.dropna(subset=[FilesColumns.FILE_NAME.value])
-                repair_actions.append("Removed entries with empty file names")
+            if recovered_from_parse_error or any("Found empty file names" in error for error in errors):
+                if FilesColumns.FILE_NAME.value in files_data.columns:
+                    before = len(files_data)
+                    files_data = files_data.dropna(subset=[FilesColumns.FILE_NAME.value])
+                    if len(files_data) != before:
+                        repair_actions.append("Removed entries with empty file names")
 
-            if any("Found empty titles" in error for error in validation_result["errors"]):
-                files_data = files_data.dropna(subset=[FilesColumns.TITLE.value])
-                repair_actions.append("Removed entries with empty titles")
+            if recovered_from_parse_error or any("Found empty titles" in error for error in errors):
+                if FilesColumns.TITLE.value in files_data.columns:
+                    before = len(files_data)
+                    files_data = files_data.dropna(subset=[FilesColumns.TITLE.value])
+                    if len(files_data) != before:
+                        repair_actions.append("Removed entries with empty titles")
 
-            # Fill NaN in subtitle with an empty string
+            filled_empty_subtitles = False
             if FilesColumns.SUBTITLE.value in files_data.columns:
-                files_data.loc[:, FilesColumns.SUBTITLE.value] = files_data[FilesColumns.SUBTITLE.value].fillna("")
-                repair_actions.append("Filled empty subtitle values with empty strings")
+                subtitle = files_data[FilesColumns.SUBTITLE.value]
+                if subtitle.isna().any():
+                    files_data[FilesColumns.SUBTITLE.value] = subtitle.map(
+                        lambda value: "" if pd.isna(value) else value
+                    )
+                    repair_actions.append("Filled empty subtitle values with empty strings")
+                    filled_empty_subtitles = True
 
             # Remove duplicates
-            if any("Found duplicate file names" in error for error in validation_result["errors"]):
-                files_data = files_data.drop_duplicates(subset=[FilesColumns.FILE_NAME.value], keep="first")
-                repair_actions.append("Removed duplicate file entries")
+            if recovered_from_parse_error or any("Found duplicate file names" in error for error in errors):
+                if FilesColumns.FILE_NAME.value in files_data.columns:
+                    before = len(files_data)
+                    files_data = files_data.drop_duplicates(subset=[FilesColumns.FILE_NAME.value], keep="first")
+                    if len(files_data) != before:
+                        repair_actions.append("Removed duplicate file entries")
 
             # Remove entries with invalid file names
             invalid_names = [
                 name for name in files_data[FilesColumns.FILE_NAME.value]
-                if not (name.endswith("_words.csv") or name.endswith("_definitions.csv"))
+                if not _is_set_basename(name)
             ]
             if invalid_names:
                 files_data = files_data[~files_data[FilesColumns.FILE_NAME.value].isin(invalid_names)]
                 repair_actions.append(f"Removed {len(invalid_names)} entries with invalid file names")
 
-            # Remove entries for missing files
-            missing_files = [name for name in files_data[FilesColumns.FILE_NAME.value] if not os.path.exists(name)]
+            # Remove entries for missing files (resolve via FilePathManager, same as validate)
+            missing_files = [
+                name
+                for name in files_data[FilesColumns.FILE_NAME.value]
+                if not os.path.exists(FilePathManager.get_csv_path(str(name)))
+            ]
             if missing_files:
                 files_data = files_data[~files_data[FilesColumns.FILE_NAME.value].isin(missing_files)]
                 repair_actions.append(f"Removed {len(missing_files)} entries for files that don't exist")
 
             # Save the cleaned data if changes were made
-            if len(files_data) != original_len or any(["Filled empty" in action for action in repair_actions]):
+            if (
+                recovered_from_parse_error
+                or column_actions
+                or len(files_data) != original_len
+                or filled_empty_subtitles
+            ):
                 files_data = ensure_files_catalog_columns(files_data, persist=False)
                 files_data.to_csv(FilePathManager.get_files_data_path(), index=False)
                 repair_actions.append(f"Saved repaired files.csv with {len(files_data)} entries (originally {original_len})")

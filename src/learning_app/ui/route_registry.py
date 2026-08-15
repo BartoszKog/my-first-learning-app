@@ -141,9 +141,15 @@ def _build_edit_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.C
     file_name = params.get("file")
     if not file_name:
         return None
-    # Create-set flow passes title and does not require an existing CSV yet.
-    if params.get("title") is None and not _set_csv_exists(file_name):
+
+    has_create_params = params.get("title") is not None
+    file_exists = _set_csv_exists(file_name)
+    # Normal edit needs an existing CSV. Create-set passes title while the CSV
+    # is still missing; a stale create URL (title + existing file) would
+    # re-register a duplicate catalog entry, so fall back like a missing set.
+    if (not has_create_params and not file_exists) or (has_create_params and file_exists):
         return None
+
     edit = EditSetMenu(
         file_name,
         title=params.get("title"),

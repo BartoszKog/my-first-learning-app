@@ -165,7 +165,8 @@ class ContentTile(ft.Card):
         from learning_app.ui.router import remove_views_for_set_file
 
         remove_views_for_set_file(e.page, self.file_name)
-        self.parent_container.refresh_content()
+        # Already notified for a missing file; do not stack a second File not found.
+        self.parent_container.refresh_content(show_alerts=not file_not_exist)
         e.page.update()
 
     def show_set_default_progress_dialog(self, e):

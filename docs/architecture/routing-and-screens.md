@@ -36,7 +36,10 @@ If a build factory returns `None`, the router builds the route's
 `fallback_path`, or Home when no fallback is configured, and syncs the page
 URL to that fallback. Factories for learn, session, and existing-set edit also
 return `None` when the set CSV is missing (for example after delete + browser
-Back). This keeps incomplete or stale deep links out of the view stack.
+Back). Edit with create-set query params (`title`) also returns `None` when
+that CSV already exists, so browser history cannot re-open a create flow that
+would duplicate the catalog entry. This keeps incomplete or stale deep links
+out of the view stack.
 
 ## Two navigation roles { #two-navigation-roles }
 

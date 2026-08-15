@@ -93,13 +93,15 @@ def _build_edit_set_controls(
     title = params.get("title")
 ```
 
-If required data is absent, or a set CSV referenced by ``file`` no longer
-exists on disk, the factory can return `None`. The router then builds the
-route configured in `RouteDef.fallback_path` (usually Home), pushes that
+If required data is absent, a set CSV referenced by ``file`` no longer
+exists on disk, or a create-set edit URL still carries ``title`` after that
+CSV was already created, the factory can return `None`. The router then builds
+the route configured in `RouteDef.fallback_path` (usually Home), pushes that
 fallback URL so browser history stays consistent, and may show a short
-SnackBar when the missing resource was a deleted set. This prevents crashes
-from stale deep links after delete, and avoids showing an incomplete Deep
-screen with missing input.
+SnackBar (`This set no longer exists.` or `This set already exists.`). This
+prevents crashes from stale deep links after delete, blocks re-creating a
+duplicate catalog entry from browser Back, and avoids showing an incomplete
+Deep screen with missing input.
 
 ```python
 def _build_edit_set_controls(

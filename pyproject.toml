@@ -1,6 +1,6 @@
 [project]
 name = "learning-app"
-version = "1.0.3"
+version = "1.0.4"
 description = "Word learning application built with Flet"
 requires-python = ">=3.12, <3.14"
 dependencies = [
@@ -26,7 +26,7 @@ dev = [
 ]
 
 [tool.flet]
-build_number = 3
+build_number = 4
 
 [tool.flet.app]
 path = "src"
@@ -34,4 +34,5 @@ path = "src"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = ["--import-mode=importlib"]

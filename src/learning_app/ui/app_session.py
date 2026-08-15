@@ -49,8 +49,9 @@ class AppSession:
     def disable_all_navigation_controls(cls):
         """Disable available shell navigation controls and update the page.
 
-        Bottom app-bar icon buttons, the floating action button, and the
-        registered drawer are disabled when present.
+        Bottom app-bar icon buttons, the floating action button, the
+        registered drawer, and home/export sort dropdowns are disabled when
+        present.
 
         Raises:
             AssertionError: If a page has not been registered.
@@ -68,6 +69,7 @@ class AppSession:
         if AppChrome.has_drawer():
             AppChrome.get_drawer().disabled = True
 
+        cls._set_tile_sort_enabled(False)
         cls._navigation_disabled = True
         page.update()
 
@@ -91,6 +93,7 @@ class AppSession:
         if AppChrome.has_drawer():
             AppChrome.get_drawer().disabled = False
 
+        cls._set_tile_sort_enabled(True)
         cls._navigation_disabled = False
         page.update()
 
@@ -103,3 +106,12 @@ class AppSession:
             they are enabled again.
         """
         return cls._navigation_disabled
+
+    @classmethod
+    def _set_tile_sort_enabled(cls, enabled: bool) -> None:
+        from learning_app.ui.body_registry import BodyRegistry
+
+        if BodyRegistry.has_home():
+            BodyRegistry.get_home().set_sort_controls_enabled(enabled)
+        if BodyRegistry.has_export():
+            BodyRegistry.get_export().set_sort_controls_enabled(enabled)

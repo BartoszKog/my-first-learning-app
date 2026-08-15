@@ -1,4 +1,5 @@
 import asyncio
+import os
 import threading
 
 import flet as ft
@@ -61,6 +62,7 @@ class TilesContainer(ft.Container):
             border_radius=10,
             leading_icon=ft.Icons.SORT,
             text_align=ft.TextAlign.CENTER,
+            disabled=AppSession.is_navigation_disabled(),
         )
 
     def __rebuild_sort_bar(self) -> None:
@@ -88,6 +90,7 @@ class TilesContainer(ft.Container):
         self.__rebuild_sort_bar()
 
         self.files_and_titles = self.__validate_and_get_files(AppSession.get_page())
+        self._skip_next_mount_refresh = True
 
         self.list_view = ft.ListView(
             expand=True,
@@ -113,15 +116,22 @@ class TilesContainer(ft.Container):
     def __tile_controls(self):
         return [control for control in self.list_view.controls if isinstance(control, ContentTile)]
 
+    def set_sort_controls_enabled(self, enabled: bool) -> None:
+        """Enable or disable the sort dropdown used on this tile list."""
+        self.sort_dropdown.disabled = not enabled
+
     def apply_sort_mode(self, mode: SetSortMode, *, reload_from_disk: bool = True) -> None:
         """Apply a sort mode locally and keep the dropdown label in sync."""
         self.sort_mode = mode
         self.sort_dropdown.value = mode.value
         if reload_from_disk:
-            self.files_and_titles = get_file_names_and_titles(self.sort_mode)
+            page = AppSession.get_page()
+            self.files_and_titles = self.__validate_and_get_files(page)
         self.__reload_tiles(self.last_pattern)
 
     def __on_sort_change(self, e):
+        if AppSession.is_navigation_disabled():
+            return
         try:
             mode = SetSortMode(e.control.value)
         except ValueError:
@@ -147,9 +157,12 @@ class TilesContainer(ft.Container):
             if control_is_on_page(container):
                 container.apply_sort_mode(mode)
 
-    def refresh_content(self):
+    def refresh_content(self, *, show_alerts=True):
         self.sort_mode = self.get_shared_sort_mode()
-        self.files_and_titles = self.__validate_and_get_files(AppSession.get_page())
+        self.files_and_titles = self.__validate_and_get_files(
+            AppSession.get_page(),
+            show_alerts=show_alerts,
+        )
         self.__reload_tiles()
         if control_is_on_page(self):
             self.update()
@@ -180,6 +193,11 @@ class TilesContainer(ft.Container):
         self.apply_flex_layout(LayoutMetricsStore.refresh(page))
         self.sort_mode = self.get_shared_sort_mode()
         self.sort_dropdown.value = self.sort_mode.value
+        # Catalog is already loaded in __init__; skip the first mount refresh
+        # so a repair dialog is not stacked on top of itself.
+        if self._skip_next_mount_refresh:
+            self._skip_next_mount_refresh = False
+            return
         self.refresh_content()
 
     def apply_flex_layout(self, metrics: LayoutMetrics | None = None):
@@ -203,7 +221,7 @@ class TilesContainer(ft.Container):
         except FileNotFoundError:
             return False
 
-    def __validate_and_get_files(self, page=None):
+    def __validate_and_get_files(self, page=None, *, show_alerts=True):
         from learning_app.data.csv_processor import CSVProcessor
         files_validation = CSVProcessor.validate_files_csv()
 
@@ -222,8 +240,9 @@ class TilesContainer(ft.Container):
 
             error_message += "\nWould you like to attempt automatic repair? This may remove some invalid entries."
 
-            if page is not None:
+            if page is not None and show_alerts:
                 AppSession.disable_all_navigation_controls()
+                self.set_sort_controls_enabled(False)
 
                 create_alert_dialog(
                     page=page,
@@ -233,33 +252,43 @@ class TilesContainer(ft.Container):
                     action_button_text="Yes, repair",
                     action_function=lambda e: self.__repair_files_and_reload(e),
                 )
-                return []
+            return []
 
         files_and_titles = get_file_names_and_titles(self.sort_mode)
 
-        file_has_been_removed = False
-        files_to_remove = []
+        files_to_remove = [
+            entry[FilesColumns.FILE_NAME.value]
+            for entry in files_and_titles
+            if not self.__file_exist(entry[FilesColumns.FILE_NAME.value])
+        ]
 
-        for entry in files_and_titles:
-            if not self.__file_exist(entry[FilesColumns.FILE_NAME.value]):
-                if page is not None:
-                    create_alert_dialog(
-                        page=page,
-                        title="File not found",
-                        content=f"File {entry[FilesColumns.FILE_NAME.value]} was not found. \nIt has been removed from the list.",
-                        close_button_text="OK",
+        if files_to_remove:
+            if page is not None and show_alerts:
+                names = [os.path.basename(name) for name in files_to_remove]
+                if len(names) == 1:
+                    content = (
+                        f"The set file {names[0]} was not found.\n"
+                        "It has been removed from the list."
                     )
-                files_to_remove.append(entry[FilesColumns.FILE_NAME.value])
-                file_has_been_removed = True
+                else:
+                    listed = "\n".join(f"• {name}" for name in names)
+                    content = (
+                        "These set files were not found and have been removed "
+                        f"from the list:\n\n{listed}"
+                    )
+                create_alert_dialog(
+                    page=page,
+                    title="File not found",
+                    content=content,
+                    close_button_text="OK",
+                )
+            from learning_app.ui.router import remove_views_for_set_file
 
-        for file_name in files_to_remove:
-            delate_set(file_name, file_not_exist=True)
-            if page is not None:
-                from learning_app.ui.router import remove_views_for_set_file
+            for file_name in files_to_remove:
+                delate_set(file_name, file_not_exist=True)
+                if page is not None:
+                    remove_views_for_set_file(page, file_name)
 
-                remove_views_for_set_file(page, file_name)
-
-        if file_has_been_removed:
             files_and_titles = get_file_names_and_titles(self.sort_mode)
 
         return files_and_titles

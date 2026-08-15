@@ -156,11 +156,15 @@ if not CSVProcessor.validate_files_csv()["is_valid"]:
 duplicate basenames, suffix rules, and whether listed files exist on disk.
 Missing files are warnings; structural problems are errors.
 
-`repair_files_csv` attempts cleanup (recreate empty catalog, drop bad rows,
-fill empty subtitles, remove duplicates or missing-file entries). Prefer
-calling it from maintenance or recovery flows after understanding the
-validation result; the default Import path currently asks for an app restart
-when the catalog is invalid rather than auto-repairing mid-import.
+`repair_files_csv` attempts cleanup (recover rows when pandas cannot parse
+the file, add missing catalog columns or rebuild from set files on disk,
+drop bad rows, fill empty subtitle cells when they are missing, remove
+duplicates or missing-file entries). A catalog that cannot be read as text is left unchanged rather
+than replaced with an empty file. A missing catalog is valid and is created
+later by catalog readers, not by repair. Prefer calling it from maintenance
+or recovery flows after understanding the validation result; the default
+Import path currently asks for an app restart when the catalog is invalid
+rather than auto-repairing mid-import.
 
 ## Export
 

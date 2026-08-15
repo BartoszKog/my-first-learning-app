@@ -14,7 +14,7 @@ from learning_app.ui.layout_host import (
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 from learning_app.ui.route_url import route_params, route_path, routes_match
-from learning_app.ui.route_paths import HOME_ROUTE, IMPORT_EXPORT_ROUTE, SET_LEARN_ROUTE
+from learning_app.ui.route_paths import HOME_ROUTE, IMPORT_EXPORT_ROUTE, SET_EDIT_ROUTE, SET_LEARN_ROUTE
 from learning_app.ui.route_registry import (
     BodyWrapperKind,
     DEEP_ROUTES,
@@ -332,8 +332,9 @@ async def reset_to_route(page: ft.Page, full_route: str):
 
     Unknown paths resolve to the home route. The operation rebuilds the target
     view, updates the browser/page route, reapplies the theme, and refreshes the
-    page. When a deep-route factory falls back (for example a missing set file),
-    the fallback view route is pushed so the URL stays consistent.
+    page. When a deep-route factory falls back (for example a missing set file
+    or a stale create-set edit URL whose CSV already exists), the fallback view
+    route is pushed so the URL stays consistent.
 
     Args:
         page: Page whose view stack should be replaced.
@@ -355,7 +356,7 @@ async def reset_to_route(page: ft.Page, full_route: str):
     await page.push_route(resolved_route)
     AppTheme.apply_to_page(page)
     if fell_back and route_params(requested_route).get("file"):
-        _notify_missing_set(page)
+        _notify_unavailable_set(page, requested_route)
     page.update()
 
 
@@ -391,8 +392,9 @@ async def push_route_view(page: ft.Page, full_route: str):
 
     An already-active complete route is not duplicated. Unknown routes and
     registered shell routes are handled as stack replacements. When the deep
-    factory falls back (missing ``file`` or deleted set CSV), the stack is
-    reset to the fallback route instead of pushing a mismatched URL.
+    factory falls back (missing ``file``, deleted set CSV, or stale create-set
+    edit URL), the stack is reset to the fallback route instead of pushing a
+    mismatched URL.
 
     Args:
         page: Page whose view stack should be updated.
@@ -424,7 +426,7 @@ async def push_route_view(page: ft.Page, full_route: str):
         await page.push_route(resolved_route)
         AppTheme.apply_to_page(page)
         if route_params(full_route).get("file"):
-            _notify_missing_set(page)
+            _notify_unavailable_set(page, full_route)
         page.update()
         return
 
@@ -434,7 +436,25 @@ async def push_route_view(page: ft.Page, full_route: str):
     page.update()
 
 
-def _notify_missing_set(page: ft.Page) -> None:
+def _notify_unavailable_set(page: ft.Page, full_route: str) -> None:
+    """Show why an edit/learn deep route fell back to home.
+
+    Stale create-set URLs keep ``title`` after the CSV already exists; other
+    missing-file cases use the generic "no longer exists" message.
+    """
+    params = route_params(full_route)
+    file_name = params.get("file")
+    if (
+        file_name
+        and params.get("title") is not None
+        and route_path(full_route) == SET_EDIT_ROUTE
+    ):
+        from learning_app.data.app_data import set_file_exists
+
+        if set_file_exists(file_name):
+            page.show_dialog(ft.SnackBar(ft.Text("This set already exists.")))
+            return
+
     page.show_dialog(ft.SnackBar(ft.Text("This set no longer exists.")))
 
 

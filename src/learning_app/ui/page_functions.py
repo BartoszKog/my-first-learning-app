@@ -1,6 +1,32 @@
 import flet as ft
 
 
+def _dialog_title_value(dlg):
+    raw = getattr(dlg, "title", None)
+    if isinstance(raw, str):
+        return raw
+    return getattr(raw, "value", None)
+
+
+def _open_dialog_titles(page):
+    dialogs = getattr(page, "_dialogs", None)
+    controls = getattr(dialogs, "controls", None) if dialogs is not None else None
+    if not controls:
+        return []
+    return [
+        _dialog_title_value(dlg)
+        for dlg in controls
+        if getattr(dlg, "open", False)
+    ]
+
+
+def _pop_open_dialogs_with_title(page, title):
+    """Close stacked duplicates that share ``title`` (the top dialog is already closed)."""
+    while title in _open_dialog_titles(page):
+        if page.pop_dialog() is None:
+            break
+
+
 def create_alert_dialog(
     page,
     title,
@@ -35,47 +61,53 @@ def create_alert_dialog(
     Returns:
         None: The function displays the dialog but doesn't return any value.
     Note:
-        This function automatically handles adding the dialog to the page overlay and removing it
-        when either button is clicked.
+        Action buttons call ``page.pop_dialog()`` themselves (same pattern as the
+        change-title dialog). Flet already removes the dialog on a tap outside.
+        A second call with the same title is ignored while that dialog is still
+        open. Closing (button or tap outside) also pops remaining open dialogs
+        with the same title.
     """
-    action_handled = False
+    if title in _open_dialog_titles(page):
+        return
 
-    def run_dialog_action(e, callback=None, *, pop_dialog=True):
-        nonlocal action_handled
-        if action_handled:
+    callback_handled = False
+
+    def run_callback(e, callback):
+        nonlocal callback_handled
+        if callback is None or callback_handled:
             return
-        action_handled = True
-        if pop_dialog:
-            e.page.pop_dialog()
-        if callback:
-            callback(e)
-        e.page.update()
+        callback_handled = True
+        callback(e)
 
     def close_action(e):
-        if close_action_function:
-            run_dialog_action(e, close_action_function)
-        else:
-            run_dialog_action(e)
+        page.pop_dialog()
+        _pop_open_dialogs_with_title(page, title)
+        run_callback(e, close_action_function)
+        page.update()
+
+    def action(e):
+        page.pop_dialog()
+        _pop_open_dialogs_with_title(page, title)
+        run_callback(e, action_function)
+        page.update()
+
+    def secondary_action(e):
+        page.pop_dialog()
+        _pop_open_dialogs_with_title(page, title)
+        run_callback(e, secondary_action_function)
+        page.update()
 
     def dismiss_action(e):
-        # Barrier dismiss already removes the dialog; only run the close callback once.
-        if close_action_function:
-            run_dialog_action(e, close_action_function, pop_dialog=False)
-        else:
-            run_dialog_action(e, pop_dialog=False)
+        # Barrier dismiss already closed the top dialog; clear stacked copies.
+        _pop_open_dialogs_with_title(page, title)
+        run_callback(e, close_action_function)
 
     actions = [ft.TextButton(close_button_text, on_click=close_action)]
 
     if secondary_action_function:
-        def secondary_action(e):
-            run_dialog_action(e, secondary_action_function)
-
         actions.append(ft.TextButton(secondary_button_text, on_click=secondary_action))
 
     if action_function:
-        def action(e):
-            run_dialog_action(e, action_function)
-
         actions.append(ft.TextButton(action_button_text, on_click=action))
 
     alert_dialog = ft.AlertDialog(

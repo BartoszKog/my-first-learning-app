@@ -161,6 +161,8 @@ cython_debug/
 
 # csv files
 *.csv
+!src/assets/demos/
+!src/assets/demos/*.csv
 
 # python files for testing
 temp.py

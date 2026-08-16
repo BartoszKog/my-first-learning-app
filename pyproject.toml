@@ -1,19 +1,38 @@
 [project]
 name = "learning-app"
-version = "1.0.3"
+version = "1.0.4"
 description = "Word learning application built with Flet"
-requires-python = ">=3.12"
+requires-python = ">=3.12, <3.14"
 dependencies = [
     "flet>=0.86.0,<1.0",
     "pandas==3.0.3",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/learning_app"]
 
 [dependency-groups]
 dev = [
     "mkdocs-material>=9.7.6",
     "mkdocstrings[python]",
     "ruff>=0.15.21",
+    "flet[test]",
+    "flet-cli",
+    "flet-desktop",
 ]
 
 [tool.flet]
-build_number = 3
+build_number = 5
+
+[tool.flet.app]
+path = "src"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--import-mode=importlib"]

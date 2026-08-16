@@ -99,36 +99,41 @@ To clone the repo and run the app or docs locally, see
 ## Project layout
 
 ```text
-main.py                   # thin launcher: ft.run(learning_app.app.main)
-learning_app/
-  app.py                  # app.main; wires chrome, theme, router handlers
-  utils/
-    greetings.py          # AppBar greeting text
-  data/
-    file_path_manager.py  # storage roots and csv_files paths
-    app_data.py           # catalog CRUD, load/save, AppData session
-    constants.py          # CSV column enums, MAX_ROWS, import messages
-    csv_processor.py      # import validation and specialized saves
-  ui/
-    route_paths.py        # canonical path constants
-    route_url.py          # build and parse route URLs
-    route_registry.py     # RouteDef registry, drawer, build factories
-    router.py             # view stack, layout dispatch, route events
-    navigation.py         # navigate_to, push_view, go_back (screen authors)
-    chrome_config.py      # ShellChromeConfig per shell route
-    app_chrome.py         # Live AppBar / bottom bar / FAB / drawer registry
-    app_drawer.py         # Shared NavigationDrawer for Shell destinations
-    layout_host.py        # body wrappers: shell, deep, safe area
-    layout_metrics.py     # responsive widths and breakpoint helpers
-    layout_tokens.py      # shared spacing / sizing tokens
-    page_functions.py     # shared dialogs and page helpers
-    body_registry.py      # shared home/export TilesContainer instances
-    routable_screen.py    # apply_layout protocol and view traversal
-    app_session.py        # page, export FilePicker, navigation lock
-    preferences.py        # SharedPreferences accessor
-    screens/              # application screens (+ _screen_template.py)
-    components/           # reusable controls
-docs/                     # this documentation (MkDocs Material)
+src/
+  main.py                   # thin launcher: ft.run(learning_app.app.main)
+  assets/                   # icons / splash / demos/ for flet build
+  learning_app/
+    app.py                  # app.main; wires chrome, theme, router handlers
+    utils/
+      greetings.py          # AppBar greeting text
+    data/
+      file_path_manager.py  # storage roots and csv_files paths
+      app_data.py           # catalog CRUD, load/save, AppData session
+      constants.py          # CSV column enums, MAX_ROWS, import messages
+      csv_processor.py      # import validation and specialized saves
+      demo_sets.py          # bundled demo registry, reserved names, install
+    ui/
+      route_paths.py        # canonical path constants
+      route_url.py          # build and parse route URLs
+      route_registry.py     # RouteDef registry, drawer, build factories
+      router.py             # view stack, layout dispatch, route events
+      navigation.py         # navigate_to, push_view, go_back, go_search
+      inplace_search.py     # in-place SearchControl over Home/export tiles
+      chrome_config.py      # ShellChromeConfig per shell route
+      app_chrome.py         # Live AppBar / bottom bar / FAB / drawer registry
+      app_drawer.py         # Shared NavigationDrawer for Shell destinations
+      layout_host.py        # body wrappers: shell, deep, safe area
+      layout_metrics.py     # responsive widths and breakpoint helpers
+      layout_tokens.py      # shared spacing / sizing tokens
+      page_functions.py     # shared dialogs and page helpers
+      body_registry.py      # shared home/export TilesContainer instances
+      routable_screen.py    # apply_layout protocol and view traversal
+      app_session.py        # page, export FilePicker, navigation lock
+      preferences.py        # SharedPreferences accessor
+      screens/              # application screens (+ _screen_template.py)
+      components/           # reusable controls
+tests/                      # pytest / flet test (not packaged into the app)
+docs/                       # this documentation (MkDocs Material)
 ```
 
 Clone and run steps are on [Getting started](getting-started.md). Source:

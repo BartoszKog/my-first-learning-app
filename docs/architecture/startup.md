@@ -1,6 +1,6 @@
 # Startup and lifecycle
 
-Source: `app.py` (`main`), launched from `main.py` via `ft.run(main)`
+Source: `app.py` (`main`), launched from `src/main.py` via `ft.run(main)`
 
 Application startup builds shared chrome and runtime services **before** the
 first routed view. Order matters: storage and session must exist before CSV
@@ -10,7 +10,7 @@ shown.
 
 ```mermaid
 flowchart TD
-    Run[main.py ft.run] --> Main[app.main]
+    Run[src/main.py ft.run] --> Main[app.main]
     Main --> Paths[FilePathManager.initialize]
     Paths --> Session[AppSession page + export picker]
     Session --> ChromeUI[Drawer AppBar FAB search]

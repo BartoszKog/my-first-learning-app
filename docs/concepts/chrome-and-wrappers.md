@@ -122,12 +122,10 @@ screen factories return only their raw controls.
 | `BodyWrapperKind.SHELL` | `build_shell_body` | Home, Import/Export |
 | `BodyWrapperKind.BOTTOM_INSET_SHELL` | `build_bottom_inset_shell_body` | Settings, Info |
 | `BodyWrapperKind.DEEP` | `build_deep_body` | Create, Edit, Learn |
-| `BodyWrapperKind.SEARCH` | `build_search_body` | Search |
 
 `SHELL` provides the normal expanding body area. `BOTTOM_INSET_SHELL` adds
 safe-area handling for Shell screens that have an AppBar but no bottom bar.
-`DEEP` provides full-screen form sizing and vertical padding. `SEARCH`
-provides search-specific body structure.
+`DEEP` provides full-screen form sizing and vertical padding.
 
 ## Why Settings needs a different wrapper
 
@@ -154,10 +152,10 @@ return wrap_safe_area(
 ```
 
 Home and Import/Export use `BodyWrapperKind.SHELL` because their shared chrome
-already defines the normal Shell body area. Search has no shared chrome and
-uses `BodyWrapperKind.SEARCH`, which protects every safe-area edge. The Deep
-form wrapper supplies form width and vertical padding; it does not add an
-`ft.SafeArea`.
+already defines the normal Shell body area. In-place search hides that chrome
+temporarily and wraps only the search field in its own `ft.SafeArea`; it does
+not use a separate body-wrapper kind. The Deep form wrapper supplies form
+width and vertical padding; it does not add an `ft.SafeArea`.
 
 Keeping these decisions in wrapper helpers prevents individual screens from
 reimplementing route-frame calculations.

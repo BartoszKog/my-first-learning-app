@@ -185,11 +185,10 @@ types and defaults.
 | --- | --- | --- |
 | `HOME` | The route owns the Home tile body and its flex-layout refresh. | Home |
 | `IMPORT_EXPORT` | The route hosts the Import/Export control and tile body. | Import/Export |
-| `SEARCH` | The route hosts `SearchScreen` and its shared tile body. | Search |
 | `SHELL` | A normal Shell route may contain a routable screen control. | Settings, Info |
 | `DEEP_FORM` | A Deep route contains a responsive form or learning flow. | Create, Edit, Learn |
 
-The first three values are specialized for existing application flows. A new
+The first two values are specialized for existing application flows. A new
 ordinary Shell screen normally uses `SHELL`; a new Deep form normally uses
 `DEEP_FORM`.
 
@@ -207,7 +206,10 @@ the intended stack behavior without exposing router internals. See the
 Before considering the route complete, verify:
 
 - The screen opens through its intended action.
-- Back, Cancel, or Save reveals the expected previous screen.
+- Back, Cancel, or Save reveals the expected previous screen. On an Android
+  APK, also press the **system** Back button: the previous Shell must still
+  show its AppBar and bottom bar. Browser Back and `flet run --android` do not
+  cover that path.
 - Missing required route parameters use the expected fallback.
 - The layout updates after resizing.
 - AppBar, bottom bar, FAB, search, and safe-area behavior are correct.

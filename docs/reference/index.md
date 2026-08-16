@@ -14,6 +14,7 @@ to confirm types, parameters, and return values.
 | [Route URLs](route_url.md) | `ui/route_url.py` | Parse, build, and compare route URLs with query params. | Encoding `file_name` or `mode` in navigation calls. | [Navigation guide](../guides/navigation.md) |
 | [Route registry](route_registry.md) | `ui/route_registry.py` | `RouteDef` entries, enums, drawer builder, `get_route`. | Registering a route or inspecting registry metadata. | [Routing concept](../concepts/routing.md) |
 | [Navigation](navigation.md) | `ui/navigation.py` | `navigate_to`, `push_view`, `go_back`, `go_search`. | Moving between routes from screen and control code. | [Navigation guide](../guides/navigation.md) |
+| [In-place search](inplace_search.md) | `ui/inplace_search.py` | Open/close search UI over shared tile bodies. | Debugging search chrome or calling search outside `go_search`. | [Body registry](../concepts/body-registry.md), [Navigation guide](../guides/navigation.md#open-search) |
 | [Router](router.md) | `ui/router.py` | Route-change handlers, view construction, layout dispatch. | Wiring `app.py` or debugging stack replacement and push. | [Routing concept](../concepts/routing.md), [Startup](../architecture/startup.md) |
 
 ## Layout & chrome
@@ -44,18 +45,20 @@ to confirm types, parameters, and return values.
 | [App data](app_data.md) | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData`. | Creating, listing, or learning a set on disk. | [Data and storage](../architecture/data-and-storage.md), [Learning algorithm](../concepts/learning-algorithm.md) |
 | [Constants](constants.md) | `data/constants.py` | Column enums, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
 | [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate, repair catalog, import save helpers. | Importing a set or checking `files.csv`. | [Import and export](../guides/import-export.md) |
+| [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into storage. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
 
 ## Suggested order for new contributors
 
 1. [Route paths](route_paths.md) and [Route URLs](route_url.md) — vocabulary for paths and parameters.
 2. [Route registry](route_registry.md) — where routes are declared.
 3. [Navigation](navigation.md) — what screen code calls day to day.
-4. [Routable screens](routable_screen.md), [Layout metrics](layout_metrics.md), and [Layout host](layout_host.md) — responsive behavior.
-5. [Chrome configuration](chrome_config.md) and [App chrome](app_chrome.md) — declarative Shell chrome vs live control registry ([App drawer](app_drawer.md) when changing drawer navigation).
-6. [File path manager](file_path_manager.md), [Constants](constants.md), and [App data](app_data.md) — where sets live on disk; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
-7. [CSV processor](csv_processor.md) — when adding import or catalog repair behavior.
-8. [Preferences](preferences.md) and [App theme](app_theme.md) — durable settings and content background.
-9. [Router](router.md) — only when you change startup wiring or trace a route event.
+4. [In-place search](inplace_search.md) — when tracing search UI without a route.
+5. [Routable screens](routable_screen.md), [Layout metrics](layout_metrics.md), and [Layout host](layout_host.md) — responsive behavior.
+6. [Chrome configuration](chrome_config.md) and [App chrome](app_chrome.md) — declarative Shell chrome vs live control registry ([App drawer](app_drawer.md) when changing drawer navigation).
+7. [File path manager](file_path_manager.md), [Constants](constants.md), and [App data](app_data.md) — where sets live on disk; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
+8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — import/catalog repair and bundled sample install.
+9. [Preferences](preferences.md) and [App theme](app_theme.md) — durable settings and content background.
+10. [Router](router.md) — only when you change startup wiring or trace a route event.
 
 Private `_build_*` factories and internal layout dispatchers are hidden from
 these pages. They remain in source for router maintainers.

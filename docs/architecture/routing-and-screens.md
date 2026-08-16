@@ -36,7 +36,10 @@ If a build factory returns `None`, the router builds the route's
 `fallback_path`, or Home when no fallback is configured, and syncs the page
 URL to that fallback. Factories for learn, session, and existing-set edit also
 return `None` when the set CSV is missing (for example after delete + browser
-Back). This keeps incomplete or stale deep links out of the view stack.
+Back). Edit with create-set query params (`title`) also returns `None` when
+that CSV already exists, so browser history cannot re-open a create flow that
+would duplicate the catalog entry. This keeps incomplete or stale deep links
+out of the view stack.
 
 ## Two navigation roles { #two-navigation-roles }
 
@@ -81,7 +84,10 @@ A Deep route represents a task started from another screen:
 - it hides shared chrome,
 - finish or cancel it with `go_back()` to reveal the previous view.
 
-Create, Edit, Learn, and Search are Deep routes.
+Create, Edit, and Learn are Deep routes. Create opens Edit with `push_view()`.
+After the first Save, `reanchor_edit_on_home()` rebuilds the stack as Home →
+Edit so Back returns to a fresh catalog instead of the create form. See
+[Navigation](../guides/navigation.md).
 
 ![Focused Deep screen](../assets/architecture/deep-screen.png){ .docs-screenshot }
 
@@ -113,13 +119,15 @@ builds a `TilesContainer` and registers it with
 | --- | --- | --- | --- |
 | `/` | Shell | `TilesContainer` | Learning-set list (Home) |
 | `/import-export` | Shell | `ImportExportControl` | Import CSV and export tiles |
-| `/settings` | Shell | `SettingsControl` | Theme preferences ([Theming](../guides/state-and-persistence.md#theming)) |
+| `/settings` | Shell | `SettingsControl` | Appearance (theme) and demo-set install ([Theming](../guides/state-and-persistence.md#theming), [Demo sets](data-and-storage.md#demo-sets)) |
 | `/info` | Shell | `InfoControl` | In-app product information |
 | `/create-set` | Deep | `CreateSetMenu` | Create an empty set, then open edit |
 | `/set/edit` | Deep | `EditSetMenu` | Edit cards for one set |
 | `/set/learn` | Deep | `WordFields` or `WordDefinitionField` (`session=False`) | Learn menu / word list |
 | `/set/learn/session` | Deep | Same control (`session=True`) | Active learn session |
-| `/search` | Deep | `SearchScreen` + `SearchControl` | Filter shared Home or export tiles |
+
+Search is not a route: `go_search()` opens in-place search over the Home or
+export `TilesContainer` (see [Body registry](../concepts/body-registry.md)).
 
 ### Learn: menu then session
 

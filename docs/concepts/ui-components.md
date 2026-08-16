@@ -30,8 +30,10 @@ files under `ui/components/`.
 
 `TilesContainer` loads the catalog through `get_file_names_and_titles`, builds
 `ContentTile` children, and supports search filtering / focus used by Search.
-Home registers the container with `BodyRegistry`; Import/Export does the same
-for export mode.
+A session-scoped sort dropdown (last used, date created newest-first, title,
+use count) sits above the tiles outside search mode; Home and export stay in
+sync via `BodyRegistry` when both are on-page. Home registers the container
+with `BodyRegistry`; Import/Export does the same for export mode.
 
 `ContentTile` opens learn or edit via `push_view`, and offers menu actions such
 as reset progress (`set_default_progress`), delete (`delate_set`), and export
@@ -84,9 +86,12 @@ new screen.
 | --- | --- | --- |
 | `SearchControl` | `ui/components/search_control.py` | Search field plus next/previous match over a `TilesContainer` |
 
-`SearchScreen` hosts `SearchControl` and the shared tile body from
-`BodyRegistry`. Filtering stays on the existing `TilesContainer` instance; the
-control only drives the pattern and focus.
+In-place search (`ui/inplace_search.py`) inserts `SearchControl` above the
+shared Home or export `TilesContainer` from `BodyRegistry`. Filtering stays on
+that existing instance; the control only drives the pattern and focus. Closing
+restores shell chrome (and the Import/Export tab bar plus export tip when
+searching export). System back closes in-place search the same way as the
+search close button, without popping the shell route.
 
 ## Ownership checklist
 

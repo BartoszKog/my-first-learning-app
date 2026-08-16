@@ -15,18 +15,26 @@ theme:
   favicon: assets/icon.png
 
   palette:
-    - scheme: default
+    - media: "(prefers-color-scheme)"
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Switch to system preference
 
   font:
     text: Plus Jakarta Sans
@@ -53,7 +61,7 @@ plugins:
       handlers:
         python:
           paths:
-            - .
+            - src
           options:
             docstring_style: google
             filters:
@@ -117,6 +125,7 @@ nav:
           - Route URLs: reference/route_url.md
           - Route registry: reference/route_registry.md
           - Navigation API: reference/navigation.md
+          - In-place search: reference/inplace_search.md
           - Router: reference/router.md
       - Layout & chrome:
           - Routable screens: reference/routable_screen.md
@@ -135,3 +144,4 @@ nav:
           - App data: reference/app_data.md
           - Constants: reference/constants.md
           - CSV processor: reference/csv_processor.md
+          - Demo sets: reference/demo_sets.md

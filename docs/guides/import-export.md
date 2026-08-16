@@ -101,7 +101,10 @@ Both helpers:
 2. Normalize or rebuild statistics columns according to `has_statistics` and
    `keep_statistics`.
 3. Rebuild a contiguous index from zero.
-4. Allocate a unique basename under `csv_files/`.
+4. Allocate a unique basename under `csv_files/` via
+   `allocate_unique_set_basename()` from `data/demo_sets.py` (also used when
+   creating a set). Catalog entries, on-disk files, and **reserved demo
+   basenames** count as taken, so import/create cannot claim a demo slot.
 5. Call `add_new_file` and `save_set`.
 
 ```python
@@ -153,11 +156,15 @@ if not CSVProcessor.validate_files_csv()["is_valid"]:
 duplicate basenames, suffix rules, and whether listed files exist on disk.
 Missing files are warnings; structural problems are errors.
 
-`repair_files_csv` attempts cleanup (recreate empty catalog, drop bad rows,
-fill empty subtitles, remove duplicates or missing-file entries). Prefer
-calling it from maintenance or recovery flows after understanding the
-validation result; the default Import path currently asks for an app restart
-when the catalog is invalid rather than auto-repairing mid-import.
+`repair_files_csv` attempts cleanup (recover rows when pandas cannot parse
+the file, add missing catalog columns or rebuild from set files on disk,
+drop bad rows, fill empty subtitle cells when they are missing, remove
+duplicates or missing-file entries). A catalog that cannot be read as text is left unchanged rather
+than replaced with an empty file. A missing catalog is valid and is created
+later by catalog readers, not by repair. Prefer calling it from maintenance
+or recovery flows after understanding the validation result; the default
+Import path currently asks for an app restart when the catalog is invalid
+rather than auto-repairing mid-import.
 
 ## Export
 
@@ -174,7 +181,7 @@ already lives under application storage.
 
 The Import/Export screen shows the bottom-bar search button only while the
 **Export** tab is selected. Clicking it calls `go_search(..., mode="export")`,
-which requires the export body to be registered (it is created when
+which opens in-place search over the export body (registered when
 `ImportExportControl` first builds). Do not call export search before visiting
 Import/Export — see [Navigation guide](navigation.md#open-search) and
 [Body registry](../concepts/body-registry.md).
@@ -184,6 +191,7 @@ Import/Export — see [Navigation guide](navigation.md#open-search) and
 | Concern | Owner |
 | --- | --- |
 | Validate / repair / import save | `CSVProcessor` |
+| Unique basename (incl. reserved demos) | `allocate_unique_set_basename` in `demo_sets` |
 | Dialogs and form state | `ImportExportControl` (+ `create_alert_dialog`) |
 | Import file picker | `ImportExportControl.csv_file_selector` |
 | Shared export picker | `AppSession` |
@@ -197,5 +205,6 @@ Do not keep imported DataFrames or catalog rows in `AppSession`.
 - [Learning algorithm](../concepts/learning-algorithm.md)
 - [State and persistence](state-and-persistence.md)
 - [CSV processor API](../reference/csv_processor.md)
+- [Demo sets API](../reference/demo_sets.md)
 - [Constants API](../reference/constants.md)
 - [App session API](../reference/app_session.md)

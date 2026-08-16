@@ -53,6 +53,9 @@ new drawer route therefore does not require a separate path-to-drawer mapping.
 
 The router owns these invariants centrally. A screen should not decide how to
 detach shared chrome, normalize unknown paths, or manipulate `page.views`.
+Do not change a live view's `route` or replace the views underneath it — that
+desyncs Android system Back from the Python stack, and Home can appear without
+chrome.
 
 ## Factory result and fallback
 

@@ -1,5 +1,5 @@
 # 📚 Word Learning Application
-<img src="assets/icon.png" alt="App Logo" width="100" height="100">
+<img src="src/assets/icon.png" alt="App Logo" width="100" height="100">
 
 > _Effective tool for learning words and definitions based on intelligent repetition algorithms._
 
@@ -14,25 +14,28 @@ uv run flet run .
 
 ## Project Structure
 
-The root `main.py` file is a thin launcher. Application code lives in the
-`learning_app` package:
+The thin launcher `src/main.py` calls `ft.run` on the `learning_app` package
+(under `src/`, as expected by Flet packaging):
 
 ```text
-learning_app/
-  app.py                  # Flet application entrypoint
-  data/                   # CSV processing, data model, file paths, constants
-  ui/
-    components/           # reusable Flet controls
-    screens/              # larger application screens and menus
-  utils/                  # small general helpers
-tests/                    # focused unit tests
+src/
+  main.py                 # thin launcher: ft.run(learning_app.app.main)
+  assets/                 # app icons / splash / bundled demo CSVs for flet build
+  learning_app/
+    app.py                # Flet application entrypoint
+    data/                 # CSV processing, data model, file paths, demo sets, constants
+    ui/
+      components/         # reusable Flet controls
+      screens/            # larger application screens and menus
+    utils/                # small general helpers
+tests/                    # tests (not packaged into the app)
 ```
 
 ## 📱 Android Release
 
 You can also download the Android version of the application:
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android&logoColor=white)](https://github.com/BartoszKog/my-first-learning-app/releases/latest) 
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge&logo=android&logoColor=white)](https://github.com/BartoszKog/my-first-learning-app/releases/latest/download/learning-app.apk) 
 
 ## 📖 Documentation
 
@@ -45,6 +48,7 @@ Full developer documentation available on GitHub Pages:
 This application was designed with effective vocabulary and definition learning in mind. It allows you to:
 
 - ✅ Import your own study sets
+- ✅ Add built-in demo sets from Settings
 - ✅ Track your progress
 - ✅ Intelligently schedule repetitions
 - ✅ Export data and statistics
@@ -66,7 +70,7 @@ This application was designed with effective vocabulary and definition learning 
 
 The application uses an advanced learning algorithm visualized in the graph below:
 
-<img src="assets/graph.png" alt="Learning Algorithm" width="500">
+<img src="src/assets/graph.png" alt="Learning Algorithm" width="500">
 
 ### Word Learning Queue
 
@@ -133,6 +137,7 @@ Contain definitions and their corresponding words:
 
 - Make sure your CSV files have the correct format and columns
 - Data import/export is available from the app's main menu
+- From **Settings**, use **Add demo sets** to install three sample learning sets (word formation, English definitions, English–Polish). Delete them like any other set; Add again only installs missing ones
 - Words marked as "learned" will appear less frequently
 - The app automatically prioritizes words you find challenging
 - For definitions with multiple correct answers or word forms, you can use the slash symbol (/) to separate them. For example: "go/goes/went". During a learning session, entering any one of these words will be marked as correct.

@@ -49,12 +49,21 @@ Columns come from `FilesColumns` in `data/constants.py`:
 | `file_name` | Basename of the set CSV (`…_words.csv` or `…_definitions.csv`) |
 | `title` | Display title on tiles |
 | `subtitle` | Optional secondary text |
+| `created_at` | ISO timestamp used for creation-order sorting (newest first) |
+| `last_used` | ISO timestamp of last open of the learn screen (empty if never) |
+| `use_count` | How many times the learn screen was opened |
+
+Older catalogs that only have the first three columns are migrated on read:
+missing fields are filled with defaults and the file is rewritten. Validation
+still requires only `file_name`, `title`, and `subtitle`.
 
 Catalog helpers in `data/app_data.py`:
 
-- `get_file_names_and_titles()` / `get_file_names()` — read the catalog
-  (creating an empty `files.csv` when missing).
+- `get_file_names_and_titles(sort_mode=…)` / `get_file_names()` — read the
+  catalog (creating an empty `files.csv` when missing) and optionally sort.
+- `ensure_files_catalog_columns()` — soft-migrate optional catalog columns.
 - `add_new_file()` — append a catalog row after a new set file exists.
+- `record_set_use()` — bump `use_count` / `last_used` when opening learn.
 - `delate_set()` — remove the catalog row and delete the set file when present.
 - `generate_empty_files_data()` — create an empty catalog with the expected
   columns.
@@ -123,6 +132,33 @@ stays in this layer either way.
 full task flow is in the [Import and export guide](../guides/import-export.md).
 Column and message enums for errors and warnings live in `data/constants.py`.
 
+## Demo sets
+
+Bundled sample CSVs live under `src/assets/demos/` (read-only templates). They
+are not user storage: Settings calls `install_demo_sets()` in
+`data/demo_sets.py`, which copies each missing template into `csv_files/`,
+resets statistics columns, and registers a catalog row with a **fixed**
+basename (for example `DemoWordFormation_words.csv`).
+
+```mermaid
+flowchart LR
+    Assets["assets/demos/*.csv"] --> Install["install_demo_sets()"]
+    Install -->|skip if already catalogued or on disk| Done[Result lists]
+    Install -->|copy reset stats add_new_file| Storage["csv_files/ + files.csv"]
+```
+
+Resolution uses `FLET_ASSETS_DIR` after `flet build`, with a local fallback to
+`src/assets`. Create and import must not claim those basenames:
+`allocate_unique_set_basename()` treats `RESERVED_DEMO_SET_NAMES` as occupied
+even when a demo is not installed yet, so a user set gets a numbered variant
+instead. Installation itself uses `is_demo_already_installed()` (catalog or
+disk only), so Add can recreate a demo after the user deletes it.
+
+After a successful install, Settings refreshes Home and export tile lists
+through `BodyRegistry` when those bodies exist.
+
+See the [Demo sets API](../reference/demo_sets.md).
+
 ## Module map
 
 | Module | Responsibility |
@@ -131,6 +167,7 @@ Column and message enums for errors and warnings live in `data/constants.py`.
 | `data/constants.py` | Schema enums, `MAX_ROWS`, import messages |
 | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData` |
 | `data/csv_processor.py` | Import validation and specialized save paths |
+| `data/demo_sets.py` | Bundled demo registry, reserved names, install |
 
 ## Continue reading
 
@@ -142,3 +179,4 @@ Column and message enums for errors and warnings live in `data/constants.py`.
 - [App data API](../reference/app_data.md)
 - [Constants API](../reference/constants.md)
 - [CSV processor API](../reference/csv_processor.md)
+- [Demo sets API](../reference/demo_sets.md)

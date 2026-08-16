@@ -15,8 +15,8 @@ flowchart TD
 ```
 
 `BodyRegistry` in `ui/body_registry.py` is a separate, narrowly
-scoped exception for sharing Home and Import/Export tile bodies with Search.
-It is not a general state store.
+scoped exception for sharing Home and Import/Export tile bodies with
+in-place search. It is not a general state store.
 
 Learning-set content and progress do **not** belong in `AppSession`,
 preferences, or `BodyRegistry`. They live as CSV files under application
@@ -97,8 +97,8 @@ finally:
     AppSession.enable_all_navigation_controls()
 ```
 
-This coordinates the drawer, bottom-bar buttons, and FAB while an operation
-must not be interrupted.
+This coordinates the drawer, bottom-bar buttons, FAB, and home/export sort
+dropdowns while an operation must not be interrupted.
 
 Do not put these values in `AppSession`:
 
@@ -121,17 +121,20 @@ await storage.set("theme_mode", ft.ThemeMode.DARK.value)
 theme_mode = await storage.get("theme_mode")
 ```
 
-Theme mode and background-shade keys are the main consumers today; see
-[Theming](#theming) below. Keep large domain data and temporary controls out
-of this store.
+Theme mode and background-shade keys are the main preference consumers today;
+see [Theming](#theming) below. Keep large domain data and temporary controls
+out of this store.
 
 ## Theming
 
 Theme **mode** and **content background** are preference-backed and owned at
 runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
-`ui/screens/settings_control.py`) is the only UI that edits them. Startup
-restores them before the first route so Home does not flash the wrong look;
+`ui/screens/settings_control.py`) is the UI that edits them. The same screen
+also hosts **Demo sets** (install bundled samples via `install_demo_sets()`;
+that path writes CSVs and `files.csv`, not preferences — see
+[Demo sets](../architecture/data-and-storage.md#demo-sets)). Startup
+restores theme before the first route so Home does not flash the wrong look;
 see [Startup](../architecture/startup.md).
 
 ### Preference keys
@@ -175,15 +178,17 @@ intentionally design a second prefs surface for them.
 
 - Screen: `/settings` in
   [Routing and screens](../architecture/routing-and-screens.md)
+- Demo install: [Demo sets](../architecture/data-and-storage.md#demo-sets),
+  [Demo sets API](../reference/demo_sets.md)
 - APIs: [App theme](../reference/app_theme.md),
   [Preferences](../reference/preferences.md)
 
 ## Where `BodyRegistry` fits
 
 `BodyRegistry` in `ui/body_registry.py` stores only the active
-Home and Import/Export `TilesContainer` instances so Search can filter the
-same controls the user was already viewing. It should not hold preferences,
-route parameters, form state, or general domain data. See
+Home and Import/Export `TilesContainer` instances so in-place search can
+filter the same controls the user was already viewing. It should not hold
+preferences, route parameters, form state, or general domain data. See
 [Body registry](../concepts/body-registry.md).
 
 ## Where set data fits

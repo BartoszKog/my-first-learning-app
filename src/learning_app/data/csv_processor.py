@@ -270,7 +270,7 @@ class CSVProcessor:
 
         file_name = CSVProcessor.__create_appropriate_file_name(file_name)
         add_new_file(file_name, title, subtitle)
-        save_set(df, file_name)
+        save_set(df, file_name, prune_tts=True)
 
     @staticmethod
     def save_set_with_specific_actions(
@@ -371,7 +371,7 @@ class CSVProcessor:
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)
 
         add_new_file(file_name, title, subtitle)
-        save_set(df, file_name)
+        save_set(df, file_name, prune_tts=True)
         return information_after_processing
 
     @staticmethod

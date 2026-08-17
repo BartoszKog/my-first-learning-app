@@ -164,15 +164,22 @@ def get_kind_of_file_and_validate(file_name: str) -> str:
         raise Exception("The file_name must end with _words.csv or _definitions.csv.")
 
 
-def save_set(data: pd.DataFrame, file_name: str) -> None:
+def save_set(data: pd.DataFrame, file_name: str, *, prune_tts: bool = False) -> None:
     """Write a set DataFrame to the CSV directory, keeping the index column.
 
     Args:
         data: Set table to persist.
         file_name: Set basename or path resolved by ``FilePathManager``.
+        prune_tts: When ``True``, drop cached MP3s for phrases that no longer
+            appear in any set. Use after editing or importing content, not
+            after progress-only saves.
     """
     full_path = FilePathManager.get_csv_path(file_name)
     data.to_csv(full_path, index=True)
+    if prune_tts:
+        from learning_app.tts.service import garbage_collect_tts_cache
+
+        garbage_collect_tts_cache()
 
 
 def load_set(file_name: str) -> pd.DataFrame:
@@ -322,6 +329,10 @@ def delate_set(file_name: str, file_not_exist: bool = False) -> None:
     full_path = FilePathManager.get_csv_path(file_name)
     if not file_not_exist and os.path.exists(full_path):
         os.remove(full_path)
+
+    from learning_app.tts.service import garbage_collect_tts_cache
+
+    garbage_collect_tts_cache()
 
 
 def add_new_file(file_name: str, title: str, subtitle: str = "") -> None:

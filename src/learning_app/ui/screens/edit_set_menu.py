@@ -260,7 +260,7 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
             self.title = None
             self.subtitle = None
 
-        save_set(existing_data, self.file_name)
+        save_set(existing_data, self.file_name, prune_tts=True)
 
         e.page.show_dialog(ft.SnackBar(
             content=ft.Text("Changes saved"),

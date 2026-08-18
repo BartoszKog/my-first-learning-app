@@ -26,6 +26,7 @@ environment variables:
 | --- | --- | --- |
 | Application data root | `FLET_APP_STORAGE_DATA` | Platform storage for the app |
 | CSV directory | `{data}/csv_files/` | Set files and the catalog |
+| TTS cache | `{data}/tts_cache/` | Generated pronunciation MP3s and JSON sidecars |
 | Catalog | `csv_files/files.csv` | Titles and file names for every set |
 | Temporary directory | `FLET_APP_STORAGE_TEMP` | Short-lived files when the platform provides it |
 
@@ -64,7 +65,8 @@ Catalog helpers in `data/app_data.py`:
 - `ensure_files_catalog_columns()` — soft-migrate optional catalog columns.
 - `add_new_file()` — append a catalog row after a new set file exists.
 - `record_set_use()` — bump `use_count` / `last_used` when opening learn.
-- `delate_set()` — remove the catalog row and delete the set file when present.
+- `delate_set()` — remove the catalog row and delete the set file when present
+  (also prunes unused TTS cache entries).
 - `generate_empty_files_data()` — create an empty catalog with the expected
   columns.
 
@@ -111,6 +113,20 @@ existing set without removing content rows.
 
 See the [Constants API](../reference/constants.md) and
 [App data API](../reference/app_data.md).
+
+## TTS cache {#tts-cache}
+
+Pronunciation MP3s live under `tts_cache/<hash[:2]>/<hash>.mp3` plus a JSON
+sidecar (`learning_app/tts/`). Cache keys include provider, voice, language,
+and normalized text. Garbage collection keeps a recording while its phrase
+still appears in any set CSV (language is ignored), and runs after
+`delate_set` and content saves with `prune_tts=True`. Empty shard folders may
+remain after GC.
+
+Playback is session-owned (`AppSession.speak`); screens must not construct
+`Audio`. Language and auto-speak flags are preferences — see
+[Text to speech](../guides/state-and-persistence.md#text-to-speech).
+Signatures are in the [TTS API](../reference/tts.md).
 
 ## `AppData` versus catalog helpers
 
@@ -163,11 +179,12 @@ See the [Demo sets API](../reference/demo_sets.md).
 
 | Module | Responsibility |
 | --- | --- |
-| `data/file_path_manager.py` | Storage roots and CSV path resolution |
+| `data/file_path_manager.py` | Storage roots, CSV paths, and `tts_cache/` |
 | `data/constants.py` | Schema enums, `MAX_ROWS`, import messages |
 | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData` |
 | `data/csv_processor.py` | Import validation and specialized save paths |
 | `data/demo_sets.py` | Bundled demo registry, reserved names, install |
+| `tts/` | Pronunciation cache, gTTS provider, and GC |
 
 ## Continue reading
 
@@ -180,3 +197,4 @@ See the [Demo sets API](../reference/demo_sets.md).
 - [Constants API](../reference/constants.md)
 - [CSV processor API](../reference/csv_processor.md)
 - [Demo sets API](../reference/demo_sets.md)
+- [TTS API](../reference/tts.md)

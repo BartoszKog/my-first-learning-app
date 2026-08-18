@@ -33,19 +33,21 @@ to confirm types, parameters, and return values.
 | Module | Source | Purpose | Use when | Related docs |
 | --- | --- | --- | --- | --- |
 | [Body registry](body_registry.md) | `ui/body_registry.py` | Shared home and export `TilesContainer` accessors. | Search, export, or navigation that reuses tile bodies. | [Body registry concept](../concepts/body-registry.md) |
-| [App session](app_session.md) | `ui/app_session.py` | Shared `Page`, export `FilePicker`, and navigation lock. | Wiring chrome/export at startup or locking navigation briefly. | [State and persistence](../guides/state-and-persistence.md) |
+| [App session](app_session.md) | `ui/app_session.py` | Shared `Page`, export `FilePicker`, TTS playback, and navigation lock. | Wiring chrome/export/TTS at startup or locking navigation briefly. | [State and persistence](../guides/state-and-persistence.md) |
 | [Preferences](preferences.md) | `ui/preferences.py` | `SharedPreferences` factory for durable settings. | Reading or writing user settings outside a screen instance. | [State and persistence](../guides/state-and-persistence.md) |
 | [App theme](app_theme.md) | `ui/app_theme.py` | Theme mode and preference-backed page bgcolor. | Applying or persisting content background / mode. | [State and persistence](../guides/state-and-persistence.md#theming), [Startup](../architecture/startup.md) |
+| [TTS preferences](tts_preferences.md) | `ui/tts_preferences.py` | TTS language and auto-speak flags. | Applying or persisting pronunciation settings. | [State and persistence](../guides/state-and-persistence.md#text-to-speech), [Startup](../architecture/startup.md) |
 
 ## Data & learning
 
 | Module | Source | Purpose | Use when | Related docs |
 | --- | --- | --- | --- | --- |
-| [File path manager](file_path_manager.md) | `data/file_path_manager.py` | Storage roots and `csv_files/` path helpers. | Resolving where catalogs and set CSVs live. | [Data and storage](../architecture/data-and-storage.md) |
+| [File path manager](file_path_manager.md) | `data/file_path_manager.py` | Storage roots, `csv_files/`, and `tts_cache/` path helpers. | Resolving where catalogs, set CSVs, and TTS files live. | [Data and storage](../architecture/data-and-storage.md) |
 | [App data](app_data.md) | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData`. | Creating, listing, or learning a set on disk. | [Data and storage](../architecture/data-and-storage.md), [Learning algorithm](../concepts/learning-algorithm.md) |
 | [Constants](constants.md) | `data/constants.py` | Column enums, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
 | [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate, repair catalog, import save helpers. | Importing a set or checking `files.csv`. | [Import and export](../guides/import-export.md) |
 | [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into storage. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
+| [TTS](tts.md) | `tts/` | Providers, MP3 cache, live phrases, and `TtsService`. | Synthesizing audio, swapping providers, or pruning the cache. | [Data and storage](../architecture/data-and-storage.md#tts-cache), [App session](app_session.md) |
 
 ## Suggested order for new contributors
 
@@ -57,8 +59,9 @@ to confirm types, parameters, and return values.
 6. [Chrome configuration](chrome_config.md) and [App chrome](app_chrome.md) — declarative Shell chrome vs live control registry ([App drawer](app_drawer.md) when changing drawer navigation).
 7. [File path manager](file_path_manager.md), [Constants](constants.md), and [App data](app_data.md) — where sets live on disk; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
 8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — import/catalog repair and bundled sample install.
-9. [Preferences](preferences.md) and [App theme](app_theme.md) — durable settings and content background.
-10. [Router](router.md) — only when you change startup wiring or trace a route event.
+9. [TTS](tts.md) — pronunciation cache and providers; [TTS preferences](tts_preferences.md) for language and auto-speak.
+10. [Preferences](preferences.md) and [App theme](app_theme.md) — durable settings and content background.
+11. [Router](router.md) — only when you change startup wiring or trace a route event.
 
 Private `_build_*` factories and internal layout dispatchers are hidden from
 these pages. They remain in source for router maintainers.

@@ -11,6 +11,17 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-08-17
+
+### Added
+- Pronounce the revealed word on definition sets (speaker next to Check, optional auto-speak)
+- Text-to-speech language and auto-speak switches in Settings
+- Cached gTTS pronunciations, pruned when a set is deleted or its content is rewritten
+
+### Changed
+- Separate Settings sections with horizontal dividers
+- Document TTS playback, preferences, and the pronunciation cache
+
 ## [1.0.4] - 2026-08-15
 
 ### Added
@@ -32,5 +43,6 @@ body and fails if it is missing.
 - Recreate a missing `files.csv` catalog during repair and close stacked catalog dialogs
 - Restore Home chrome after Android Back from a newly created set
 
-[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.3...v1.0.4

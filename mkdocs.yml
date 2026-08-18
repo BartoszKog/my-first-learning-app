@@ -139,9 +139,11 @@ nav:
           - App session: reference/app_session.md
           - Preferences: reference/preferences.md
           - App theme: reference/app_theme.md
+          - TTS preferences: reference/tts_preferences.md
       - Data & learning:
           - File path manager: reference/file_path_manager.md
           - App data: reference/app_data.md
           - Constants: reference/constants.md
           - CSV processor: reference/csv_processor.md
           - Demo sets: reference/demo_sets.md
+          - TTS: reference/tts.md

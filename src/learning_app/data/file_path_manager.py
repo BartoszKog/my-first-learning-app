@@ -1,8 +1,9 @@
 """Resolve Flet storage directories and paths under ``csv_files/``.
 
 ``FilePathManager`` is initialized once at application startup so catalog and
-set CSVs share a single directory root. Prefer these helpers over hard-coded
-absolute paths.
+set CSVs share a single directory root. TTS audio cache lives beside that
+catalog under ``tts_cache/``. Prefer these helpers over hard-coded absolute
+paths.
 """
 
 import os
@@ -78,3 +79,22 @@ class FilePathManager:
         """Return the directory that holds set CSVs and ``files.csv``."""
         cls.initialize()
         return cls._csv_dir
+
+    @classmethod
+    def get_tts_cache_dir(cls) -> str:
+        """Return the directory for persisted TTS MP3 files.
+
+        Uses ``FLET_APP_STORAGE_DATA/tts_cache`` when the data root is set so
+        cache survives app restarts. Falls back to ``<cwd>/tts_cache`` when
+        the data root is unset (for example web mode).
+
+        Returns:
+            Absolute path to the TTS cache directory. Created if missing.
+        """
+        cls.initialize()
+        if cls._data_dir:
+            path = os.path.join(cls._data_dir, "tts_cache")
+        else:
+            path = os.path.join(os.getcwd(), "tts_cache")
+        os.makedirs(path, exist_ok=True)
+        return path

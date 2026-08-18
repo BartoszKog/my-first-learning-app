@@ -25,7 +25,7 @@ BODY_WIDTH_RATIO = 0.87
 FORM_WIDTH_RATIO = 0.83
 
 # Fraction of viewport width for the Settings screen content column.
-SETTINGS_WIDTH_RATIO = 0.7
+SETTINGS_WIDTH_RATIO = 0.8
 
 # Viewport width thresholds (logical px) stored on LayoutMetrics.breakpoint
 # as "compact" / "normal" / "wide". Currently classification only — they do

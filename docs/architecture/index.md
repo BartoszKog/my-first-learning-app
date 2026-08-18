@@ -12,8 +12,8 @@ Deep, and the route → class map.
 Learning-set content and progress live outside the routing layer as CSV files
 under application storage. See [Data and storage](data-and-storage.md).
 
-How `app.py` wires storage, session, chrome, theme, and the first Home route
-is described in [Startup and lifecycle](startup.md).
+How `app.py` wires storage, session, chrome, theme, TTS preferences, and the
+first Home route is described in [Startup and lifecycle](startup.md).
 
 ## Module responsibilities
 
@@ -27,11 +27,12 @@ is described in [Startup and lifecycle](startup.md).
 
 | Module | Responsibility |
 | --- | --- |
-| `data/file_path_manager.py` | Resolves storage directories and CSV paths. |
+| `data/file_path_manager.py` | Resolves storage directories, CSV paths, and the TTS cache root. |
 | `data/app_data.py` | Set catalog CRUD, load/save, and in-memory learning session state. |
 | `data/constants.py` | CSV column enums, row cap, and import error/warning messages. |
 | `data/csv_processor.py` | Import validation, repair, and save paths for CSV sets. |
 | `data/demo_sets.py` | Bundled demo templates, reserved basenames, and install into storage. |
+| `tts/` | Cached pronunciations, gTTS provider, and garbage collection. |
 
 See [Data and storage](data-and-storage.md) for how these modules fit together.
 
@@ -65,8 +66,10 @@ and the screen map.
 | Module | Responsibility |
 | --- | --- |
 | `ui/body_registry.py` | Shared Home and export `TilesContainer` accessors for in-place search. |
-| `ui/app_session.py` | In-memory session bag for app-wide runtime UI services. |
+| `ui/app_session.py` | In-memory session bag for app-wide runtime UI services (including TTS playback). |
 | `ui/preferences.py` | `SharedPreferences` factory for durable settings. |
+| `ui/app_theme.py` | Theme mode and preference-backed page bgcolor. |
+| `ui/tts_preferences.py` | TTS language and auto-speak flags backed by preferences. |
 
 ### Screens
 

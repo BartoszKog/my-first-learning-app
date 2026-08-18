@@ -83,7 +83,7 @@ To clone the repo and run the app or docs locally, see
 | [Navigation](guides/navigation.md) | Move between shell and deep routes from UI code. |
 | [Layout](guides/layout.md) | Choose `LayoutKind`, wrappers, and responsive sizing. |
 | [Adding a screen](guides/adding-a-screen.md) | Register a new route and wire its control. |
-| [State and persistence](guides/state-and-persistence.md) | Screen vs session vs preferences; theme keys and `AppTheme`. |
+| [State and persistence](guides/state-and-persistence.md) | Screen vs session vs preferences; theme and TTS keys. |
 | [Import and export](guides/import-export.md) | Validate CSVs, import sets, and export through the shared picker. |
 
 ## Concepts {#concepts}
@@ -107,11 +107,12 @@ src/
     utils/
       greetings.py          # AppBar greeting text
     data/
-      file_path_manager.py  # storage roots and csv_files paths
+      file_path_manager.py  # storage roots, csv_files, tts_cache paths
       app_data.py           # catalog CRUD, load/save, AppData session
       constants.py          # CSV column enums, MAX_ROWS, import messages
       csv_processor.py      # import validation and specialized saves
       demo_sets.py          # bundled demo registry, reserved names, install
+    tts/                    # pronunciation cache, gTTS provider, GC
     ui/
       route_paths.py        # canonical path constants
       route_url.py          # build and parse route URLs
@@ -128,8 +129,10 @@ src/
       page_functions.py     # shared dialogs and page helpers
       body_registry.py      # shared home/export TilesContainer instances
       routable_screen.py    # apply_layout protocol and view traversal
-      app_session.py        # page, export FilePicker, navigation lock
+      app_session.py        # page, export FilePicker, TTS playback, navigation lock
       preferences.py        # SharedPreferences accessor
+      app_theme.py          # theme mode and page bgcolor
+      tts_preferences.py    # TTS language and auto-speak flags
       screens/              # application screens (+ _screen_template.py)
       components/           # reusable controls
 tests/                      # pytest / flet test (not packaged into the app)

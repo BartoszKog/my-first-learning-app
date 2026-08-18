@@ -61,6 +61,11 @@ supply the visible fields; `BaseWordField` owns starting/stopping the session,
 calling `good_answer_at_current_row` / `bad_answer_at_current_row`, and
 resetting progress when all words are learned.
 
+`WordDefinitionField` adds a speaker button to the right of Check. It stays
+disabled until Check reveals the word, then `AppSession.speak` plays the
+**word** column (not the definition) in the language from `TtsPreferences`.
+Optional auto-speak after Check does not show error snackbars.
+
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
 the learn menu list; it is a screen helper, not under `components/`.
 

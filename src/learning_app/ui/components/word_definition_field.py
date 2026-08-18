@@ -1,6 +1,8 @@
 import flet as ft
 
 from learning_app.data.constants import WordDefinitions
+from learning_app.tts import TtsError, TtsNetworkError
+from learning_app.ui.app_session import AppSession
 from learning_app.ui.components.base_word_field import BaseWordField
 from learning_app.ui.components.controls import ProgressBar, WordField
 from learning_app.ui.layout_host import control_is_on_page
@@ -12,6 +14,7 @@ from learning_app.ui.layout_metrics import (
 )
 from learning_app.ui.layout_tokens import LEARN_DEFINITION_CHECK_BUTTON_SCALE
 from learning_app.ui.screens.word_list_menu import WordListMenu
+from learning_app.ui.tts_preferences import TtsPreferences
 
 
 class WordDefinitionField(BaseWordField):
@@ -37,6 +40,18 @@ class WordDefinitionField(BaseWordField):
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
         self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
+        self.speakButton = ft.IconButton(
+            icon=ft.Icons.VOLUME_UP,
+            tooltip="Pronounce word",
+            on_click=self.on_speak_click,
+            disabled=True,
+        )
+        self._speak_unlocked = False
+        self.check_row = ft.Row(
+            controls=[self.checkButton, self.speakButton],
+            alignment=ft.MainAxisAlignment.CENTER,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
         self.pb = ProgressBar(width=field_width)
 
         if not is_windows_platform(page):
@@ -46,7 +61,7 @@ class WordDefinitionField(BaseWordField):
             self.pb,
             self.definitionLabel,
             self.word,
-            self.checkButton,
+            self.check_row,
         ]
 
         self.menu_control = WordListMenu(file_name, on_back=self.back, width=width)
@@ -80,4 +95,52 @@ class WordDefinitionField(BaseWordField):
             self.word.reset()
         else:
             self.menu()
+        self._set_speak_unlocked(False)
         self.update()
+
+    def on_check_click(self, e):
+        super().on_check_click(e)
+        revealed = self._get_check_button_text() == "Next"
+        self._set_speak_unlocked(revealed)
+        if control_is_on_page(self):
+            self.update()
+        if revealed and TtsPreferences.auto_speak_definitions:
+            page = self._get_page()
+            if page is not None:
+                page.run_task(self._speak_current_word, False)
+
+    def _set_speak_unlocked(self, unlocked: bool) -> None:
+        self._speak_unlocked = unlocked
+        self.speakButton.disabled = not unlocked
+
+    async def on_speak_click(self, e):
+        await self._speak_current_word(True)
+
+    async def _speak_current_word(self, notify_errors: bool):
+        if not self._speak_unlocked:
+            return
+        word = self.words.get_current_row()[WordDefinitions.WORD.value]
+        if word is None or str(word).strip() in ("", "nan"):
+            return
+
+        self.speakButton.disabled = True
+        if control_is_on_page(self):
+            self.update()
+        try:
+            await AppSession.speak(str(word), TtsPreferences.language)
+        except TtsNetworkError:
+            if notify_errors:
+                self._show_tts_error("Could not play pronunciation. Check your internet connection.")
+        except TtsError:
+            if notify_errors:
+                self._show_tts_error("Could not play pronunciation.")
+        finally:
+            self.speakButton.disabled = not self._speak_unlocked
+            if control_is_on_page(self):
+                self.update()
+
+    def _show_tts_error(self, message: str) -> None:
+        page = self._get_page()
+        if page is None:
+            return
+        page.show_dialog(ft.SnackBar(content=ft.Text(message)))

@@ -1,10 +1,11 @@
 [project]
 name = "learning-app"
-version = "1.0.4"
+version = "1.0.5"
 description = "Word learning application built with Flet"
 requires-python = ">=3.12, <3.14"
 dependencies = [
     "flet>=0.86.0,<1.0",
+    "flet-audio>=0.86.5",
     "gTTS>=2.5.0",
     "pandas==3.0.3",
 ]
@@ -27,7 +28,7 @@ dev = [
 ]
 
 [tool.flet]
-build_number = 5
+build_number = 6
 
 [tool.flet.app]
 path = "src"

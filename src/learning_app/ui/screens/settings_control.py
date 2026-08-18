@@ -8,6 +8,7 @@ from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.preferences import get_shared_preferences
 from learning_app.ui.routable_screen import RoutableScreenMixin
+from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
 
 
 class BackgroundShadeSlider(ft.Column):
@@ -81,11 +82,12 @@ class BackgroundShadeSlider(ft.Column):
 
 
 class SettingsControl(RoutableScreenMixin, ft.Column):
-    """Settings shell screen with Appearance and Demo sets sections.
+    """Settings shell screen with Appearance, TTS, and Demo sets sections.
 
-    Owns the light/dark switch, ``BackgroundShadeSlider``, and demo-set
-    installation. Persistence goes through preferences and ``AppTheme``;
-    Shell chrome colors stay in ``app.py``.
+    Owns the light/dark switch, ``BackgroundShadeSlider``, TTS language and
+    auto-speak, and demo-set installation. Persistence goes through
+    preferences, ``AppTheme``, and ``TtsPreferences``; shell chrome colors
+    stay in ``app.py``.
     """
 
     def __init__(self, page):
@@ -94,12 +96,12 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.scroll = ft.ScrollMode.AUTO
         self.alignment = ft.MainAxisAlignment.START
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        self.spacing = 28
+        self.spacing = 0
         self._app_page = page
         self._content_width = 300
 
         self.theme_switch = ft.Switch(
-            label="Light theme",
+            label=" Light theme",
             label_text_style=ft.TextStyle(size=16),
             value=AppTheme.theme_mode == ft.ThemeMode.LIGHT,
             on_change=self.on_theme_change,
@@ -130,6 +132,31 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             weight=ft.FontWeight.BOLD,
             width=self._content_width,
         )
+        self.tts_heading = ft.Text(
+            "Text to speech",
+            size=18,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.tts_language_dropdown = ft.Dropdown(
+            label="Language",
+            value=TtsPreferences.language,
+            options=[
+                ft.DropdownOption(key=code, text=label) for code, label in TTS_LANGUAGES
+            ],
+            width=self._content_width,
+            on_select=self.on_tts_language_select,
+        )
+        self.tts_auto_speak_switch = ft.Switch(
+            label=" Pronounce after Check",
+            label_text_style=ft.TextStyle(size=16),
+            value=TtsPreferences.auto_speak_definitions,
+            on_change=self.on_tts_auto_speak_change,
+        )
+        self.tts_auto_speak_row = ft.Row(
+            [self.tts_auto_speak_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
         self.demo_description = ft.Text(
             "Add sample learning sets so you can try the app quickly.",
             size=14,
@@ -150,6 +177,15 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             spacing=16,
             width=self._content_width,
         )
+        self.tts_section = ft.Column(
+            controls=[
+                self.tts_heading,
+                self.tts_language_dropdown,
+                self.tts_auto_speak_row,
+            ],
+            spacing=16,
+            width=self._content_width,
+        )
         self.demo_section = ft.Column(
             controls=[
                 self.demo_heading,
@@ -160,11 +196,28 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             width=self._content_width,
         )
 
+        self.tts_section_divider = self._section_divider()
+        self.demo_section_divider = self._section_divider()
+
         self.controls = [
             ft.Container(height=24),
             self.appearance_section,
+            self.tts_section_divider,
+            self.tts_section,
+            self.demo_section_divider,
             self.demo_section,
+            ft.Container(height=32),
         ]
+
+    def _section_divider(self) -> ft.Container:
+        return ft.Container(
+            content=ft.Divider(
+                height=32,
+                thickness=1,
+                color=ft.Colors.OUTLINE_VARIANT,
+            ),
+            width=self._content_width,
+        )
 
     def _get_page(self):
         if control_is_on_page(self):
@@ -178,11 +231,17 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         for control in (
             self.appearance_heading,
             self.demo_heading,
+            self.tts_heading,
             self.demo_description,
             self.add_demo_button,
             self.appearance_section,
+            self.tts_section,
             self.demo_section,
             self.theme_switch_row,
+            self.tts_auto_speak_row,
+            self.tts_language_dropdown,
+            self.tts_section_divider,
+            self.demo_section_divider,
         ):
             control.width = metrics.settings_width
         self.background_shade_slider.apply_layout(metrics.settings_width)
@@ -206,6 +265,21 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
 
     async def _save_theme_mode(self, theme_mode_value):
         await get_shared_preferences().set("theme_mode", theme_mode_value)
+
+    def on_tts_language_select(self, e):
+        language = TtsPreferences.normalize_language(e.control.value)
+        TtsPreferences.language = language
+        e.control.value = language
+        page = self._get_page()
+        if page is not None:
+            page.run_task(TtsPreferences.save_language, language)
+
+    def on_tts_auto_speak_change(self, e):
+        enabled = bool(e.control.value)
+        TtsPreferences.auto_speak_definitions = enabled
+        page = self._get_page()
+        if page is not None:
+            page.run_task(TtsPreferences.save_auto_speak_definitions, enabled)
 
     def on_add_demo_sets_click(self, e):
         page = self._get_page()

@@ -11,6 +11,9 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+### Fixed
+- Replay a pronunciation immediately when the speaker is pressed after auto-speak of the same word
+
 ## [1.0.5] - 2026-08-17
 
 ### Added

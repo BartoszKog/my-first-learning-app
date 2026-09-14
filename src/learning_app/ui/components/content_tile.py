@@ -5,6 +5,7 @@ import flet as ft
 from learning_app.data.app_data import (
     delate_set,
     get_kind_of_file_and_validate,
+    get_set_learn_progress,
     record_set_use,
     set_default_progress,
     update_set_metadata,
@@ -15,14 +16,17 @@ from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.navigation import push_view
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.app_session import AppSession
+from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.route_paths import SET_EDIT_ROUTE, SET_LEARN_ROUTE
 
 
 class ContentTile(ft.Card):
     """One catalog entry with learn, edit, title change, delete, reset, or export actions.
 
-    Home mode opens learn/edit flows and management menus. Export mode focuses
-    on saving the set through the shared export file picker.
+    Home mode opens learn/edit flows and management menus, and shows a
+    bottom progress strip using the same Known / Learned weights as the
+    learn-menu bar. Export mode focuses on saving the set through the
+    shared export file picker.
 
     Args:
         file_name: Set basename or path (``*_words.csv`` / ``*_definitions.csv``).
@@ -69,11 +73,20 @@ class ContentTile(ft.Card):
             subtitle=ft.Text(subtitle) if subtitle else None,
             trailing=self.popUpButton if not export_mode else None,
             on_click=self.open_set if not export_mode else self.export,
-            dense=True,  # Make the ListTile more compact
+            # dense=True,  # Make the ListTile more compact
             min_height=75,
         )
 
-        self.content = lt
+        if export_mode:
+            self.content = lt
+        else:
+            self.clip_behavior = ft.ClipBehavior.ANTI_ALIAS
+            self.content = ft.Column(
+                [lt, self.__create_progress_bar()],
+                spacing=0,
+                tight=True,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            )
         self.margin = 5  # Add some margin around the card
 
     def edit(self, e):
@@ -182,6 +195,8 @@ class ContentTile(ft.Card):
     def set_default_progress(self, e):
         # Logic for setting default progress
         set_default_progress(self.file_name)
+        if self.parent_container is not None:
+            self.parent_container.refresh_content()
         e.page.update()
 
     def __validate_file_before_opening(self, e):
@@ -250,6 +265,34 @@ class ContentTile(ft.Card):
     # methods involved with logic of searching
     def contains_pattern(self, pattern: str):
         return pattern.lower() in self.title.lower()
+
+    def __create_progress_bar(self):
+        units, max_units = get_set_learn_progress(self.file_name)
+        ratio = (units / max_units) if max_units else 0.0
+        complete = max_units > 0 and units == max_units
+        if complete:
+            color = ft.Colors.TEAL_800
+            bgcolor = ft.Colors.TEAL_900
+        elif AppTheme.is_dark_mode():
+            color = ft.Colors.GREY_400
+            bgcolor = ft.Colors.GREY_700
+        else:
+            color = ft.Colors.GREY_500
+            bgcolor = ft.Colors.GREY_300
+        return ft.Container(
+            content=ft.ProgressBar(
+                value=ratio,
+                bar_height=5,
+                color=color,
+                bgcolor=bgcolor,
+                border_radius=0,
+                track_gap=0,
+                year_2023=True,
+            ),
+            height=5,
+            padding=0,
+            margin=0,
+        )
 
     def __create_title_control(self, pattern: str = "", main_color: bool = False):
         if not pattern:

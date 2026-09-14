@@ -27,7 +27,7 @@ class TilesContainer(ft.Container):
         export_mode: When ``True``, tiles use export-oriented actions.
     """
 
-    SCROLL_PIXELS_PER_TILE = 95
+    SCROLL_PIXELS_PER_TILE = 100
     SCROLL_OFFSET_CORRECTION = -100
     _shared_sort_mode: SetSortMode = SetSortMode.LAST_USED
 

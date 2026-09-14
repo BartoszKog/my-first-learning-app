@@ -308,6 +308,52 @@ def set_default_progress(file_name: str) -> None:
     save_set(data, file_name)
 
 
+def get_set_learn_progress(file_name: str) -> tuple[int, int]:
+    """Return weighted learn progress without starting a learn session.
+
+    Matches the learn-menu bar: Known rows count as ``1``, rows still in the
+    learning mix (``Learned`` / queued) count as ``0.25``, and unverified
+    ``0/0/0`` rows count as ``0``. Values are stored in quarters so callers
+    can use ``units / max_units`` the same way ``WordListMenu`` does
+    (``known * 4 + learning * 1`` over ``total * 4``).
+
+    Missing files or unreadable tables return ``(0, 0)``.
+
+    Args:
+        file_name: Set basename or path resolved by ``FilePathManager``.
+
+    Returns:
+        ``(units, max_units)`` in quarter-word weights.
+    """
+    try:
+        data = load_set(file_name)
+    except (OSError, pd.errors.EmptyDataError, pd.errors.ParserError, ValueError):
+        return 0, 0
+
+    total = len(data)
+    required = (
+        StatsColumns.GOOD_ANSWER.value,
+        StatsColumns.GOOD_ANSWERS_IN_A_ROW.value,
+        StatsColumns.WORD_TO_LEARN.value,
+    )
+    if total == 0 or not all(col in data.columns for col in required):
+        return 0, int(total) * 4
+
+    known_mask = (
+        (data[StatsColumns.GOOD_ANSWER.value] == True)
+        & (data[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == True)
+        & (data[StatsColumns.WORD_TO_LEARN.value] == False)
+    )
+    unverified_mask = (
+        (data[StatsColumns.GOOD_ANSWER.value] == False)
+        & (data[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == False)
+        & (data[StatsColumns.WORD_TO_LEARN.value] == False)
+    )
+    known = int(known_mask.sum())
+    learning = total - known - int(unverified_mask.sum())
+    return known * 4 + learning, total * 4
+
+
 def delate_set(file_name: str, file_not_exist: bool = False) -> None:
     """Remove a set from the catalog and optionally delete its CSV file.
 

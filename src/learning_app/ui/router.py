@@ -125,6 +125,7 @@ def _restore_active_view_state(page: ft.Page, full_route: str):
     _update_drawer_selection(full_route)
     _sync_chrome_for_route(full_route, page)
     _refresh_learn_menu_view(page, full_route)
+    _refresh_home_tiles(full_route)
     _apply_layout_for_route(page, route_path(full_route))
 
 
@@ -181,6 +182,12 @@ def _refresh_learn_menu_view(page: ft.Page, full_route: str):
     control.words.refresh()
     if call_apply_layout(control):
         control.update()
+
+
+def _refresh_home_tiles(full_route: str):
+    if route_path(full_route) != HOME_ROUTE or not BodyRegistry.has_home():
+        return
+    BodyRegistry.get_home().refresh_content()
 
 
 def _detach_shared_chrome_from_views(page: ft.Page):

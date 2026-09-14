@@ -148,8 +148,9 @@ go_search(page, mode="export")
 ![Search filtering shared tile body](../assets/architecture/search-screen.png){ .docs-screenshot-sm }
 
 Search obtains that source through the
-[body registry](../concepts/body-registry.md), then inserts `SearchControl`
-above the tiles without changing the route. Important constraints:
+[body registry](../concepts/body-registry.md), then hosts `SearchControl` as
+the shared AppBar title without changing the route or reparenting tiles.
+Important constraints:
 
 - Call `go_search(..., mode="export")` only after the Import/Export screen has
   registered the export `TilesContainer`. `BodyRegistry.get_export()` asserts

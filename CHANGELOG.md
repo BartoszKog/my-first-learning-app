@@ -18,6 +18,7 @@ body and fails if it is missing.
 
 ### Changed
 - Restyle in-place search on Home and Export: host the field in the app bar, use a slightly lighter teal fill with white text and icon buttons, enlarge the actions, and match tile width on wide screens
+- Update developer documentation for in-place search chrome, learn-queue retry, Home tile progress, and CSV text loading
 
 ### Fixed
 - Replay a pronunciation immediately when the speaker is pressed after auto-speak of the same word

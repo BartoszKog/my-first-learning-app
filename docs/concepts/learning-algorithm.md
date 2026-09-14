@@ -101,6 +101,29 @@ else:
     self.words.bad_answer_at_current_row()
 ```
 
+Those helpers run on the **first** Check of a card. When Settings **Retype
+until correct** is off, Check then becomes Next and the queue advances as
+usual.
+
+## Retry until correct {#retry-until-correct}
+
+`LearnPreferences.retry_until_correct` is a UI flag, not an `AppData` rule.
+When it is on:
+
+1. The first wrong Check still calls `bad_answer_at_current_row()` once.
+2. Check becomes **Try again**; the same row stays current.
+3. Further Checks only compare the typed answer. They do not increment
+   `correct_answers` or flip `G/S/W` again.
+4. A correct retype unlocks Next. The queue then advances without a second
+   stats write for that card.
+
+On word-formation sets, `WordFields.prepare_retry` keeps already-green fields
+filled so only missed forms need typing again. Definitions reset the word
+field and lock the speaker until the next reveal.
+
+The flag is loaded at startup and edited from Settings — see
+[Learning](../guides/state-and-persistence.md#learning).
+
 ## Progress helpers
 
 | Method | Use |
@@ -109,8 +132,14 @@ else:
 | `number_of_learning_words()` | Count rows still in the learning mix |
 | `number_of_all_words()` | Total rows in the loaded set |
 | `are_all_words_learned()` | `True` when known count equals total |
+| `get_set_learn_progress(file_name)` | Module helper: `(units, max_units)` in quarter-word weights for Home tiles and the learn-menu bar |
 | `refresh()` | Reload the CSV into `words` after an external reset |
 | `set_default_progress(file_name)` | Module helper: wipe stats on disk |
+
+`get_set_learn_progress` does not start a learn session. Known rows count as
+`1`, rows still in the mix as `0.25`, and unverified `0/0/0` as `0`, stored
+as `known * 4 + learning` over `total * 4`. Home `ContentTile` bars use this
+helper; returning to Home refreshes the tile list so the strip matches disk.
 
 Learn UI uses `are_all_words_learned()` before starting a session and may offer
 `set_default_progress` when every row is Known.
@@ -121,6 +150,7 @@ Learn UI uses `are_all_words_learned()` before starting a session and may offer
 | --- | --- |
 | Path and catalog | `FilePathManager`, module-level `app_data` helpers |
 | Queue and answer rules | `AppData` |
+| Retry-until-correct flag | `LearnPreferences` (Settings) |
 | Presenting fields / buttons | `ui/components/` learn controls and `WordListMenu` |
 | Transient UI chrome lock | `AppSession` — never learning statistics |
 
@@ -134,4 +164,5 @@ changed outside the session.
 - [UI components](ui-components.md)
 - [State and persistence](../guides/state-and-persistence.md)
 - [App data API](../reference/app_data.md)
+- [Learn preferences API](../reference/learn_preferences.md)
 - [Constants API](../reference/constants.md)

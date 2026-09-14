@@ -67,8 +67,15 @@ Catalog helpers in `data/app_data.py`:
 - `record_set_use()` — bump `use_count` / `last_used` when opening learn.
 - `delate_set()` — remove the catalog row and delete the set file when present
   (also prunes unused TTS cache entries).
+- `get_set_learn_progress()` — weighted Known / Learned units for Home tile
+  bars without starting a learn session.
 - `generate_empty_files_data()` — create an empty catalog with the expected
   columns.
+
+Catalog and set readers treat only blank cells as missing
+(`read_catalog_csv` / `read_set_csv` with `keep_default_na=False`). Titles or
+words that look like pandas NA sentinels (`None`, `null`, `NA`, `nan`) stay
+as written. Empty subtitle cells still become empty strings after load.
 
 `get_file_names_and_titles()` returns full paths via `FilePathManager` so tile
 code can open the matching CSV without recomputing directories.
@@ -103,13 +110,18 @@ Every set also stores progress columns (`StatsColumns`):
 `create_empty_set(kind)` builds an empty DataFrame with the correct columns
 and dtypes. `load_set` / `save_set` read and write through
 `FilePathManager.get_csv_path()`, keeping the DataFrame index in the CSV
-(`index_col=0` on load, `index=True` on save).
+(`index_col=0` on load, `index=True` on save). After load, content columns
+are coerced to strings (`stringify_content_columns`) so numeric-looking
+cells such as `123` stay text for edit and learn UIs; statistics columns
+keep inferred numeric/bool dtypes. Import validation uses the same readers.
 
 `MAX_ROWS` in `data/constants.py` caps how many content rows a set may
 contain (currently `40`). Import validation enforces that limit.
 
 `set_default_progress(file_name)` resets all statistics columns on an
-existing set without removing content rows.
+existing set without removing content rows. `get_set_learn_progress(file_name)`
+returns the weighted Home / learn-menu bar values described in
+[Learning algorithm](../concepts/learning-algorithm.md#progress-helpers).
 
 See the [Constants API](../reference/constants.md) and
 [App data API](../reference/app_data.md).

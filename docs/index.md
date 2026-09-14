@@ -83,7 +83,7 @@ To clone the repo and run the app or docs locally, see
 | [Navigation](guides/navigation.md) | Move between shell and deep routes from UI code. |
 | [Layout](guides/layout.md) | Choose `LayoutKind`, wrappers, and responsive sizing. |
 | [Adding a screen](guides/adding-a-screen.md) | Register a new route and wire its control. |
-| [State and persistence](guides/state-and-persistence.md) | Screen vs session vs preferences; theme and TTS keys. |
+| [State and persistence](guides/state-and-persistence.md) | Screen vs session vs preferences; theme, TTS, and learn-retry keys. |
 | [Import and export](guides/import-export.md) | Validate CSVs, import sets, and export through the shared picker. |
 
 ## Concepts {#concepts}
@@ -119,7 +119,7 @@ src/
       route_registry.py     # RouteDef registry, drawer, build factories
       router.py             # view stack, layout dispatch, route events
       navigation.py         # navigate_to, push_view, go_back, go_search
-      inplace_search.py     # in-place SearchControl over Home/export tiles
+      inplace_search.py     # in-place SearchControl in the AppBar over tiles
       chrome_config.py      # ShellChromeConfig per shell route
       app_chrome.py         # Live AppBar / bottom bar / FAB / drawer registry
       app_drawer.py         # Shared NavigationDrawer for Shell destinations
@@ -133,6 +133,7 @@ src/
       preferences.py        # SharedPreferences accessor
       app_theme.py          # theme mode and page bgcolor
       tts_preferences.py    # TTS language and auto-speak flags
+      learn_preferences.py  # retry-until-correct learn-session flag
       screens/              # application screens (+ _screen_template.py)
       components/           # reusable controls
 tests/                      # pytest / flet test (not packaged into the app)

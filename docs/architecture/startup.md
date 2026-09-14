@@ -5,7 +5,7 @@ Source: `app.py` (`main`), launched from `src/main.py` via `ft.run(main)`
 Application startup builds shared chrome and runtime services **before** the
 first routed view. Order matters: storage and session must exist before CSV
 UI runs, chrome controls must be registered before the router attaches them
-to Shell views, and theme and TTS preferences should load before the home
+to Shell views, and theme, TTS, and learn preferences should load before the home
 route is shown.
 
 ```mermaid
@@ -15,7 +15,7 @@ flowchart TD
     Paths --> Session[AppSession page + export picker + TTS]
     Session --> ChromeUI[Drawer AppBar FAB search]
     ChromeUI --> Register[AppChrome.register]
-    Register --> Prefs[AppTheme + TtsPreferences]
+    Register --> Prefs[AppTheme + TtsPreferences + LearnPreferences]
     Prefs --> Routes[initialize_routes Home]
 ```
 
@@ -112,7 +112,7 @@ The router and Shell chrome sync look up these refs instead of reading
 Shell views that attach them. See
 [App chrome API](../reference/app_chrome.md).
 
-### 6. Theme and TTS preferences
+### 6. Theme, TTS, and learn preferences
 
 Default theme keys are written when missing (`theme_mode`, light/dark
 background and slider values). The page theme mode and bgcolor are applied,
@@ -122,18 +122,21 @@ then:
 await AppTheme.load_from_preferences()
 AppTheme.sync_from_page(page)
 await TtsPreferences.load_from_preferences()
+await LearnPreferences.load_from_preferences()
 ```
 
-Theme and TTS *settings UI* is owned by Settings; startup only restores the
-last saved look and speech options so the first frame matches preferences.
-Keys and ownership are in
+Theme, TTS, and Learning *settings UI* is owned by Settings; startup only
+restores the last saved look, speech options, and learn-queue retry so the
+first frame matches preferences. Keys and ownership are in
 [State and persistence](../guides/state-and-persistence.md)
 ([Theming](../guides/state-and-persistence.md#theming),
-[Text to speech](../guides/state-and-persistence.md#text-to-speech)).
+[Text to speech](../guides/state-and-persistence.md#text-to-speech),
+[Learning](../guides/state-and-persistence.md#learning)).
 
 See [Preferences API](../reference/preferences.md),
-[App theme API](../reference/app_theme.md), and
-[TTS preferences API](../reference/tts_preferences.md).
+[App theme API](../reference/app_theme.md),
+[TTS preferences API](../reference/tts_preferences.md), and
+[Learn preferences API](../reference/learn_preferences.md).
 
 ### 7. Initial route
 
@@ -153,7 +156,7 @@ See [Navigation](../guides/navigation.md).
 | Paths after first CSV use | Missing `csv_files/` or wrong roots |
 | Session after export/import UI | No shared page or picker |
 | `AppChrome.register` after first Shell view | Chrome sync cannot find controls |
-| Theme / TTS prefs after `initialize_routes` | First Home paint may flash wrong theme; Settings TTS controls may show defaults |
+| Theme / TTS / learn prefs after `initialize_routes` | First Home paint may flash wrong theme; Settings TTS and Learning controls may show defaults |
 | Route handlers after `initialize_routes` | Initial navigation may miss router logic |
 
 Hardcoded chrome colors in `app.py` are separate from preference-backed page
@@ -165,7 +168,7 @@ background goes through Settings / `AppTheme`.
 - [Architecture overview](index.md)
 - [Routing and screens](routing-and-screens.md)
 - [Data and storage](data-and-storage.md)
-- [State and persistence](../guides/state-and-persistence.md) (incl. [Theming](../guides/state-and-persistence.md#theming) and [Text to speech](../guides/state-and-persistence.md#text-to-speech))
+- [State and persistence](../guides/state-and-persistence.md) (incl. [Theming](../guides/state-and-persistence.md#theming), [Text to speech](../guides/state-and-persistence.md#text-to-speech), and [Learning](../guides/state-and-persistence.md#learning))
 - [Chrome and wrappers](../concepts/chrome-and-wrappers.md)
 - [Router API](../reference/router.md)
 - [App chrome API](../reference/app_chrome.md)
@@ -173,5 +176,6 @@ background goes through Settings / `AppTheme`.
 - [App session API](../reference/app_session.md)
 - [App theme API](../reference/app_theme.md)
 - [TTS preferences API](../reference/tts_preferences.md)
+- [Learn preferences API](../reference/learn_preferences.md)
 - [File path manager API](../reference/file_path_manager.md)
 - [Preferences API](../reference/preferences.md)

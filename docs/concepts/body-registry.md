@@ -35,9 +35,9 @@ The complete flow is:
 TilesContainer → BodyRegistry.set_home() → go_search(mode="home") → inplace_search
 ```
 
-Search is not a route. `ui/inplace_search.py` inserts `SearchControl` above
-the existing tile body in its shell column, hides shared chrome, and restores
-it on close. The tile body is never reparented.
+Search is not a route. `ui/inplace_search.py` hosts `SearchControl` as the
+shared AppBar title, hides the menu / bottom bar / FAB, and restores chrome
+on close. The tile body stays in its shell column and is never reparented.
 
 ![Search filtering the Home tile body](../assets/architecture/search-screen.png){ .docs-screenshot-sm }
 

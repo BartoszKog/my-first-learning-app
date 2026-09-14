@@ -83,8 +83,10 @@ AppChrome.register(
 
 The router then:
 
-1. Looks up `SHELL_CHROME[path]` for Shell routes and sets visibility, AppBar
-   title (including the `__greeting__` sentinel), leading menu button, and FAB.
+1. Looks up `SHELL_CHROME[path]` for Shell routes and sets visibility, restores
+   the AppBar title `Text` with `AppChrome.show_appbar_title` (including the
+   `__greeting__` sentinel, after in-place search may have replaced `appbar.title`),
+   leading menu button, and FAB.
 2. Hides AppBar, bottom bar, and FAB for Deep routes.
 3. Attaches the same registered controls onto each Shell `ft.View` (plus
    drawer and alignment defaults from `AppChrome`).
@@ -152,10 +154,11 @@ return wrap_safe_area(
 ```
 
 Home and Import/Export use `BodyWrapperKind.SHELL` because their shared chrome
-already defines the normal Shell body area. In-place search hides that chrome
-temporarily and wraps only the search field in its own `ft.SafeArea`; it does
-not use a separate body-wrapper kind. The Deep form wrapper supplies form
-width and vertical padding; it does not add an `ft.SafeArea`.
+already defines the normal Shell body area. In-place search keeps the AppBar
+visible and hosts `SearchControl` as its title (hiding the menu button, bottom
+bar, and FAB); it does not use a separate body-wrapper kind or a search-only
+`ft.SafeArea`. The Deep form wrapper supplies form width and vertical padding;
+it does not add an `ft.SafeArea`.
 
 Keeping these decisions in wrapper helpers prevents individual screens from
 reimplementing route-frame calculations.

@@ -35,6 +35,11 @@ use count) sits above the tiles outside search mode; Home and export stay in
 sync via `BodyRegistry` when both are on-page. Home registers the container
 with `BodyRegistry`; Import/Export does the same for export mode.
 
+On Home, `ContentTile` also draws a bottom progress strip from
+`get_set_learn_progress()` — the same Known / Learned quarter-weights as the
+learn-menu bar. Export tiles omit the strip. Returning to Home refreshes the
+shared `TilesContainer` so those bars stay current after a learn session.
+
 `ContentTile` opens learn or edit via `push_view`, and offers menu actions such
 as reset progress (`set_default_progress`), delete (`delate_set`), and export
 through `AppSession.get_export_csv_picker()` with `save_file(..., src_bytes=...)`.
@@ -58,13 +63,20 @@ files.csv → TilesContainer → ContentTile → learn / edit / delete / export
 Route factories construct `WordFields` or `WordDefinitionField` with
 `session=False` (learn menu) or `session=True` (active session). Subclasses
 supply the visible fields; `BaseWordField` owns starting/stopping the session,
-calling `good_answer_at_current_row` / `bad_answer_at_current_row`, and
-resetting progress when all words are learned.
+calling `good_answer_at_current_row` / `bad_answer_at_current_row` on the
+**first** Check of a card, and resetting progress when all words are learned.
+
+When Settings **Retype until correct** is on (`LearnPreferences`), a wrong
+Check stays on the same card (`Try again`) until the answer is typed
+correctly. Extra attempts do not call the answer helpers. On word-formation
+retries, `WordFields.prepare_retry` keeps green fields filled and only resets
+missed forms.
 
 `WordDefinitionField` adds a speaker button to the right of Check. It stays
 disabled until Check reveals the word, then `AppSession.speak` plays the
 **word** column (not the definition) in the language from `TtsPreferences`.
-Optional auto-speak after Check does not show error snackbars.
+Optional auto-speak after Check does not show error snackbars. Repeating the
+same cached file skips the load wait so the speaker can replay immediately.
 
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
 the learn menu list; it is a screen helper, not under `components/`.
@@ -91,12 +103,15 @@ new screen.
 | --- | --- | --- |
 | `SearchControl` | `ui/components/search_control.py` | Search field plus next/previous match over a `TilesContainer` |
 
-In-place search (`ui/inplace_search.py`) inserts `SearchControl` above the
-shared Home or export `TilesContainer` from `BodyRegistry`. Filtering stays on
-that existing instance; the control only drives the pattern and focus. Closing
-restores shell chrome (and the Import/Export tab bar plus export tip when
-searching export). System back closes in-place search the same way as the
-search close button, without popping the shell route.
+In-place search (`ui/inplace_search.py`) hosts `SearchControl` as the shared
+AppBar title over the Home or export `TilesContainer` from `BodyRegistry`.
+The field uses a slightly lighter teal fill with white text and icon buttons.
+On roomy screens its width matches the tiles (`body_width`); on compact
+screens it fills the AppBar. Filtering stays on that existing instance; the
+control only drives the pattern and focus. Closing restores the greeting or
+route title, bottom bar, and FAB (and the Import/Export tab bar plus export
+tip when searching export). System back closes in-place search the same way
+as the search close button, without popping the shell route.
 
 ## Ownership checklist
 
@@ -105,6 +120,7 @@ search close button, without popping the shell route.
 | Which route hosts which body | `route_registry` / screen map |
 | Shared Home/export tile instance | `BodyRegistry` |
 | Practice queue and stats | `AppData` |
+| Learn-session retry flag | `LearnPreferences` |
 | Tile list / learn loop / edit cards | `ui/components/` |
 | Screen chrome and navigation | Shell chrome + navigation helpers |
 

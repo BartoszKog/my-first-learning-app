@@ -23,6 +23,7 @@ class AppChrome:
     _horizontal_alignment: ft.CrossAxisAlignment | None = None
     _vertical_alignment: ft.MainAxisAlignment | None = None
     _appbar_menu_button: ft.IconButton | None = None
+    _appbar_title: ft.Text | None = None
     _search_button: ft.IconButton | None = None
     _drawer: ft.NavigationDrawer | None = None
 
@@ -58,6 +59,7 @@ class AppChrome:
         cls._horizontal_alignment = horizontal_alignment
         cls._vertical_alignment = vertical_alignment
         cls._appbar_menu_button = appbar_menu_button
+        cls._appbar_title = appbar.title if isinstance(appbar.title, ft.Text) else None
         cls._search_button = search_button
         cls._allow_bottom_appbar_system_inset(bottom_appbar)
 
@@ -134,6 +136,21 @@ class AppChrome:
         """Return the leading drawer-menu button for Shell routes that show it."""
         assert cls._appbar_menu_button is not None, "App chrome is not registered"
         return cls._appbar_menu_button
+
+    @classmethod
+    def get_appbar_title(cls) -> ft.Text:
+        """Return the shared app bar title text control."""
+        assert cls._appbar_title is not None, "App chrome is not registered"
+        return cls._appbar_title
+
+    @classmethod
+    def show_appbar_title(cls, text: str) -> None:
+        """Restore the greeting/title ``Text`` after in-place search replaces it."""
+        appbar = cls.get_appbar()
+        title = cls.get_appbar_title()
+        title.value = text
+        appbar.title = title
+        appbar.center_title = True
 
     @classmethod
     def get_search_button(cls) -> ft.IconButton:

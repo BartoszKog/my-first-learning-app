@@ -8,6 +8,7 @@ from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.chrome_config import SHELL_CHROME
 from learning_app.ui.components.search_control import SearchControl
 from learning_app.ui.components.tiles_container import TilesContainer
+from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.route_paths import HOME_ROUTE
 from learning_app.ui.route_url import route_path
 from learning_app.utils.greetings import Greetings
@@ -19,11 +20,27 @@ def is_inplace_search_active(page: ft.Page) -> bool:
     return getattr(page, _PAGE_STATE_ATTR, None) is not None
 
 
-def _hide_shell_chrome() -> None:
-    """Match deep-route chrome: no app bar, bottom bar, or FAB during search."""
-    AppChrome.get_appbar().visible = False
+def _apply_search_chrome(search: SearchControl) -> None:
+    """Keep the app bar as the search host; hide bottom bar and FAB."""
+    appbar = AppChrome.get_appbar()
+    appbar.visible = True
+    appbar.leading = None
+    appbar.title = search
     AppChrome.get_bottom_appbar().visible = False
     AppChrome.get_floating_action_button().visible = False
+
+
+def sync_inplace_search_layout(page: ft.Page) -> None:
+    """Keep SearchControl width aligned with tiles after open or resize."""
+    state = getattr(page, _PAGE_STATE_ATTR, None)
+    if not state:
+        return
+    search = state["control"]
+    if not isinstance(search, SearchControl):
+        return
+    metrics = LayoutMetricsStore.refresh(page)
+    search.apply_flex_layout(metrics)
+    AppChrome.get_appbar().center_title = metrics.breakpoint != "compact"
 
 
 def _restore_shell_chrome(page: ft.Page, full_route: str | None = None) -> None:
@@ -38,7 +55,7 @@ def _restore_shell_chrome(page: ft.Page, full_route: str | None = None) -> None:
     appbar = AppChrome.get_appbar()
     appbar.visible = True
     appbar.leading = AppChrome.get_appbar_menu_button() if config.appbar_menu_leading else None
-    appbar.title.value = (
+    AppChrome.show_appbar_title(
         Greetings.get_greeting() if config.appbar_title == "__greeting__" else config.appbar_title
     )
 
@@ -69,7 +86,7 @@ def _find_import_export_control(body: TilesContainer):
 
 
 def ensure_inplace_search(page: ft.Page, body: TilesContainer) -> bool:
-    """Show SearchControl above ``body`` in its shell column without reparenting tiles.
+    """Show SearchControl in the shared app bar without reparenting tiles.
 
     Returns:
         ``True`` when search UI was shown (or already active).
@@ -77,33 +94,12 @@ def ensure_inplace_search(page: ft.Page, body: TilesContainer) -> bool:
     if is_inplace_search_active(page):
         return True
 
-    shell = body.parent
-    if shell is None or not hasattr(shell, "controls"):
-        return False
-
     def on_close(_e=None):
         close_inplace_search(page)
 
     search = SearchControl(page, body, on_close=on_close)
-    # App bar is hidden in search; keep the field clear of the status bar / notch.
-    search_host = ft.SafeArea(
-        content=search,
-        expand=False,
-        avoid_intrusions_top=True,
-        avoid_intrusions_bottom=False,
-        avoid_intrusions_left=True,
-        avoid_intrusions_right=True,
-    )
-    controls = list(shell.controls)
-    if body in controls:
-        idx = controls.index(body)
-        controls.insert(idx, search_host)
-    else:
-        controls.insert(0, search_host)
-    shell.controls = controls
-
     body.trigger_searching_mode()
-    _hide_shell_chrome()
+    _apply_search_chrome(search)
 
     import_export = _find_import_export_control(body) if body.export_mode else None
     if import_export is not None:
@@ -113,13 +109,13 @@ def ensure_inplace_search(page: ft.Page, body: TilesContainer) -> bool:
         page,
         _PAGE_STATE_ATTR,
         {
-            "control": search_host,
-            "shell": shell,
+            "control": search,
             "body": body,
             "route": page.route or HOME_ROUTE,
             "import_export": import_export,
         },
     )
+    sync_inplace_search_layout(page)
 
     page.update()
     return True
@@ -131,14 +127,9 @@ def close_inplace_search(page: ft.Page) -> bool:
     if not state:
         return False
 
-    search = state["control"]
-    shell = state["shell"]
     body: TilesContainer = state["body"]
     opened_from_route = state.get("route") or page.route or HOME_ROUTE
     import_export = state.get("import_export")
-
-    if hasattr(shell, "controls"):
-        shell.controls = [c for c in list(shell.controls) if c is not search]
 
     if body.searching:
         body.turn_off_searching_mode()

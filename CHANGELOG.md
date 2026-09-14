@@ -14,6 +14,9 @@ body and fails if it is missing.
 ### Added
 - Learn progress bars on Home set tiles, using the same Known / Learned weights as the learn session
 
+### Changed
+- Restyle in-place search on Home and Export: host the field in the app bar, use a slightly lighter teal fill with white text and icon buttons, enlarge the actions, and match tile width on wide screens
+
 ### Fixed
 - Replay a pronunciation immediately when the speaker is pressed after auto-speak of the same word
 - Keep numeric-looking card text and catalog titles or subtitles such as None, null, or NA when loading CSVs

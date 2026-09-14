@@ -134,7 +134,9 @@ def _apply_shell_chrome(path: str):
     appbar = AppChrome.get_appbar()
     appbar.visible = True
     appbar.leading = AppChrome.get_appbar_menu_button() if config.appbar_menu_leading else None
-    appbar.title.value = Greetings.get_greeting() if config.appbar_title == "__greeting__" else config.appbar_title
+    AppChrome.show_appbar_title(
+        Greetings.get_greeting() if config.appbar_title == "__greeting__" else config.appbar_title
+    )
 
     bottom_appbar = AppChrome.get_bottom_appbar()
     bottom_appbar.visible = config.bottom_appbar_visible
@@ -650,4 +652,7 @@ def handle_page_resize(e: ft.ControlEvent):
     """
     page = e.page
     _apply_layout_for_route(page, route_path(page.route or HOME_ROUTE))
+    from learning_app.ui.inplace_search import sync_inplace_search_layout
+
+    sync_inplace_search_layout(page)
     AppTheme.apply_to_page(page)

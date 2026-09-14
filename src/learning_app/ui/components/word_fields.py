@@ -87,6 +87,8 @@ class WordFields(BaseWordField):
         if self.words.it_is_not_last_index_of_group():
             self.words.draw_new_row()
             word_label = rd.choice(self.words.get_current_words_list())
+            if not isinstance(word_label, str):
+                word_label = str(word_label)
             if "/" in word_label:
                 self.Word.value = rd.choice(word_label.split("/"))
             else:

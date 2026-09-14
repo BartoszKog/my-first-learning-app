@@ -24,6 +24,21 @@ _CATALOG_COLUMN_ORDER = [
 ]
 
 
+def read_catalog_csv(path: str) -> pd.DataFrame:
+    """Read ``files.csv``, treating only blank cells as missing.
+
+    Pandas' default NA list would turn catalog text such as ``None``,
+    ``null``, or ``NA`` into missing values. Empty cells still become NA
+    so blank titles fail validation and blank subtitles stay empty.
+    """
+    return pd.read_csv(
+        path,
+        index_col=False,
+        keep_default_na=False,
+        na_values=[""],
+    )
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
@@ -49,7 +64,7 @@ def ensure_files_catalog_columns(df: pd.DataFrame | None = None, *, persist: boo
     if df is None:
         if not os.path.exists(files_data_path):
             generate_empty_files_data()
-        df = pd.read_csv(files_data_path)
+        df = read_catalog_csv(files_data_path)
 
     changed = False
     base_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
@@ -164,6 +179,58 @@ def get_kind_of_file_and_validate(file_name: str) -> str:
         raise Exception("The file_name must end with _words.csv or _definitions.csv.")
 
 
+def _stringify_content_cell(value):
+    """Return ``value`` as text, leaving missing cells as missing."""
+    if value is None:
+        return value
+    try:
+        if pd.isna(value):
+            return value
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool):
+        return str(value)
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def read_set_csv(path: str, *, index_col: int | str | None = 0) -> pd.DataFrame:
+    """Read a set CSV, treating only blank cells as missing.
+
+    Pandas' default NA list would turn user text such as ``nan``, ``None``,
+    or ``NA`` into missing values. Empty cells still become NA so unused
+    parts-of-speech fields stay empty. Statistics columns keep inferred
+    numeric/bool dtypes.
+
+    Args:
+        path: Absolute path to the set CSV.
+        index_col: Passed to ``pandas.read_csv``. ``None`` reads without
+            promoting a column to the index (import validation).
+    """
+    kwargs: dict = {"keep_default_na": False, "na_values": [""]}
+    if index_col is not None:
+        kwargs["index_col"] = index_col
+    return pd.read_csv(path, **kwargs)
+
+
+def stringify_content_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Coerce learning-content cells to strings after CSV type inference.
+
+    Pandas reads a column of digits as ``int64``/``float64``. Edit and learn
+    UIs then treat those cells as empty or call ``len``/``split`` on numbers.
+    Statistics columns are left unchanged; missing content stays NA.
+    """
+    stats = {col.value for col in StatsColumns}
+    for col in df.columns:
+        if col in stats:
+            continue
+        df[col] = df[col].map(_stringify_content_cell)
+    return df
+
+
 def save_set(data: pd.DataFrame, file_name: str, *, prune_tts: bool = False) -> None:
     """Write a set DataFrame to the CSV directory, keeping the index column.
 
@@ -185,6 +252,11 @@ def save_set(data: pd.DataFrame, file_name: str, *, prune_tts: bool = False) -> 
 def load_set(file_name: str) -> pd.DataFrame:
     """Load a set CSV with the first column as the DataFrame index.
 
+    Content columns are coerced to strings so numeric-looking cells (``123``)
+    stay text. Words that look like pandas NA sentinels (``nan``, ``None``,
+    ``NA``) stay as written. Missing content stays NA; statistics columns
+    keep inferred numeric/bool dtypes.
+
     Args:
         file_name: Set basename or path resolved by ``FilePathManager``.
 
@@ -192,7 +264,7 @@ def load_set(file_name: str) -> pd.DataFrame:
         Loaded set table.
     """
     full_path = FilePathManager.get_csv_path(file_name)
-    return pd.read_csv(full_path, index_col=0)
+    return stringify_content_columns(read_set_csv(full_path, index_col=0))
 
 
 def set_file_exists(file_name: str) -> bool:
@@ -241,7 +313,7 @@ def get_file_names_and_titles(sort_mode: SetSortMode = SetSortMode.LAST_USED) ->
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
     df_files[FilesColumns.SUBTITLE.value] = df_files[FilesColumns.SUBTITLE.value].apply(
         lambda x: "" if pd.isna(x) else x
     )
@@ -277,7 +349,7 @@ def get_file_names() -> list:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
     return df_files[FilesColumns.FILE_NAME.value].tolist()
 
 
@@ -368,7 +440,7 @@ def delate_set(file_name: str, file_not_exist: bool = False) -> None:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
     df_files = df_files[df_files[FilesColumns.FILE_NAME.value] != os.path.basename(file_name)]
     df_files.to_csv(files_data_path, index=False)
 
@@ -394,7 +466,7 @@ def add_new_file(file_name: str, title: str, subtitle: str = "") -> None:
     if not os.path.exists(files_data_path):
         generate_empty_files_data()
 
-    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
     new_row = {
         FilesColumns.FILE_NAME.value: os.path.basename(file_name),
         FilesColumns.TITLE.value: title,
@@ -422,7 +494,7 @@ def update_set_metadata(file_name: str, title: str, subtitle: str = "") -> None:
     if not os.path.exists(files_data_path):
         return
 
-    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
     basename = os.path.basename(file_name)
     mask = df_files[FilesColumns.FILE_NAME.value] == basename
     if not mask.any():
@@ -446,7 +518,7 @@ def record_set_use(file_name: str) -> None:
     if not os.path.exists(files_data_path):
         return
 
-    df_files = ensure_files_catalog_columns(pd.read_csv(files_data_path))
+    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
     basename = os.path.basename(file_name)
     mask = df_files[FilesColumns.FILE_NAME.value] == basename
     if not mask.any():

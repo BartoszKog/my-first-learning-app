@@ -2,6 +2,7 @@ import asyncio
 
 import flet as ft
 
+from learning_app.data.app_data import _stringify_content_cell
 from learning_app.data.constants import PartsOfSpeech, WordDefinitions
 from learning_app.ui.app_theme import AppTheme
 
@@ -42,10 +43,8 @@ class EditCardBase(ft.Card):
             self.index = words_row.name
 
             for label, word_field in self.dict_word_fields.items():
-                if isinstance(words_row[label], str):
-                    word_field.value = words_row[label]
-                else:
-                    word_field.value = ""
+                text = _stringify_content_cell(words_row[label])
+                word_field.value = text if isinstance(text, str) else ""
 
             self.edited = False
             self.error_label.value = "This card is not edited yet"

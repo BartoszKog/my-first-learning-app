@@ -11,8 +11,12 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+### Added
+- Learn progress bars on Home set tiles, using the same Known / Learned weights as the learn session
+
 ### Fixed
 - Replay a pronunciation immediately when the speaker is pressed after auto-speak of the same word
+- Keep numeric-looking card text and catalog titles or subtitles such as None, null, or NA when loading CSVs
 
 ## [1.0.5] - 2026-08-17
 

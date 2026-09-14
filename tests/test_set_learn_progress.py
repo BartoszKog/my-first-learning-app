@@ -112,3 +112,61 @@ def test_get_set_learn_progress_missing_stats_columns(isolated_csv_dir: Path):
     )
 
     assert get_set_learn_progress("nostats_words.csv") == (0, 4)
+
+
+def test_load_set_keeps_numeric_looking_content_as_strings(isolated_csv_dir: Path):
+    from learning_app.data.app_data import load_set
+
+    df = pd.concat(
+        [
+            create_empty_set("definitions"),
+            pd.DataFrame(
+                [
+                    {
+                        WordDefinitions.DEFINITION.value: "e",
+                        WordDefinitions.WORD.value: "123",
+                        StatsColumns.CORRECT_ANSWERS.value: 0,
+                        StatsColumns.GOOD_ANSWER.value: False,
+                        StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: False,
+                        StatsColumns.WORD_TO_LEARN.value: False,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    save_set(df, "numeric_definitions.csv")
+
+    loaded = load_set("numeric_definitions.csv")
+    word = loaded.loc[0, WordDefinitions.WORD.value]
+    assert word == "123"
+    assert isinstance(word, str)
+
+
+def test_load_set_keeps_na_sentinel_words_as_strings(isolated_csv_dir: Path):
+    from learning_app.data.app_data import load_set
+
+    df = pd.concat(
+        [
+            create_empty_set("definitions"),
+            pd.DataFrame(
+                [
+                    {
+                        WordDefinitions.DEFINITION.value: "None",
+                        WordDefinitions.WORD.value: "nan",
+                        StatsColumns.CORRECT_ANSWERS.value: 0,
+                        StatsColumns.GOOD_ANSWER.value: False,
+                        StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: False,
+                        StatsColumns.WORD_TO_LEARN.value: False,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    save_set(df, "sentinel_definitions.csv")
+
+    loaded = load_set("sentinel_definitions.csv")
+    assert loaded.loc[0, WordDefinitions.WORD.value] == "nan"
+    assert loaded.loc[0, WordDefinitions.DEFINITION.value] == "None"
+    assert isinstance(loaded.loc[0, WordDefinitions.WORD.value], str)

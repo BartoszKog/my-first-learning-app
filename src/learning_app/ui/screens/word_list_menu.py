@@ -90,6 +90,13 @@ class WordContainer(ft.Container):
 
         char_threshold = 20 / 250 * width  # proportion of the width
 
+        for _col in list(words_row.index):
+            if _col in stats_columns:
+                continue
+            _val = words_row[_col]
+            if not isinstance(_val, str):
+                words_row[_col] = str(_val)
+
         for word in words_row.index:
             # it means that the word is not kind of stats and definitions
             if not ((word in stats_columns) or (word in columns_definitions)):

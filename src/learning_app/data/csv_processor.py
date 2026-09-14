@@ -12,7 +12,7 @@ import warnings as py_warnings
 
 import pandas as pd
 
-from learning_app.data.app_data import add_new_file, save_set
+from learning_app.data.app_data import add_new_file, read_catalog_csv, read_set_csv, save_set, stringify_content_columns
 from learning_app.data.constants import Errors, FilesColumns, MAX_ROWS, PartsOfSpeech, StatsColumns, Warnings, WordDefinitions
 from learning_app.data.demo_sets import allocate_unique_set_basename
 from learning_app.data.file_path_manager import FilePathManager
@@ -192,18 +192,18 @@ class CSVProcessor:
     def __read_csv_file(file_path: str, index_present: bool = True) -> pd.DataFrame:
         try:
             if index_present:
-                df = pd.read_csv(file_path, index_col=0)
+                df = read_set_csv(file_path, index_col=0)
             else:
-                df = pd.read_csv(file_path)
+                df = read_set_csv(file_path, index_col=None)
         except Exception:
             # If that fails, load without setting an index
-            df = pd.read_csv(file_path)
+            df = read_set_csv(file_path, index_col=None)
 
         # Remove any 'Unnamed: 0' columns if they exist
         if "Unnamed: 0" in df.columns:
             df = df.drop(columns=["Unnamed: 0"])
 
-        return df
+        return stringify_content_columns(df)
 
     @staticmethod
     def __indexes_of_rows_with_insufficient_non_empty_values(df: pd.DataFrame, data_type: str) -> list:
@@ -439,7 +439,7 @@ class CSVProcessor:
         else:
             # Try to load the file with pandas
             try:
-                df = pd.read_csv(file_path)
+                df = read_set_csv(file_path, index_col=None)
             except FileNotFoundError:
                 errors.append(Errors.FILE_NOT_FOUND.value)
                 is_valid = False
@@ -597,7 +597,7 @@ class CSVProcessor:
         try:
             with py_warnings.catch_warnings():
                 py_warnings.simplefilter("ignore", pd.errors.ParserWarning)
-                files_data = pd.read_csv(files_data_path, index_col=False)
+                files_data = read_catalog_csv(files_data_path)
         except Exception as e:
             errors.append(f"Error loading files.csv: {str(e)}")
             is_valid = False

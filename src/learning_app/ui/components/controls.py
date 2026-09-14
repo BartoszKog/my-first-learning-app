@@ -62,6 +62,8 @@ class WordField(ft.TextField):
 
     def contain_word(self, word: str):
         # Checks if the word field contains the word.
+        if not isinstance(word, str):
+            word = "" if word is None else str(word)
         splitted_word = word.split("/") if "/" in word else [word]
         # making lower characters for comparison
         splitted_word = [w.lower() for w in splitted_word]

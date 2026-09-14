@@ -98,9 +98,13 @@ class WordDefinitionField(BaseWordField):
         self._set_speak_unlocked(False)
         self.update()
 
+    def prepare_retry(self):
+        self.word.reset()
+        self._set_speak_unlocked(False)
+
     def on_check_click(self, e):
         super().on_check_click(e)
-        revealed = self._get_check_button_text() == "Next"
+        revealed = self._answer_is_revealed()
         self._set_speak_unlocked(revealed)
         if control_is_on_page(self):
             self.update()

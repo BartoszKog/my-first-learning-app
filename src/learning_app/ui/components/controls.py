@@ -80,6 +80,10 @@ class WordField(ft.TextField):
         self.make_read_only()
         self.set_value(word)
 
+    def is_indicated_correct(self) -> bool:
+        """Return whether this field is locked after a correct Check."""
+        return bool(self.read_only) and self.border_color == ft.Colors.GREEN
+
     def did_mount(self):
         # Set border width, based on the theme mode.
         if AppTheme.is_dark_mode():

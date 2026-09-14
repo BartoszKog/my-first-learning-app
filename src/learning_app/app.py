@@ -15,6 +15,7 @@ from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.app_session import AppSession
+from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.preferences import get_shared_preferences
 from learning_app.ui.tts_preferences import TtsPreferences
 from learning_app.ui.route_paths import CREATE_SET_ROUTE, IMPORT_EXPORT_ROUTE
@@ -149,4 +150,5 @@ async def main(page: ft.Page):
     await AppTheme.load_from_preferences()
     AppTheme.sync_from_page(page)
     await TtsPreferences.load_from_preferences()
+    await LearnPreferences.load_from_preferences()
     await initialize_routes(page)

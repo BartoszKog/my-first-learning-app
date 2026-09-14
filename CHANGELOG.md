@@ -13,6 +13,8 @@ body and fails if it is missing.
 
 ### Added
 - Learn progress bars on Home set tiles, using the same Known / Learned weights as the learn session
+- Settings switch to retype until correct: after a wrong Check, stay on the same card until the answer is typed correctly; extra attempts do not change set statistics
+- On word-formation retries, keep green fields filled so only missed forms need to be typed again
 
 ### Changed
 - Restyle in-place search on Home and Export: host the field in the app bar, use a slightly lighter teal fill with white text and icon buttons, enlarge the actions, and match tile width on wide screens

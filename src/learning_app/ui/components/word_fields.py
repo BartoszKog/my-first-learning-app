@@ -75,6 +75,8 @@ class WordFields(BaseWordField):
         row_without_nan = self.words.get_current_row()
         for column_name in row_without_nan.index:
             word_field = self.dict_word_fields[column_name]
+            if word_field.is_indicated_correct():
+                continue
             word_class = self.words.get_current_row()[column_name]
             if word_field.contain_word(word_class):
                 word_field.indicate_good_answer(word_class)
@@ -100,3 +102,12 @@ class WordFields(BaseWordField):
         else:
             self.menu()
         self.update()
+
+    def prepare_retry(self):
+        for colname in self.words.colnames_in_WordFields():
+            word_field = self.dict_word_fields[colname]
+            if word_field.is_indicated_correct():
+                continue
+            word_field.reset()
+        for nan_colname in self.words.colnames_with_nan():
+            self.dict_word_fields[nan_colname].disable()

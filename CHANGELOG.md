@@ -11,6 +11,8 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-09-14
+
 ### Added
 - Learn progress bars on Home set tiles, using the same Known / Learned weights as the learn session
 - Settings switch to retype until correct: after a wrong Check, stay on the same card until the answer is typed correctly; extra attempts do not change set statistics
@@ -57,5 +59,6 @@ body and fails if it is missing.
 - Restore Home chrome after Android Back from a newly created set
 
 [Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...HEAD
+[1.0.6]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.3...v1.0.4

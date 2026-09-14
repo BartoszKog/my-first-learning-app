@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from learning_app.data.constants import PartsOfSpeech, WordDefinitions
+from learning_app.data.app_data import read_set_csv
 from learning_app.data.file_path_manager import FilePathManager
 
 _CONTENT_COLUMNS = {member.value for member in PartsOfSpeech} | {
@@ -72,7 +73,7 @@ def collect_speakable_texts() -> set[str]:
 
 def _texts_from_set_csv(path: Path) -> set[str]:
     try:
-        frame = pd.read_csv(path, index_col=0)
+        frame = read_set_csv(path, index_col=0)
     except (OSError, UnicodeError, ValueError, pd.errors.ParserError):
         return set()
 

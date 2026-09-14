@@ -59,12 +59,18 @@ def test_settings_includes_tts_section(restore_tts_preferences):
         screen.appearance_section,
         screen.tts_section_divider,
         screen.tts_section,
+        screen.learning_section_divider,
+        screen.learning_section,
         screen.demo_section_divider,
         screen.demo_section,
         screen.controls[-1],
     ]
     assert screen.controls[-1].height == 32
-    for divider in (screen.tts_section_divider, screen.demo_section_divider):
+    for divider in (
+        screen.tts_section_divider,
+        screen.learning_section_divider,
+        screen.demo_section_divider,
+    ):
         assert isinstance(divider.content, ft.Divider)
         assert divider.content.thickness == 1
         assert divider.content.color == ft.Colors.OUTLINE_VARIANT

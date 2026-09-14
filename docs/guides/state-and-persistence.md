@@ -89,10 +89,18 @@ bytes or catalog rows. Import uses a separate `FilePicker` on
 `ImportExportControl`. Validation and save helpers stay on `CSVProcessor`;
 see [Import and export](import-export.md).
 
+The export picker is created lazily and reused rather than constructing a new
+service for each export action. It holds the picker control only — not CSV
+bytes or catalog rows. Import uses a separate `FilePicker` on
+`ImportExportControl`. Validation and save helpers stay on `CSVProcessor`;
+see [Import and export](import-export.md).
+
 TTS uses one `TtsService` for the whole session. The `Audio` player is
 created on first `speak` (never with an empty `src`) and reused. A newer
 `speak` takes over the slash-separated playlist; the current clip is not
-paused or stopped. Do not add `Audio` controls to tiles or learn screens.
+paused or stopped. Repeating the same cached file skips remounting and the
+load wait so the speaker button can replay immediately. Do not add `Audio`
+controls to tiles or learn screens.
 
 ### Temporary navigation lock
 
@@ -128,8 +136,9 @@ await storage.set("theme_mode", ft.ThemeMode.DARK.value)
 theme_mode = await storage.get("theme_mode")
 ```
 
-Theme mode, background-shade, and TTS keys are the preference consumers
-today; see [Theming](#theming) and [Text to speech](#text-to-speech) below.
+Theme mode, background-shade, TTS, and learn-retry keys are the preference
+consumers today; see [Theming](#theming), [Text to speech](#text-to-speech),
+and [Learning](#learning) below.
 Keep large domain data and temporary controls out of this store.
 
 ## Theming
@@ -139,7 +148,8 @@ runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
 `ui/screens/settings_control.py`) is the UI that edits them. The same screen
 also hosts **Text to speech** (language and auto-speak; see
-[Text to speech](#text-to-speech)) and **Demo sets** (install bundled samples
+[Text to speech](#text-to-speech)), **Learning** (retry until correct; see
+[Learning](#learning)), and **Demo sets** (install bundled samples
 via `install_demo_sets()`; that path writes CSVs and `files.csv`, not
 preferences — see
 [Demo sets](../architecture/data-and-storage.md#demo-sets)). Startup
@@ -221,6 +231,31 @@ auto-speak on).
 - APIs: [TTS preferences](../reference/tts_preferences.md),
   [TTS](../reference/tts.md)
 
+## Learning {#learning}
+
+The **retype until correct** switch is preference-backed and owned at runtime
+by `LearnPreferences` in `ui/learn_preferences.py`. Settings is the UI that
+edits it. `BaseWordField` reads the flag during Check: a wrong first answer
+still writes statistics once, then extra attempts stay on the same card and
+do not call `good_answer_at_current_row` / `bad_answer_at_current_row`. Queue
+rules remain on `AppData` — see
+[Learning algorithm](../concepts/learning-algorithm.md#retry-until-correct).
+
+### Preference keys
+
+| Key | Role |
+| --- | --- |
+| `learn_retry_until_correct` | `"true"` or `"false"`; stay on a card until Check is correct |
+
+Missing keys are seeded in `LearnPreferences.load_from_preferences()` (off).
+
+### Related
+
+- Screen: `/settings` in
+  [Routing and screens](../architecture/routing-and-screens.md)
+- Session UI: [UI components](../concepts/ui-components.md)
+- API: [Learn preferences](../reference/learn_preferences.md)
+
 ## Where `BodyRegistry` fits
 
 `BodyRegistry` in `ui/body_registry.py` stores only the active
@@ -235,7 +270,8 @@ Catalog rows, set CSVs, and learning statistics belong on disk via
 `data/file_path_manager.py` and `data/app_data.py`. Resetting progress uses
 `set_default_progress`; deleting a set uses `delate_set`. During a learn
 session, queue and answer transitions live on `AppData` — not in
-`AppSession`. See [Data and storage](../architecture/data-and-storage.md) and
+`AppSession`. The retry-until-correct switch lives in `LearnPreferences`.
+See [Data and storage](../architecture/data-and-storage.md) and
 [Learning algorithm](../concepts/learning-algorithm.md).
 
 For generated contracts, see the
@@ -244,6 +280,7 @@ For generated contracts, see the
 [App theme API](../reference/app_theme.md),
 [TTS preferences API](../reference/tts_preferences.md),
 [TTS API](../reference/tts.md),
+[Learn preferences API](../reference/learn_preferences.md),
 [Body registry API](../reference/body_registry.md),
 [File path manager API](../reference/file_path_manager.md),
 [App data API](../reference/app_data.md),

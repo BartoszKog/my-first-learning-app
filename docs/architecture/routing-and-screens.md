@@ -119,15 +119,16 @@ builds a `TilesContainer` and registers it with
 | --- | --- | --- | --- |
 | `/` | Shell | `TilesContainer` | Learning-set list (Home) |
 | `/import-export` | Shell | `ImportExportControl` | Import CSV and export tiles |
-| `/settings` | Shell | `SettingsControl` | Appearance, text to speech, and demo-set install ([Theming](../guides/state-and-persistence.md#theming), [Text to speech](../guides/state-and-persistence.md#text-to-speech), [Demo sets](data-and-storage.md#demo-sets)) |
+| `/settings` | Shell | `SettingsControl` | Appearance, text to speech, learn-queue retry, and demo-set install ([Theming](../guides/state-and-persistence.md#theming), [Text to speech](../guides/state-and-persistence.md#text-to-speech), [Learning](../guides/state-and-persistence.md#learning), [Demo sets](data-and-storage.md#demo-sets)) |
 | `/info` | Shell | `InfoControl` | In-app product information |
 | `/create-set` | Deep | `CreateSetMenu` | Create an empty set, then open edit |
 | `/set/edit` | Deep | `EditSetMenu` | Edit cards for one set |
 | `/set/learn` | Deep | `WordFields` or `WordDefinitionField` (`session=False`) | Learn menu / word list |
 | `/set/learn/session` | Deep | Same control (`session=True`) | Active learn session |
 
-Search is not a route: `go_search()` opens in-place search over the Home or
-export `TilesContainer` (see [Body registry](../concepts/body-registry.md)).
+Search is not a route: `go_search()` hosts `SearchControl` in the shared
+AppBar over the Home or export `TilesContainer` (see
+[Body registry](../concepts/body-registry.md)).
 
 ### Learn: menu then session
 

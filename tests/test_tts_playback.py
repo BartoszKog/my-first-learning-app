@@ -109,6 +109,63 @@ async def test_speak_reattaches_player_after_services_cleared(tts_session):
     assert tts_session.player.played
 
 
+@pytest.mark.asyncio
+async def test_speak_replays_same_src_without_remount(tts_session, monkeypatch):
+    mounts: list[str] = []
+    original_mount = AppSession._mount_player
+
+    def tracking_mount(src):
+        mounts.append(src)
+        return original_mount(src)
+
+    monkeypatch.setattr(AppSession, "_mount_player", tracking_mount)
+
+    await AppSession.speak("hello", "en")
+    await AppSession.speak("hello", "en")
+
+    assert len(mounts) == 1
+    assert len(tts_session.player.played) == 2
+    assert tts_session.player.played[0] == tts_session.player.played[1]
+    assert tts_session.provider.calls == [("hello", "en")]
+
+
+@pytest.mark.asyncio
+async def test_speak_remounts_when_src_changes(tts_session, monkeypatch):
+    mounts: list[str] = []
+    original_mount = AppSession._mount_player
+
+    def tracking_mount(src):
+        mounts.append(src)
+        return original_mount(src)
+
+    monkeypatch.setattr(AppSession, "_mount_player", tracking_mount)
+
+    await AppSession.speak("hello", "en")
+    await AppSession.speak("world", "en")
+
+    assert len(mounts) == 2
+    assert tts_session.provider.calls == [("hello", "en"), ("world", "en")]
+
+
+@pytest.mark.asyncio
+async def test_speak_remounts_same_src_after_services_cleared(tts_session, monkeypatch):
+    mounts: list[str] = []
+    original_mount = AppSession._mount_player
+
+    def tracking_mount(src):
+        mounts.append(src)
+        return original_mount(src)
+
+    monkeypatch.setattr(AppSession, "_mount_player", tracking_mount)
+
+    await AppSession.speak("hello", "en")
+    tts_session.page.services.clear()
+    await AppSession.speak("hello", "en")
+
+    assert len(mounts) == 2
+    assert len(tts_session.player.played) == 2
+
+
 def test_definition_learn_places_speaker_right_of_check(isolated_csv_dir):
     import pandas as pd
 

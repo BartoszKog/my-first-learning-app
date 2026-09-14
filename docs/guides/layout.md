@@ -92,7 +92,7 @@ and platform.
 
 | Field | Meaning | Current consumers |
 | --- | --- | --- |
-| `body_width` | General Shell body width. | `TilesContainer`, `InfoControl`, and the Shell wrapper |
+| `body_width` | General Shell body width. | `TilesContainer`, `InfoControl`, `SearchControl` (in-place search), and the Shell wrapper |
 | `form_width` | Narrow width for focused forms and learning flows. | `CreateSetMenu`, `EditSetMenu`, `WordListMenu`, `WordFields`, and `WordDefinitionField` |
 | `settings_width` | Width allocated to Settings controls. | `SettingsControl` and its background-shade slider |
 | `content_height` | Height remaining after visible chrome and padding are subtracted. | Calculated and available, but no screen currently reads it directly |

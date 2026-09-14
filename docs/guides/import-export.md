@@ -181,9 +181,10 @@ already lives under application storage.
 
 The Import/Export screen shows the bottom-bar search button only while the
 **Export** tab is selected. Clicking it calls `go_search(..., mode="export")`,
-which opens in-place search over the export body (registered when
-`ImportExportControl` first builds). Do not call export search before visiting
-Import/Export — see [Navigation guide](navigation.md#open-search) and
+which hosts `SearchControl` in the shared AppBar over the export body
+(registered when `ImportExportControl` first builds). Do not call export
+search before visiting Import/Export — see
+[Navigation guide](navigation.md#open-search) and
 [Body registry](../concepts/body-registry.md).
 
 ## Ownership checklist

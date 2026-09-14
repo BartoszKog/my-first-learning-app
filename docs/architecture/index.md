@@ -12,8 +12,9 @@ Deep, and the route → class map.
 Learning-set content and progress live outside the routing layer as CSV files
 under application storage. See [Data and storage](data-and-storage.md).
 
-How `app.py` wires storage, session, chrome, theme, TTS preferences, and the
-first Home route is described in [Startup and lifecycle](startup.md).
+How `app.py` wires storage, session, chrome, theme, TTS and learn
+preferences, and the first Home route is described in
+[Startup and lifecycle](startup.md).
 
 ## Module responsibilities
 
@@ -70,6 +71,7 @@ and the screen map.
 | `ui/preferences.py` | `SharedPreferences` factory for durable settings. |
 | `ui/app_theme.py` | Theme mode and preference-backed page bgcolor. |
 | `ui/tts_preferences.py` | TTS language and auto-speak flags backed by preferences. |
+| `ui/learn_preferences.py` | Retry-until-correct flag for the learn queue, backed by preferences. |
 
 ### Screens
 

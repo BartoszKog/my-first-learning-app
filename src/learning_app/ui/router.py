@@ -125,6 +125,7 @@ def _restore_active_view_state(page: ft.Page, full_route: str):
     _update_drawer_selection(full_route)
     _sync_chrome_for_route(full_route, page)
     _refresh_learn_menu_view(page, full_route)
+    _refresh_home_tiles(full_route)
     _apply_layout_for_route(page, route_path(full_route))
 
 
@@ -133,7 +134,9 @@ def _apply_shell_chrome(path: str):
     appbar = AppChrome.get_appbar()
     appbar.visible = True
     appbar.leading = AppChrome.get_appbar_menu_button() if config.appbar_menu_leading else None
-    appbar.title.value = Greetings.get_greeting() if config.appbar_title == "__greeting__" else config.appbar_title
+    AppChrome.show_appbar_title(
+        Greetings.get_greeting() if config.appbar_title == "__greeting__" else config.appbar_title
+    )
 
     bottom_appbar = AppChrome.get_bottom_appbar()
     bottom_appbar.visible = config.bottom_appbar_visible
@@ -181,6 +184,12 @@ def _refresh_learn_menu_view(page: ft.Page, full_route: str):
     control.words.refresh()
     if call_apply_layout(control):
         control.update()
+
+
+def _refresh_home_tiles(full_route: str):
+    if route_path(full_route) != HOME_ROUTE or not BodyRegistry.has_home():
+        return
+    BodyRegistry.get_home().refresh_content()
 
 
 def _detach_shared_chrome_from_views(page: ft.Page):
@@ -643,4 +652,7 @@ def handle_page_resize(e: ft.ControlEvent):
     """
     page = e.page
     _apply_layout_for_route(page, route_path(page.route or HOME_ROUTE))
+    from learning_app.ui.inplace_search import sync_inplace_search_layout
+
+    sync_inplace_search_layout(page)
     AppTheme.apply_to_page(page)

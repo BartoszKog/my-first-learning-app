@@ -27,8 +27,10 @@ class TilesContainer(ft.Container):
         export_mode: When ``True``, tiles use export-oriented actions.
     """
 
-    SCROLL_PIXELS_PER_TILE = 95
+    SCROLL_PIXELS_PER_TILE = 100
     SCROLL_OFFSET_CORRECTION = -100
+    EXPORT_SCROLL_PIXELS_PER_TILE = 95
+    EXPORT_SCROLL_OFFSET_CORRECTION = -95
     _shared_sort_mode: SetSortMode = SetSortMode.LAST_USED
 
     @classmethod
@@ -378,16 +380,22 @@ class TilesContainer(ft.Container):
         else:
             asyncio.create_task(self.__scroll_to_offset(offset))
 
+    def __scroll_metrics(self) -> tuple[int, int]:
+        if self.export_mode:
+            return self.EXPORT_SCROLL_PIXELS_PER_TILE, self.EXPORT_SCROLL_OFFSET_CORRECTION
+        return self.SCROLL_PIXELS_PER_TILE, self.SCROLL_OFFSET_CORRECTION
+
     def __scroll_to_tile(self, index, up_or_down):
         assert index < len(self.tiles_with_patterns) and index >= 0
         assert up_or_down == "up" or up_or_down == "down"
 
         target_key = self.tiles_with_patterns[index].key
+        pixels_per_tile, offset_correction = self.__scroll_metrics()
         for tile_index, tile in enumerate(self.list_view.controls):
             if isinstance(tile, ContentTile) and tile.key == target_key:
                 self.index_of_all_tiles = tile_index
                 offset = max(
-                    tile_index * self.SCROLL_PIXELS_PER_TILE + self.SCROLL_OFFSET_CORRECTION,
+                    tile_index * pixels_per_tile + offset_correction,
                     0,
                 )
                 self.__schedule_scroll_to_offset(offset)

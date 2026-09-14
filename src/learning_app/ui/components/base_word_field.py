@@ -3,6 +3,7 @@ import threading
 import flet as ft
 
 from learning_app.data.app_data import AppData, set_default_progress
+from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.page_functions import create_alert_dialog
 
 
@@ -30,6 +31,7 @@ class BaseWordField(ft.Column):
         self._app_page = page
         self.session = session
         self._session_active = False
+        self._retrying_after_wrong = False
         self.lock = threading.Lock()
 
     def _get_check_button_text(self):
@@ -108,6 +110,7 @@ class BaseWordField(ft.Column):
             self.controls.extend(self.active_controls)
             self.update()
             self.pb.reset()
+            self._retrying_after_wrong = False
             self._set_check_button_text("Check")
             length = self.words.draw_index_group(save_indexes_in_class_art=True)
             self.pb.set_max_qty(length)
@@ -117,28 +120,55 @@ class BaseWordField(ft.Column):
 
     def on_check_click(self, e):
         with self.lock:
-            if self._get_check_button_text() == "Check":
+            button_text = self._get_check_button_text()
+            if button_text == "Check":
                 self.checkButton.disabled = True
                 self.update()
                 all_correct = self.compare_all_words()
-                if all_correct:
-                    self.words.good_answer_at_current_row()
+                if self._retrying_after_wrong:
+                    if all_correct:
+                        self._retrying_after_wrong = False
+                        self._set_check_button_text("Next")
+                    else:
+                        self._set_check_button_text("Try again")
                 else:
-                    self.words.bad_answer_at_current_row()
-                self._set_check_button_text("Next")
-                self.pb.increase()
+                    if all_correct:
+                        self.words.good_answer_at_current_row()
+                        self._set_check_button_text("Next")
+                    else:
+                        self.words.bad_answer_at_current_row()
+                        if LearnPreferences.retry_until_correct:
+                            self._retrying_after_wrong = True
+                            self._set_check_button_text("Try again")
+                        else:
+                            self._set_check_button_text("Next")
+                    self.pb.increase()
                 self.checkButton.disabled = False
                 self.update()
-            elif self._get_check_button_text() == "Next":
+            elif button_text == "Next":
                 self.checkButton.disabled = True
                 self.update()
+                self._retrying_after_wrong = False
                 self._set_check_button_text("Check")
                 self.set_next_word()
                 self.checkButton.disabled = False
                 self.update()
+            elif button_text == "Try again":
+                self.checkButton.disabled = True
+                self.update()
+                self.prepare_retry()
+                self._set_check_button_text("Check")
+                self.checkButton.disabled = False
+                self.update()
+
+    def _answer_is_revealed(self) -> bool:
+        return self._get_check_button_text() in {"Next", "Try again"}
 
     def compare_all_words(self):
         raise NotImplementedError("This method should be overridden in subclasses")
 
     def set_next_word(self):
+        raise NotImplementedError("This method should be overridden in subclasses")
+
+    def prepare_retry(self):
         raise NotImplementedError("This method should be overridden in subclasses")

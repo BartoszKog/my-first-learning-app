@@ -88,8 +88,8 @@ def reanchor_edit_on_home(page: ft.Page, file_name: str) -> None:
 def go_search(page: ft.Page, mode: str = "home") -> None:
     """Open in-place search over the selected tile collection.
 
-    Search UI is inserted above the tiles in their existing shell column so the
-    tile body is never reparented (which breaks the sort dropdown after return).
+    Search UI is shown in the shared app bar so the tile body is never
+    reparented (which breaks the sort dropdown after return).
 
     When the chosen body has no content tiles, the call returns without changes.
 

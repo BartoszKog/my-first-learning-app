@@ -288,3 +288,53 @@ def test_repair_fills_empty_subtitles_only_when_values_are_missing(isolated_csv_
         keep_default_na=False,
     )
     assert df.loc[0, FilesColumns.SUBTITLE.value] == ""
+
+
+def test_validate_keeps_na_sentinel_titles_and_subtitles(isolated_csv_dir: Path):
+    """Literal None/null/NA in catalog text must not count as empty titles."""
+    _write_set(isolated_csv_dir, "none_words.csv")
+    _write_catalog(
+        isolated_csv_dir,
+        f"{CATALOG_HEADER}\n"
+        "none_words.csv,None,None,2026-01-01T00:00:00+00:00,,0\n",
+    )
+
+    validation = CSVProcessor.validate_files_csv()
+
+    assert validation["is_valid"] is True
+    row = validation["files_data"].iloc[0]
+    assert row[FilesColumns.TITLE.value] == "None"
+    assert row[FilesColumns.SUBTITLE.value] == "None"
+
+
+def test_get_file_names_and_titles_keeps_na_sentinel_subtitle(isolated_csv_dir: Path):
+    """Tile metadata must keep subtitle text that looks like a pandas NA token."""
+    from learning_app.data.app_data import get_file_names_and_titles
+
+    _write_set(isolated_csv_dir, "none_words.csv")
+    _write_catalog(
+        isolated_csv_dir,
+        f"{CATALOG_HEADER}\n"
+        "none_words.csv,None,null,2026-01-01T00:00:00+00:00,,0\n",
+    )
+
+    entries = get_file_names_and_titles()
+
+    assert len(entries) == 1
+    assert entries[0][FilesColumns.TITLE.value] == "None"
+    assert entries[0][FilesColumns.SUBTITLE.value] == "null"
+
+
+def test_validate_still_rejects_blank_titles(isolated_csv_dir: Path):
+    """An actually empty title cell is still a catalog error."""
+    _write_set(isolated_csv_dir, "animals_words.csv")
+    _write_catalog(
+        isolated_csv_dir,
+        f"{CATALOG_HEADER}\n"
+        "animals_words.csv,,Sample,2026-01-01T00:00:00+00:00,,0\n",
+    )
+
+    validation = CSVProcessor.validate_files_csv()
+
+    assert validation["is_valid"] is False
+    assert any("Found empty titles" in error for error in validation["errors"])

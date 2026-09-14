@@ -62,6 +62,8 @@ class WordField(ft.TextField):
 
     def contain_word(self, word: str):
         # Checks if the word field contains the word.
+        if not isinstance(word, str):
+            word = "" if word is None else str(word)
         splitted_word = word.split("/") if "/" in word else [word]
         # making lower characters for comparison
         splitted_word = [w.lower() for w in splitted_word]
@@ -77,6 +79,10 @@ class WordField(ft.TextField):
         self.set_red_border()
         self.make_read_only()
         self.set_value(word)
+
+    def is_indicated_correct(self) -> bool:
+        """Return whether this field is locked after a correct Check."""
+        return bool(self.read_only) and self.border_color == ft.Colors.GREEN
 
     def did_mount(self):
         # Set border width, based on the theme mode.

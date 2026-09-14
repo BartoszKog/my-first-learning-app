@@ -185,12 +185,28 @@ class AppSession:
         return player
 
     @classmethod
+    def _can_replay_src(cls, src: str) -> bool:
+        """Return True when the live player already has ``src`` loaded.
+
+        Re-assigning the same path does not fire ``on_loaded`` again, so
+        ``speak`` would wait the full load timeout before ``play``.
+        """
+        player = cls._tts_player
+        if player is None or getattr(player, "src", None) != src:
+            return False
+        page = cls.get_page()
+        services = getattr(page, "services", None)
+        return services is not None and player in services
+
+    @classmethod
     async def speak(cls, text: str, language: str) -> None:
         """Synthesize ``text`` if needed and play every slash-separated member.
 
         A newer ``speak`` takes over the remaining playlist so two calls do
         not drive ``play`` in parallel. The current clip is not paused or
-        stopped. Screens should call this instead of driving ``Audio``.
+        stopped. Repeating the same cached file skips remounting and the
+        load wait so the speaker button can replay immediately. Screens
+        should call this instead of driving ``Audio``.
 
         Args:
             text: Cell value, possibly containing ``/``.
@@ -208,13 +224,16 @@ class AppSession:
             done = asyncio.Event()
             cls._playback_done = done
             src = cls._audio_src_from_path(path)
-            cls._src_loaded = asyncio.Event()
-            player = cls._mount_player(src)
-            if isinstance(player, fta.Audio):
-                try:
-                    await asyncio.wait_for(cls._src_loaded.wait(), timeout=2)
-                except TimeoutError:
-                    pass
+            if cls._can_replay_src(src):
+                player = cls._tts_player
+            else:
+                cls._src_loaded = asyncio.Event()
+                player = cls._mount_player(src)
+                if isinstance(player, fta.Audio):
+                    try:
+                        await asyncio.wait_for(cls._src_loaded.wait(), timeout=2)
+                    except TimeoutError:
+                        pass
             if done.is_set():
                 continue
             await player.play()

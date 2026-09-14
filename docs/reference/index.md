@@ -14,7 +14,7 @@ to confirm types, parameters, and return values.
 | [Route URLs](route_url.md) | `ui/route_url.py` | Parse, build, and compare route URLs with query params. | Encoding `file_name` or `mode` in navigation calls. | [Navigation guide](../guides/navigation.md) |
 | [Route registry](route_registry.md) | `ui/route_registry.py` | `RouteDef` entries, enums, drawer builder, `get_route`. | Registering a route or inspecting registry metadata. | [Routing concept](../concepts/routing.md) |
 | [Navigation](navigation.md) | `ui/navigation.py` | `navigate_to`, `push_view`, `go_back`, `go_search`. | Moving between routes from screen and control code. | [Navigation guide](../guides/navigation.md) |
-| [In-place search](inplace_search.md) | `ui/inplace_search.py` | Open/close search UI over shared tile bodies. | Debugging search chrome or calling search outside `go_search`. | [Body registry](../concepts/body-registry.md), [Navigation guide](../guides/navigation.md#open-search) |
+| [In-place search](inplace_search.md) | `ui/inplace_search.py` | Host `SearchControl` in the AppBar over shared tile bodies. | Debugging search chrome or calling search outside `go_search`. | [Body registry](../concepts/body-registry.md), [Navigation guide](../guides/navigation.md#open-search) |
 | [Router](router.md) | `ui/router.py` | Route-change handlers, view construction, layout dispatch. | Wiring `app.py` or debugging stack replacement and push. | [Routing concept](../concepts/routing.md), [Startup](../architecture/startup.md) |
 
 ## Layout & chrome
@@ -37,6 +37,7 @@ to confirm types, parameters, and return values.
 | [Preferences](preferences.md) | `ui/preferences.py` | `SharedPreferences` factory for durable settings. | Reading or writing user settings outside a screen instance. | [State and persistence](../guides/state-and-persistence.md) |
 | [App theme](app_theme.md) | `ui/app_theme.py` | Theme mode and preference-backed page bgcolor. | Applying or persisting content background / mode. | [State and persistence](../guides/state-and-persistence.md#theming), [Startup](../architecture/startup.md) |
 | [TTS preferences](tts_preferences.md) | `ui/tts_preferences.py` | TTS language and auto-speak flags. | Applying or persisting pronunciation settings. | [State and persistence](../guides/state-and-persistence.md#text-to-speech), [Startup](../architecture/startup.md) |
+| [Learn preferences](learn_preferences.md) | `ui/learn_preferences.py` | Retry-until-correct flag for the learn queue. | Applying or persisting learn-session settings. | [State and persistence](../guides/state-and-persistence.md#learning), [Startup](../architecture/startup.md) |
 
 ## Data & learning
 
@@ -60,7 +61,7 @@ to confirm types, parameters, and return values.
 7. [File path manager](file_path_manager.md), [Constants](constants.md), and [App data](app_data.md) — where sets live on disk; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
 8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — import/catalog repair and bundled sample install.
 9. [TTS](tts.md) — pronunciation cache and providers; [TTS preferences](tts_preferences.md) for language and auto-speak.
-10. [Preferences](preferences.md) and [App theme](app_theme.md) — durable settings and content background.
+10. [Preferences](preferences.md), [App theme](app_theme.md), and [Learn preferences](learn_preferences.md) — durable settings, content background, and learn-queue retry.
 11. [Router](router.md) — only when you change startup wiring or trace a route event.
 
 Private `_build_*` factories and internal layout dispatchers are hidden from

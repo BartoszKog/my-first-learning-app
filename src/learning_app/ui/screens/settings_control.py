@@ -7,6 +7,7 @@ from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.preferences import get_shared_preferences
+from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
 
@@ -82,12 +83,12 @@ class BackgroundShadeSlider(ft.Column):
 
 
 class SettingsControl(RoutableScreenMixin, ft.Column):
-    """Settings shell screen with Appearance, TTS, and Demo sets sections.
+    """Settings shell screen with Appearance, TTS, Learning, and Demo sets.
 
     Owns the light/dark switch, ``BackgroundShadeSlider``, TTS language and
-    auto-speak, and demo-set installation. Persistence goes through
-    preferences, ``AppTheme``, and ``TtsPreferences``; shell chrome colors
-    stay in ``app.py``.
+    auto-speak, learn-queue retry, and demo-set installation. Persistence
+    goes through preferences, ``AppTheme``, ``TtsPreferences``, and
+    ``LearnPreferences``; shell chrome colors stay in ``app.py``.
     """
 
     def __init__(self, page):
@@ -157,6 +158,27 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             [self.tts_auto_speak_switch],
             alignment=ft.MainAxisAlignment.START,
         )
+        self.learning_heading = ft.Text(
+            "Learning",
+            size=18,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.retry_until_correct_switch = ft.Switch(
+            label=" Retype until correct",
+            label_text_style=ft.TextStyle(size=16),
+            value=LearnPreferences.retry_until_correct,
+            on_change=self.on_retry_until_correct_change,
+        )
+        self.retry_until_correct_row = ft.Row(
+            [self.retry_until_correct_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
+        self.retry_until_correct_description = ft.Text(
+            "After a wrong answer, type the correct one before continuing. Extra attempts do not change statistics.",
+            size=14,
+            width=self._content_width,
+        )
         self.demo_description = ft.Text(
             "Add sample learning sets so you can try the app quickly.",
             size=14,
@@ -186,6 +208,15 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             spacing=16,
             width=self._content_width,
         )
+        self.learning_section = ft.Column(
+            controls=[
+                self.learning_heading,
+                self.retry_until_correct_row,
+                self.retry_until_correct_description,
+            ],
+            spacing=16,
+            width=self._content_width,
+        )
         self.demo_section = ft.Column(
             controls=[
                 self.demo_heading,
@@ -197,6 +228,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         )
 
         self.tts_section_divider = self._section_divider()
+        self.learning_section_divider = self._section_divider()
         self.demo_section_divider = self._section_divider()
 
         self.controls = [
@@ -204,6 +236,8 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.appearance_section,
             self.tts_section_divider,
             self.tts_section,
+            self.learning_section_divider,
+            self.learning_section,
             self.demo_section_divider,
             self.demo_section,
             ft.Container(height=32),
@@ -232,15 +266,20 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.appearance_heading,
             self.demo_heading,
             self.tts_heading,
+            self.learning_heading,
             self.demo_description,
+            self.retry_until_correct_description,
             self.add_demo_button,
             self.appearance_section,
             self.tts_section,
+            self.learning_section,
             self.demo_section,
             self.theme_switch_row,
             self.tts_auto_speak_row,
+            self.retry_until_correct_row,
             self.tts_language_dropdown,
             self.tts_section_divider,
+            self.learning_section_divider,
             self.demo_section_divider,
         ):
             control.width = metrics.settings_width
@@ -280,6 +319,13 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         page = self._get_page()
         if page is not None:
             page.run_task(TtsPreferences.save_auto_speak_definitions, enabled)
+
+    def on_retry_until_correct_change(self, e):
+        enabled = bool(e.control.value)
+        LearnPreferences.retry_until_correct = enabled
+        page = self._get_page()
+        if page is not None:
+            page.run_task(LearnPreferences.save_retry_until_correct, enabled)
 
     def on_add_demo_sets_click(self, e):
         page = self._get_page()

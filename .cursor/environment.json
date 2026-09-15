@@ -1,3 +1,4 @@
 {
-  "install": "uv sync --all-groups"
+  "name": "learning-app",
+  "install": "curl -LsSf https://astral.sh/uv/install.sh | sudo env UV_UNMANAGED_INSTALL=/usr/local/bin sh\nuv python install\nuv sync --all-groups\nsudo ln -sfn /workspace/.venv/bin/flet /usr/local/bin/flet"
 }

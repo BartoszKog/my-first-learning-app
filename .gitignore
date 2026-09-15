@@ -184,4 +184,5 @@ build/
 storage/
 
 # cursor
-.cursor/
+.cursor/*
+!.cursor/environment.json

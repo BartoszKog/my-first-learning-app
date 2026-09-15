@@ -25,6 +25,7 @@ dev = [
     "flet[test]",
     "flet-cli",
     "flet-desktop",
+    "flet-mcp",
 ]
 
 [tool.flet]

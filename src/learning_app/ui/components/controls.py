@@ -84,6 +84,13 @@ class WordField(ft.TextField):
         """Return whether this field is locked after a correct Check."""
         return bool(self.read_only) and self.border_color == ft.Colors.GREEN
 
+    def is_awaiting_input(self) -> bool:
+        """Return whether this field is editable and still empty."""
+        if self.disabled or self.read_only:
+            return False
+        value = self.value
+        return value is None or str(value).strip() == ""
+
     def did_mount(self):
         # Set border width, based on the theme mode.
         if AppTheme.is_dark_mode():

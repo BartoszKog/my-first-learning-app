@@ -10,6 +10,7 @@ from learning_app.ui.components.controls import ProgressBar
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
 from learning_app.ui.app_theme import AppTheme
+from learning_app.ui.keyboard_shortcuts import pop_ctrl_enter_action, push_ctrl_enter_action
 from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE
@@ -308,29 +309,21 @@ class WordListMenu(ft.Column):
             self.words.refresh()
             self.refresh_content()
 
-        def on_button_click(e):
-            if e.control.content == "Start":
-                self.words.refresh()
-                if self.words.are_all_words_learned():
-                    create_alert_dialog(
-                        page=e.page,
-                        title="Congratulations, all words learned!",
-                        content="If you want to start again, set the progress to 0.",
-                        close_button_text="Close",
-                        action_button_text="Set progress to 0",
-                        action_function=reset_progress_and_refresh,
-                    )
-                else:
-                    push_view(e.page, SET_LEARN_SESSION_ROUTE, file=self.file_name)
+        self._reset_progress_and_refresh = reset_progress_and_refresh
+        self._on_back = on_back
 
-            elif e.control.content == "Back":
-                on_back()
+        def on_button_click(e):
+            if e.control is self.start_button:
+                self.start_learning(e.page)
+            elif e.control is self.back_button:
+                self._on_back()
                 go_back(e.page)
 
         self.start_button = ft.Button(
             content="Start",
             icon=ft.Icons.PLAY_ARROW,
             on_click=on_button_click,
+            tooltip="Start (Ctrl+Enter)",
         )
 
         self.back_button = ft.Button(
@@ -338,6 +331,7 @@ class WordListMenu(ft.Column):
             icon=ft.Icons.ARROW_BACK,
             on_click=on_button_click,
         )
+        self._ctrl_enter_registered = False
 
         self.lv = ft.ListView(
             expand=True,
@@ -360,6 +354,24 @@ class WordListMenu(ft.Column):
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
         ]
+
+    def start_learning(self, page=None):
+        page = page or self.page
+        self.words.refresh()
+        if self.words.are_all_words_learned():
+            create_alert_dialog(
+                page=page,
+                title="Congratulations, all words learned!",
+                content="If you want to start again, set the progress to 0.",
+                close_button_text="Close",
+                action_button_text="Set progress to 0",
+                action_function=self._reset_progress_and_refresh,
+            )
+        else:
+            push_view(page, SET_LEARN_SESSION_ROUTE, file=self.file_name)
+
+    def _on_ctrl_enter(self, e):
+        self.start_learning(e.page or self.page)
 
     def __update_lv(self):
         self.lv.controls.clear()
@@ -401,6 +413,14 @@ class WordListMenu(ft.Column):
         self.apply_layout()
         self.__update_lv()
         self.__update_bp()
+        if not self._ctrl_enter_registered:
+            push_ctrl_enter_action(self.page, self._on_ctrl_enter)
+            self._ctrl_enter_registered = True
+
+    def will_unmount(self):
+        if self._ctrl_enter_registered:
+            pop_ctrl_enter_action(self.page, self._on_ctrl_enter)
+            self._ctrl_enter_registered = False
 
     def apply_layout(self, metrics: LayoutMetrics | None = None):
         if metrics is None:

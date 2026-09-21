@@ -15,6 +15,7 @@ from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.app_chrome import AppChrome
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.app_session import AppSession
+from learning_app.ui.keyboard_shortcuts import install_keyboard_shortcuts
 from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.preferences import get_shared_preferences
 from learning_app.ui.tts_preferences import TtsPreferences
@@ -118,6 +119,7 @@ async def main(page: ft.Page):
 
     page.on_route_change = handle_route_change
     page.on_view_pop = handle_view_pop
+    install_keyboard_shortcuts(page)
 
     AppChrome.register(
         appbar=page.appbar,

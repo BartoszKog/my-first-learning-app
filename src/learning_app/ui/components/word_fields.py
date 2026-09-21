@@ -33,7 +33,11 @@ class WordFields(BaseWordField):
         self.nounThingWord = WordField(label="Noun (thing)", width=field_width)
         self.adjWord = WordField(label="Adjective", width=field_width)
         self.advWord = WordField(label="Adverb", width=field_width)
-        self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
+        self.checkButton = ft.Button(
+            content="Start",
+            on_click=self.on_check_click,
+            tooltip="Ctrl+Enter",
+        )
         self.pb = ProgressBar(width=field_width)
 
         self.dict_word_fields = {
@@ -111,3 +115,10 @@ class WordFields(BaseWordField):
             word_field.reset()
         for nan_colname in self.words.colnames_with_nan():
             self.dict_word_fields[nan_colname].disable()
+
+    def focus_first_empty_input(self):
+        for colname in self.words.colnames_in_WordFields():
+            word_field = self.dict_word_fields[colname]
+            if word_field.is_awaiting_input():
+                self._focus_field(word_field)
+                return

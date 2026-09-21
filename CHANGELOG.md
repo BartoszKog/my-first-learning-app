@@ -14,6 +14,9 @@ body and fails if it is missing.
 ### Added
 - Speaker buttons on set word-list cards, with Settings switches for word formations, word, and definition fields
 - Separate Word formations and Definitions speaker controls in Settings, with always-visible sample cards under each group and a note that definition TTS uses the global language
+- Ctrl+Enter shortcut for Start on the word list and for Check / Try again / Next in a learn session, with focus moved to the first empty answer field afterward
+- Ctrl+Left Arrow shortcut for navigational back (same as system back / in-app Back)
+- Ctrl+S shortcut to pronounce the revealed word in a definitions learn session
 
 ### Changed
 - Default **Retype until correct** to on for new installs (existing saved preference is unchanged)

@@ -82,16 +82,18 @@ See [Chrome and wrappers](../concepts/chrome-and-wrappers.md) (config vs
 [Chrome configuration API](../reference/chrome_config.md), and
 [App chrome API](../reference/app_chrome.md).
 
-### 4. Route and view-pop handlers
+### 4. Route, view-pop, and keyboard handlers
 
 ```python
 page.on_route_change = handle_route_change
 page.on_view_pop = handle_view_pop
+install_keyboard_shortcuts(page)
 ```
 
 Flet delivers navigation events to the router. These assignments happen
 before the first `initialize_routes` call so the initial Home navigation is
-handled consistently.
+handled consistently. Keyboard shortcuts (Ctrl+Left for back, Ctrl+Enter for
+learn primary actions) are installed through `ui/keyboard_shortcuts.py`.
 
 See the [Router API](../reference/router.md) and
 [Routing](../concepts/routing.md).

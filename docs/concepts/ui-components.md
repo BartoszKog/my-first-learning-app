@@ -77,9 +77,20 @@ disabled until Check reveals the word, then `AppSession.speak` plays the
 **word** column (not the definition) in the language from `TtsPreferences`.
 Optional auto-speak after Check does not show error snackbars. Repeating the
 same cached file skips the load wait so the speaker can replay immediately.
+During a definitions session, **Ctrl+S** triggers the same pronunciation as the
+speaker button (only while the word is revealed).
 
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
 the learn menu list; it is a screen helper, not under `components/`.
+
+**Ctrl+Enter** activates the primary action on these screens: **Start** on the
+word list, and **Check** / **Try again** / **Next** during a learn session.
+After the shortcut (and when a session starts), focus moves to the first empty
+editable answer field so typing can continue without a mouse click. Learn
+screens push that action through `ui/keyboard_shortcuts.py` while mounted.
+App-wide **Ctrl+Left Arrow** calls `go_back` (system / in-app back); see
+[Navigation](../guides/navigation.md). Definitions sessions also register
+**Ctrl+S** for pronunciation while the word is revealed.
 
 Responsive widths for learn fields come from
 [Layout](../guides/layout.md) (`form_width` and field-width helpers).

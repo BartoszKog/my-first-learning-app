@@ -147,7 +147,7 @@ Theme **mode** and **content background** are preference-backed and owned at
 runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
 `ui/screens/settings_control.py`) is the UI that edits them. The same screen
-also hosts **Text to speech** (language and auto-speak; see
+also hosts **Text to speech** (language, auto-speak, and word-list speakers; see
 [Text to speech](#text-to-speech)), **Learning** (retry until correct; see
 [Learning](#learning)), and **Demo sets** (install bundled samples
 via `install_demo_sets()`; that path writes CSVs and `files.csv`, not
@@ -204,11 +204,17 @@ intentionally design a second prefs surface for them.
 
 ## Text to speech
 
-TTS **language** and **auto-speak on definitions Check** are preference-backed
-and owned at runtime by `TtsPreferences` in `ui/tts_preferences.py`.
-Settings is the UI that edits them. Definitions learn
-(`WordDefinitionField`) calls `AppSession.speak` with that language; auto-speak
-does not show error snackbars (the speaker button still does).
+TTS **language**, **auto-speak on definitions Check**, and **word-list
+speakers** are preference-backed and owned at runtime by `TtsPreferences` in
+`ui/tts_preferences.py`. Settings is the UI that edits them. Under Text to
+speech, **Word list speakers** separates word-formation switches from
+definition-card switches, warns that definition text may not match the global
+TTS language, and shows always-visible sample cards under Word formations and
+Definitions.
+Definitions learn (`WordDefinitionField`) calls `AppSession.speak` with that
+language; auto-speak does not show error snackbars (the speaker button still
+does). Word-list cards (`WordContainer`) show per-field speakers when the
+matching switch is on.
 
 Cached MP3s live under `tts_cache/` and are pruned when set content is deleted
 or rewritten — see [Data and storage](../architecture/data-and-storage.md#tts-cache).
@@ -219,9 +225,12 @@ or rewritten — see [Data and storage](../architecture/data-and-storage.md#tts-
 | --- | --- |
 | `tts_language` | gTTS language code (`en`, `pl`, `zh-CN`, …) |
 | `tts_auto_speak_definitions` | `"true"` or `"false"`; pronounce the word after Check |
+| `tts_speakers_word_formations` | `"true"` or `"false"`; speakers on word-formation list fields |
+| `tts_speakers_word` | `"true"` or `"false"`; speakers on definition-list word fields |
+| `tts_speakers_definition` | `"true"` or `"false"`; speakers on definition-list definition fields |
 
 Missing keys are seeded in `TtsPreferences.load_from_preferences()` (English,
-auto-speak on).
+auto-speak on, word-formation and word speakers on, definition speakers off).
 
 ### Related
 
@@ -247,7 +256,7 @@ rules remain on `AppData` — see
 | --- | --- |
 | `learn_retry_until_correct` | `"true"` or `"false"`; stay on a card until Check is correct |
 
-Missing keys are seeded in `LearnPreferences.load_from_preferences()` (off).
+Missing keys are seeded in `LearnPreferences.load_from_preferences()` (on).
 
 ### Related
 

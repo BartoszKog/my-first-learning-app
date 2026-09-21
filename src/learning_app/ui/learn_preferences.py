@@ -14,24 +14,25 @@ class LearnPreferences:
             set statistics.
     """
 
-    retry_until_correct: bool = False
+    retry_until_correct: bool = True
 
     @classmethod
     def parse_retry_until_correct(cls, raw: object) -> bool:
-        """Parse a stored retry flag; missing or unknown means off."""
+        """Parse a stored retry flag; missing or unknown means on."""
         if raw is None:
-            return False
-        return str(raw).strip().lower() in {"true", "1", "on", "yes"}
+            return True
+        text = str(raw).strip().lower()
+        return text not in {"false", "0", "off", "no"}
 
     @classmethod
     async def load_from_preferences(cls) -> None:
         """Load retry-until-correct from ``SharedPreferences``.
 
-        Missing keys are seeded with the flag disabled.
+        Missing keys are seeded with the flag enabled.
         """
         storage = get_shared_preferences()
         if not await storage.contains_key(RETRY_UNTIL_CORRECT_KEY):
-            await storage.set(RETRY_UNTIL_CORRECT_KEY, "false")
+            await storage.set(RETRY_UNTIL_CORRECT_KEY, "true")
         cls.retry_until_correct = cls.parse_retry_until_correct(
             await storage.get(RETRY_UNTIL_CORRECT_KEY)
         )

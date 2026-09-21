@@ -4,6 +4,8 @@ import flet as ft
 
 from learning_app.data.app_data import AppData, get_kind_of_file_and_validate, set_default_progress
 from learning_app.data.constants import PartsOfSpeech, StatsColumns, WordDefinitions
+from learning_app.tts import TtsError, TtsNetworkError
+from learning_app.ui.app_session import AppSession
 from learning_app.ui.components.controls import ProgressBar
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
@@ -11,6 +13,7 @@ from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE
+from learning_app.ui.tts_preferences import TtsPreferences
 
 BORDERS = {
     "To learn": ft.Border.all(1.5, ft.Colors.BLUE_GREY_700),
@@ -25,6 +28,53 @@ COLORS_CHECKS = {
     "Learned": ft.Colors.ORANGE_500,
     "Known": ft.Colors.GREEN_ACCENT_700,
 }
+
+_LABEL_COLOR = ft.Colors.BLUE_GREY_500
+_SPEAKER_RESERVE_PX = 40
+_WORD_FORMATION_COLUMNS = frozenset(member.value for member in PartsOfSpeech)
+_DEFINITION_CONTENT_COLUMNS = frozenset(member.value for member in WordDefinitions)
+
+
+def _is_blank_cell(value) -> bool:
+    return value is None or str(value).strip() in ("", "nan")
+
+
+def _speaker_enabled_for(column: str) -> bool:
+    if column in _WORD_FORMATION_COLUMNS:
+        return TtsPreferences.speakers_word_formations
+    if column == WordDefinitions.WORD.value:
+        return TtsPreferences.speakers_word
+    if column == WordDefinitions.DEFINITION.value:
+        return TtsPreferences.speakers_definition
+    return False
+
+
+def _wrap_slash_cell(text: str, char_threshold: float) -> str:
+    if len(text) <= char_threshold:
+        return text
+    parts = text.split("/")
+    wrapped = parts[0]
+    for part in parts[1:]:
+        wrapped += "/\n" + part
+    return wrapped
+
+
+def _wrap_space_cell(text: str, char_threshold: float) -> str:
+    if len(text) <= char_threshold:
+        return text
+    list_words = text.split(" ")
+    new_word = list_words[0]
+    current_line = list_words[0]
+    for word_l in list_words[1:]:
+        real_last_line = current_line.split("\n")[-1]
+        if len(real_last_line + " " + word_l) > char_threshold:
+            if "\n" not in word_l:
+                new_word += "\n" + word_l
+            current_line = word_l
+        else:
+            new_word += " " + word_l
+            current_line += " " + word_l
+    return new_word
 
 
 class WordContainer(ft.Container):
@@ -86,10 +136,6 @@ class WordContainer(ft.Container):
         # dropping NaN values
         words_row = words_row.dropna()
 
-        # finding words that are to long
-
-        char_threshold = 20 / 250 * width  # proportion of the width
-
         for _col in list(words_row.index):
             if _col in stats_columns:
                 continue
@@ -97,55 +143,87 @@ class WordContainer(ft.Container):
             if not isinstance(_val, str):
                 words_row[_col] = str(_val)
 
-        for word in words_row.index:
-            # it means that the word is not kind of stats and definitions
-            if not ((word in stats_columns) or (word in columns_definitions)):
-                if len(words_row[word]) > char_threshold:
-                    list_words = words_row[word].split("/")
-                    words_row[word] = list_words[0]
-                    for word_l in list_words[1:]:
-                        words_row[word] += "/\n" + word_l
-            elif not (word in stats_columns):  # it could be definition or something else but not stats
-                if len(words_row[word]) > char_threshold:
-                    list_words = words_row[word].split(" ")
-                    new_word = list_words[0]
-                    current_line = list_words[0]
-                    for word_l in list_words[1:]:
-                        real_last_line = current_line.split("\n")[-1]
-                        if len(real_last_line + " " + word_l) > char_threshold:
-                            if "\n" not in word_l:
-                                new_word += "\n" + word_l
-                            current_line = word_l
-                        else:
-                            new_word += " " + word_l
-                            current_line += " " + word_l
-                    words_row[word] = new_word
-
         # creating dictionary with index names where the length of the index name is equal to the max length
         dict_index_names = {  # it is used to make the columns the same width
-            PartsOfSpeech.VERB.value: "Verb        ",
-            PartsOfSpeech.PERSON.value: "Person    ",
-            PartsOfSpeech.THING.value: "Thing      ",
-            PartsOfSpeech.ADJECTIVE.value: "Adjective",
-            PartsOfSpeech.ADVERB.value: "Adverb   ",
-            WordDefinitions.DEFINITION.value: "Definition",
-            WordDefinitions.WORD.value: "Word       ",
+            PartsOfSpeech.VERB.value: "Verb         ",
+            PartsOfSpeech.PERSON.value: "Person     ",
+            PartsOfSpeech.THING.value: "Thing       ",
+            PartsOfSpeech.ADJECTIVE.value: "Adjective ",
+            PartsOfSpeech.ADVERB.value: "Adverb    ",
+            WordDefinitions.DEFINITION.value: "Definition ",
+            WordDefinitions.WORD.value: "Word        ",
         }
 
         Column_with_words = ft.Column()
 
         for word in words_row.index:
-            if not (word in stats_columns):
-                Column_with_words.controls.append(
-                    ft.Row(
-                        [
-                            ft.Text(dict_index_names[word], color=ft.Colors.BLUE_GREY_500),
-                            ft.Text(words_row[word]),
-                        ],
+            if word in stats_columns:
+                continue
+            original = words_row[word]
+            show_speaker = (not _is_blank_cell(original)) and _speaker_enabled_for(word)
+            wrap_width = width - _SPEAKER_RESERVE_PX if show_speaker else width
+            char_threshold = 20 / 250 * wrap_width
+            if word in _DEFINITION_CONTENT_COLUMNS:
+                display = _wrap_space_cell(original, char_threshold)
+            else:
+                display = _wrap_slash_cell(original, char_threshold)
+            row_controls = [
+                ft.Text(dict_index_names[word], color=_LABEL_COLOR),
+                ft.Text(display, expand=True),
+            ]
+            if show_speaker:
+                row_controls.append(
+                    ft.IconButton(
+                        icon=ft.Icons.VOLUME_UP,
+                        icon_color=_LABEL_COLOR,
+                        icon_size=16,
+                        padding=0,
+                        height=18,
+                        visual_density=ft.VisualDensity.COMPACT,
+                        size_constraints=ft.BoxConstraints(
+                            min_width=18,
+                            min_height=18,
+                            max_width=18,
+                            max_height=18,
+                        ),
+                        tooltip="Pronounce",
+                        on_click=self._make_speak_handler(original),
                     )
                 )
+            Column_with_words.controls.append(
+                ft.Row(
+                    row_controls,
+                    spacing=4,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            )
 
         self.content = Column_with_words
+
+    def _make_speak_handler(self, text: str):
+        async def on_click(e):
+            await self._speak_cell(e, text)
+
+        return on_click
+
+    async def _speak_cell(self, e, text: str):
+        try:
+            await AppSession.speak(text, TtsPreferences.language)
+        except TtsNetworkError:
+            self._show_tts_error(
+                getattr(e, "page", None),
+                "Could not play pronunciation. Check your internet connection.",
+            )
+        except TtsError:
+            self._show_tts_error(
+                getattr(e, "page", None),
+                "Could not play pronunciation.",
+            )
+
+    def _show_tts_error(self, page, message: str) -> None:
+        if page is None:
+            return
+        page.show_dialog(ft.SnackBar(content=ft.Text(message)))
 
     def is_to_learn(self):
         return self.to_learn

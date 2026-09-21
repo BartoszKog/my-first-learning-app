@@ -11,6 +11,112 @@ from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
 
+_PREVIEW_LABEL_COLOR = ft.Colors.BLUE_GREY_500
+_PREVIEW_BORDER = ft.Border.all(1.5, ft.Colors.BLUE_GREY_700)
+
+
+def _preview_speaker_button() -> ft.IconButton:
+    return ft.IconButton(
+        icon=ft.Icons.VOLUME_UP,
+        icon_color=_PREVIEW_LABEL_COLOR,
+        icon_size=16,
+        padding=0,
+        height=18,
+        visual_density=ft.VisualDensity.COMPACT,
+        size_constraints=ft.BoxConstraints(
+            min_width=18,
+            min_height=18,
+            max_width=18,
+            max_height=18,
+        ),
+        tooltip="Pronounce",
+    )
+
+
+def _preview_field_row(label: str, value: str, *, show_speaker: bool) -> ft.Row:
+    controls: list[ft.Control] = [
+        ft.Text(label, color=_PREVIEW_LABEL_COLOR),
+        ft.Text(value, expand=True),
+    ]
+    if show_speaker:
+        controls.append(_preview_speaker_button())
+    return ft.Row(
+        controls,
+        spacing=4,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
+
+class SpeakerPreviewCard(ft.Container):
+    """Always-visible sample word-list card for Settings speaker switches."""
+
+    def __init__(self, width: float):
+        super().__init__()
+        self.width = width
+        self.padding = 10
+        self.border_radius = 5
+        self.border = _PREVIEW_BORDER
+        self.content = ft.Column(spacing=4)
+
+    def apply_layout(self, width: float):
+        self.width = width
+
+    def set_rows(self, rows: list[ft.Row]):
+        self.content = ft.Column(rows, spacing=4)
+
+
+def _formations_preview_rows(*, show_speaker: bool) -> list[ft.Row]:
+    return [
+        _preview_field_row("Verb         ", "assist", show_speaker=show_speaker),
+        _preview_field_row("Person     ", "assistant", show_speaker=show_speaker),
+        _preview_field_row("Thing       ", "assistance", show_speaker=show_speaker),
+    ]
+
+
+def _definitions_preview_rows(
+    *, show_word_speaker: bool, show_definition_speaker: bool
+) -> list[ft.Row]:
+    return [
+        _preview_field_row(
+            "Definition ",
+            "a round fruit",
+            show_speaker=show_definition_speaker,
+        ),
+        _preview_field_row(
+            "Word        ", "apple", show_speaker=show_word_speaker
+        ),
+    ]
+
+
+class DashedDivider(ft.Container):
+    """Horizontal dashed rule separating Word list speakers from TTS above."""
+
+    _DASH_WIDTH = 6.0
+    _GAP = 4.0
+    _DASH_HEIGHT = 1.0
+
+    def __init__(self, width: float):
+        super().__init__()
+        self.height = 24
+        self.alignment = ft.Alignment.CENTER
+        self.apply_layout(width)
+
+    def apply_layout(self, width: float):
+        self.width = width
+        count = max(1, int(width // (self._DASH_WIDTH + self._GAP)))
+        self.content = ft.Row(
+            [
+                ft.Container(
+                    width=self._DASH_WIDTH,
+                    height=self._DASH_HEIGHT,
+                    bgcolor=ft.Colors.OUTLINE_VARIANT,
+                )
+                for _ in range(count)
+            ],
+            spacing=self._GAP,
+            tight=True,
+        )
+
 
 class BackgroundShadeSlider(ft.Column):
     """Slider that maps shade index 1–4 to light or dark page backgrounds.
@@ -85,8 +191,9 @@ class BackgroundShadeSlider(ft.Column):
 class SettingsControl(RoutableScreenMixin, ft.Column):
     """Settings shell screen with Appearance, TTS, Learning, and Demo sets.
 
-    Owns the light/dark switch, ``BackgroundShadeSlider``, TTS language and
-    auto-speak, learn-queue retry, and demo-set installation. Persistence
+    Owns the light/dark switch, ``BackgroundShadeSlider``, TTS language,
+    auto-speak, word-list speakers, learn-queue retry, and demo-set
+    installation. Persistence
     goes through preferences, ``AppTheme``, ``TtsPreferences``, and
     ``LearnPreferences``; shell chrome colors stay in ``app.py``.
     """
@@ -158,6 +265,117 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             [self.tts_auto_speak_switch],
             alignment=ft.MainAxisAlignment.START,
         )
+        self.tts_speakers_heading = ft.Text(
+            "Word list speakers",
+            size=16,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.tts_speakers_description = ft.Text(
+            "Show or hide speaker buttons on the set word list cards.",
+            size=14,
+            width=self._content_width,
+        )
+        self.tts_speakers_formations_heading = ft.Text(
+            "Word formations",
+            size=14,
+            weight=ft.FontWeight.W_600,
+            width=self._content_width,
+        )
+        self.tts_speakers_formations_description = ft.Text(
+            "Covers verb, person, thing, adjective, and adverb fields.",
+            size=13,
+            width=self._content_width,
+        )
+        self.tts_speakers_word_formations_switch = ft.Switch(
+            label=" Word formation speakers",
+            label_text_style=ft.TextStyle(size=16),
+            value=TtsPreferences.speakers_word_formations,
+            on_change=self.on_tts_speakers_word_formations_change,
+        )
+        self.tts_speakers_word_formations_row = ft.Row(
+            [self.tts_speakers_word_formations_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
+        self.tts_speakers_formations_preview = SpeakerPreviewCard(
+            self._content_width
+        )
+        self.tts_speakers_formations_group = ft.Column(
+            controls=[
+                self.tts_speakers_formations_heading,
+                self.tts_speakers_formations_description,
+                self.tts_speakers_word_formations_row,
+                self.tts_speakers_formations_preview,
+            ],
+            spacing=6,
+            width=self._content_width,
+        )
+        self.tts_speakers_definitions_heading = ft.Text(
+            "Definitions",
+            size=14,
+            weight=ft.FontWeight.W_600,
+            width=self._content_width,
+        )
+        self.tts_speakers_definitions_description = ft.Text(
+            "Word and Definition are the two fields on definition cards.",
+            size=13,
+            width=self._content_width,
+        )
+        self.tts_speakers_word_switch = ft.Switch(
+            label=" Word speakers",
+            label_text_style=ft.TextStyle(size=16),
+            value=TtsPreferences.speakers_word,
+            on_change=self.on_tts_speakers_word_change,
+        )
+        self.tts_speakers_word_row = ft.Row(
+            [self.tts_speakers_word_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
+        self.tts_speakers_definition_switch = ft.Switch(
+            label=" Definition speakers",
+            label_text_style=ft.TextStyle(size=16),
+            value=TtsPreferences.speakers_definition,
+            on_change=self.on_tts_speakers_definition_change,
+        )
+        self.tts_speakers_definition_row = ft.Row(
+            [self.tts_speakers_definition_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
+        self.tts_speakers_definition_hint = ft.Text(
+            "Definitions may be written in a different language than the one "
+            "you are learning. TTS language is set globally above, so "
+            "pronouncing definitions can sound wrong when that language does "
+            "not match the definition text.",
+            size=13,
+            width=self._content_width,
+        )
+        self.tts_speakers_definitions_preview = SpeakerPreviewCard(
+            self._content_width
+        )
+        self.tts_speakers_definitions_group = ft.Column(
+            controls=[
+                self.tts_speakers_definitions_heading,
+                self.tts_speakers_definitions_description,
+                self.tts_speakers_word_row,
+                self.tts_speakers_definition_row,
+                self.tts_speakers_definition_hint,
+                self.tts_speakers_definitions_preview,
+            ],
+            spacing=6,
+            width=self._content_width,
+        )
+        self._refresh_speakers_preview()
+        self.tts_speakers_divider = DashedDivider(self._content_width)
+        self.tts_speakers_group = ft.Column(
+            controls=[
+                self.tts_speakers_heading,
+                self.tts_speakers_description,
+                self.tts_speakers_formations_group,
+                self.tts_speakers_definitions_group,
+            ],
+            spacing=12,
+            width=self._content_width,
+        )
         self.learning_heading = ft.Text(
             "Learning",
             size=18,
@@ -204,6 +422,8 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 self.tts_heading,
                 self.tts_language_dropdown,
                 self.tts_auto_speak_row,
+                self.tts_speakers_divider,
+                self.tts_speakers_group,
             ],
             spacing=16,
             width=self._content_width,
@@ -258,6 +478,23 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             return self.page
         return self._app_page
 
+    def _refresh_speakers_preview(self):
+        self.tts_speakers_formations_preview.set_rows(
+            _formations_preview_rows(
+                show_speaker=TtsPreferences.speakers_word_formations
+            )
+        )
+        self.tts_speakers_definitions_preview.set_rows(
+            _definitions_preview_rows(
+                show_word_speaker=TtsPreferences.speakers_word,
+                show_definition_speaker=TtsPreferences.speakers_definition,
+            )
+        )
+        if control_is_on_page(self.tts_speakers_formations_preview):
+            self.tts_speakers_formations_preview.update()
+        if control_is_on_page(self.tts_speakers_definitions_preview):
+            self.tts_speakers_definitions_preview.update()
+
     def apply_layout(self, metrics: LayoutMetrics | None = None):
         metrics = self.resolve_layout_metrics(metrics)
 
@@ -269,6 +506,13 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.learning_heading,
             self.demo_description,
             self.retry_until_correct_description,
+            self.tts_speakers_heading,
+            self.tts_speakers_description,
+            self.tts_speakers_formations_heading,
+            self.tts_speakers_formations_description,
+            self.tts_speakers_definitions_heading,
+            self.tts_speakers_definitions_description,
+            self.tts_speakers_definition_hint,
             self.add_demo_button,
             self.appearance_section,
             self.tts_section,
@@ -276,6 +520,12 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.demo_section,
             self.theme_switch_row,
             self.tts_auto_speak_row,
+            self.tts_speakers_group,
+            self.tts_speakers_formations_group,
+            self.tts_speakers_definitions_group,
+            self.tts_speakers_word_formations_row,
+            self.tts_speakers_word_row,
+            self.tts_speakers_definition_row,
             self.retry_until_correct_row,
             self.tts_language_dropdown,
             self.tts_section_divider,
@@ -284,6 +534,9 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         ):
             control.width = metrics.settings_width
         self.background_shade_slider.apply_layout(metrics.settings_width)
+        self.tts_speakers_formations_preview.apply_layout(metrics.settings_width)
+        self.tts_speakers_definitions_preview.apply_layout(metrics.settings_width)
+        self.tts_speakers_divider.apply_layout(metrics.settings_width)
 
         self.update_if_mounted()
 
@@ -319,6 +572,30 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         page = self._get_page()
         if page is not None:
             page.run_task(TtsPreferences.save_auto_speak_definitions, enabled)
+
+    def on_tts_speakers_word_formations_change(self, e):
+        enabled = bool(e.control.value)
+        TtsPreferences.speakers_word_formations = enabled
+        page = self._get_page()
+        if page is not None:
+            page.run_task(TtsPreferences.save_speakers_word_formations, enabled)
+        self._refresh_speakers_preview()
+
+    def on_tts_speakers_word_change(self, e):
+        enabled = bool(e.control.value)
+        TtsPreferences.speakers_word = enabled
+        page = self._get_page()
+        if page is not None:
+            page.run_task(TtsPreferences.save_speakers_word, enabled)
+        self._refresh_speakers_preview()
+
+    def on_tts_speakers_definition_change(self, e):
+        enabled = bool(e.control.value)
+        TtsPreferences.speakers_definition = enabled
+        page = self._get_page()
+        if page is not None:
+            page.run_task(TtsPreferences.save_speakers_definition, enabled)
+        self._refresh_speakers_preview()
 
     def on_retry_until_correct_change(self, e):
         enabled = bool(e.control.value)

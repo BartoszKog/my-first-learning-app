@@ -11,6 +11,13 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+### Added
+- Speaker buttons on set word-list cards, with Settings switches for word formations, word, and definition fields
+- Separate Word formations and Definitions speaker controls in Settings, with always-visible sample cards under each group and a note that definition TTS uses the global language
+
+### Changed
+- Default **Retype until correct** to on for new installs (existing saved preference is unchanged)
+
 ## [1.0.6] - 2026-09-14
 
 ### Added

@@ -12,7 +12,9 @@ from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
 
 _PREVIEW_LABEL_COLOR = ft.Colors.BLUE_GREY_500
-_PREVIEW_BORDER = ft.Border.all(1.5, ft.Colors.BLUE_GREY_700)
+# Same outline as word-list "To learn" cards — visible on dark backgrounds.
+_FORM_BORDER_COLOR = ft.Colors.BLUE_GREY_700
+_PREVIEW_BORDER = ft.Border.all(1.5, _FORM_BORDER_COLOR)
 
 
 def _preview_speaker_button() -> ft.IconButton:
@@ -253,6 +255,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 ft.DropdownOption(key=code, text=label) for code, label in TTS_LANGUAGES
             ],
             width=self._content_width,
+            border_color=_FORM_BORDER_COLOR,
             on_select=self.on_tts_language_select,
         )
         self.tts_auto_speak_switch = ft.Switch(

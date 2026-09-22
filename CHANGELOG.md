@@ -21,6 +21,9 @@ body and fails if it is missing.
 ### Changed
 - Default **Retype until correct** to on for new installs (existing saved preference is unchanged)
 
+### Fixed
+- Use the word-list card border color on Settings and Create set text fields and dropdowns so outlines stay visible in dark mode
+
 ## [1.0.6] - 2026-09-14
 
 ### Added

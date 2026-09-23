@@ -186,3 +186,4 @@ storage/
 # cursor
 .cursor/*
 !.cursor/environment.json
+!.cursor/Dockerfile

@@ -5,6 +5,7 @@ from learning_app.tts import TtsError, TtsNetworkError
 from learning_app.ui.app_session import AppSession
 from learning_app.ui.components.base_word_field import BaseWordField
 from learning_app.ui.components.controls import ProgressBar, WordField
+from learning_app.ui.keyboard_shortcuts import pop_ctrl_s_action, push_ctrl_s_action
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import (
     LayoutMetrics,
@@ -39,14 +40,19 @@ class WordDefinitionField(BaseWordField):
         self.word = WordField(label="", width=field_width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
-        self.checkButton = ft.Button(content="Start", on_click=self.on_check_click)
+        self.checkButton = ft.Button(
+            content="Start",
+            on_click=self.on_check_click,
+            tooltip="Ctrl+Enter",
+        )
         self.speakButton = ft.IconButton(
             icon=ft.Icons.VOLUME_UP,
-            tooltip="Pronounce word",
+            tooltip="Pronounce word (Ctrl+S)",
             on_click=self.on_speak_click,
             disabled=True,
         )
         self._speak_unlocked = False
+        self._ctrl_s_registered = False
         self.check_row = ft.Row(
             controls=[self.checkButton, self.speakButton],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -101,6 +107,32 @@ class WordDefinitionField(BaseWordField):
     def prepare_retry(self):
         self.word.reset()
         self._set_speak_unlocked(False)
+
+    def focus_first_empty_input(self):
+        if self.word.is_awaiting_input():
+            self._focus_field(self.word)
+
+    def _register_ctrl_enter(self):
+        super()._register_ctrl_enter()
+        if self._ctrl_s_registered:
+            return
+        push_ctrl_s_action(self._get_page(), self._on_ctrl_s)
+        self._ctrl_s_registered = True
+
+    def _unregister_ctrl_enter(self):
+        if self._ctrl_s_registered:
+            pop_ctrl_s_action(self._get_page(), self._on_ctrl_s)
+            self._ctrl_s_registered = False
+        super()._unregister_ctrl_enter()
+
+    def _on_ctrl_s(self, e):
+        if not self._session_active or not self._speak_unlocked:
+            return
+        if getattr(self.speakButton, "disabled", False):
+            return
+        page = self._get_page()
+        if page is not None and hasattr(page, "run_task"):
+            page.run_task(self._speak_current_word, True)
 
     def on_check_click(self, e):
         super().on_check_click(e)

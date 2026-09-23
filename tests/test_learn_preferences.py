@@ -14,27 +14,28 @@ def restore_learn_preferences():
     LearnPreferences.retry_until_correct = retry
 
 
-def test_learn_preferences_default_retry_off():
-    assert LearnPreferences.retry_until_correct is False
+def test_learn_preferences_default_retry_on():
+    assert LearnPreferences.retry_until_correct is True
 
 
-def test_parse_retry_until_correct_defaults_off():
-    assert LearnPreferences.parse_retry_until_correct(None) is False
-    assert LearnPreferences.parse_retry_until_correct("false") is False
-    assert LearnPreferences.parse_retry_until_correct("0") is False
+def test_parse_retry_until_correct_defaults_on():
+    assert LearnPreferences.parse_retry_until_correct(None) is True
     assert LearnPreferences.parse_retry_until_correct("true") is True
     assert LearnPreferences.parse_retry_until_correct("1") is True
     assert LearnPreferences.parse_retry_until_correct("on") is True
+    assert LearnPreferences.parse_retry_until_correct("false") is False
+    assert LearnPreferences.parse_retry_until_correct("0") is False
+    assert LearnPreferences.parse_retry_until_correct("off") is False
 
 
 def test_settings_includes_learning_section(restore_learn_preferences):
     from learning_app.ui.screens.settings_control import SettingsControl
 
-    LearnPreferences.retry_until_correct = False
+    LearnPreferences.retry_until_correct = True
     screen = SettingsControl(SimpleNamespace())
 
     assert screen.learning_heading.value == "Learning"
-    assert screen.retry_until_correct_switch.value is False
+    assert screen.retry_until_correct_switch.value is True
     assert "do not change statistics" in screen.retry_until_correct_description.value
     assert screen.learning_section in screen.controls
     assert screen.controls.index(screen.tts_section) < screen.controls.index(

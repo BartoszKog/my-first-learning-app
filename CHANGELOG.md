@@ -11,6 +11,21 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-09-23
+
+### Added
+- Speaker buttons on set word-list cards, with Settings switches for word formations, word, and definition fields
+- Separate Word formations and Definitions speaker controls in Settings, with always-visible sample cards under each group and a note that definition TTS uses the global language
+- Ctrl+Enter shortcut for Start on the word list and for Check / Try again / Next in a learn session, with focus moved to the first empty answer field afterward
+- Ctrl+Left Arrow shortcut for navigational back (same as system back / in-app Back)
+- Ctrl+S shortcut to pronounce the revealed word in a definitions learn session
+
+### Changed
+- Default **Retype until correct** to on for new installs (existing saved preference is unchanged)
+
+### Fixed
+- Use the word-list card border color on Settings and Create set text fields and dropdowns so outlines stay visible in dark mode
+
 ## [1.0.6] - 2026-09-14
 
 ### Added
@@ -58,7 +73,8 @@ body and fails if it is missing.
 - Recreate a missing `files.csv` catalog during repair and close stacked catalog dialogs
 - Restore Home chrome after Android Back from a newly created set
 
-[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.3...v1.0.4

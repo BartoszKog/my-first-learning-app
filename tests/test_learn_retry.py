@@ -273,3 +273,43 @@ def test_words_prepare_retry_keeps_correct_fields(
     stats = _stats_row(file_name)
     assert int(stats[StatsColumns.CORRECT_ANSWERS.value]) == 0
     assert bool(stats[StatsColumns.WORD_TO_LEARN.value]) is True
+
+
+def test_ctrl_enter_try_again_focuses_empty_field(
+    isolated_csv_dir, restore_flags, silent_flet_updates
+):
+    file_name = _save_definition_set("focus_definitions.csv")
+    LearnPreferences.retry_until_correct = True
+    focused = []
+    screen = _start_definition_session(file_name)
+    screen._app_page = SimpleNamespace(
+        run_task=lambda handler, *args: focused.append(handler) or SimpleNamespace()
+    )
+    screen.word.value = "nope"
+    screen.on_check_click(SimpleNamespace())
+    assert screen._get_check_button_text() == "Try again"
+
+    screen._on_ctrl_enter(SimpleNamespace(key="Enter", ctrl=True, meta=False))
+    assert screen._get_check_button_text() == "Check"
+    assert screen.word.value == ""
+    assert focused and focused[-1] == screen.word.focus
+
+
+def test_ctrl_s_speaks_when_word_revealed(
+    isolated_csv_dir, restore_flags, silent_flet_updates
+):
+    file_name = _save_definition_set("speak_shortcut_definitions.csv")
+    screen = _start_definition_session(file_name)
+    spoke = []
+    screen._app_page = SimpleNamespace(
+        run_task=lambda handler, *args: spoke.append((handler, args)) or SimpleNamespace()
+    )
+    screen._session_active = True
+    screen._on_ctrl_s(SimpleNamespace())
+    assert spoke == []
+
+    screen.word.value = "way"
+    screen.on_check_click(SimpleNamespace())
+    assert screen._speak_unlocked is True
+    screen._on_ctrl_s(SimpleNamespace())
+    assert spoke and spoke[-1] == (screen._speak_current_word, (True,))

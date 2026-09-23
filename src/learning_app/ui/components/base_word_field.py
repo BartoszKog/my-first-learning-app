@@ -3,8 +3,11 @@ import threading
 import flet as ft
 
 from learning_app.data.app_data import AppData, set_default_progress
+from learning_app.ui.keyboard_shortcuts import pop_ctrl_enter_action, push_ctrl_enter_action
 from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.page_functions import create_alert_dialog
+
+_SESSION_PRIMARY_LABELS = frozenset({"Check", "Try again", "Next"})
 
 
 class BaseWordField(ft.Column):
@@ -32,6 +35,7 @@ class BaseWordField(ft.Column):
         self.session = session
         self._session_active = False
         self._retrying_after_wrong = False
+        self._ctrl_enter_registered = False
         self.lock = threading.Lock()
 
     def _get_check_button_text(self):
@@ -54,17 +58,58 @@ class BaseWordField(ft.Column):
             self.checkButton.content = text
 
     def _get_page(self):
-        return self.page or self._app_page
+        try:
+            page = self.page
+        except RuntimeError:
+            page = None
+        return page or self._app_page
 
     def did_mount(self):
         if self.session:
             self.start()
+            if self._session_active:
+                self._register_ctrl_enter()
+                self.focus_first_empty_input()
 
     def will_unmount(self):
         # Keep last_group_of_indexes so "Previous session" still highlights the
         # queue the user had started, including after a forced back (browser /
         # system back). A completed leave via menu() already skips this path.
+        self._unregister_ctrl_enter()
         self._session_active = False
+
+    def _register_ctrl_enter(self):
+        if self._ctrl_enter_registered:
+            return
+        push_ctrl_enter_action(self._get_page(), self._on_ctrl_enter)
+        self._ctrl_enter_registered = True
+
+    def _unregister_ctrl_enter(self):
+        if not self._ctrl_enter_registered:
+            return
+        pop_ctrl_enter_action(self._get_page(), self._on_ctrl_enter)
+        self._ctrl_enter_registered = False
+
+    def _on_ctrl_enter(self, e):
+        if not self._session_active:
+            return
+        if getattr(self.checkButton, "disabled", False):
+            return
+        if self._get_check_button_text() not in _SESSION_PRIMARY_LABELS:
+            return
+        self.on_check_click(e)
+        if self._session_active:
+            self.focus_first_empty_input()
+
+    def _focus_field(self, field):
+        page = self._get_page()
+        if page is None or not hasattr(page, "run_task"):
+            return
+        page.run_task(field.focus)
+
+    def focus_first_empty_input(self):
+        """Focus the first empty editable answer field, if any."""
+        return
 
     def menu(self):
         self._session_active = False

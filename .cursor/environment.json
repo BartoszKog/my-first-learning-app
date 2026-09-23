@@ -1,3 +1,7 @@
 {
-  "install": "uv sync --all-groups"
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "uv sync --all-groups && uv pip install flet-mcp"
 }

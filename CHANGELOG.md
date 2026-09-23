@@ -11,6 +11,8 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-09-23
+
 ### Added
 - Speaker buttons on set word-list cards, with Settings switches for word formations, word, and definition fields
 - Separate Word formations and Definitions speaker controls in Settings, with always-visible sample cards under each group and a note that definition TTS uses the global language
@@ -71,7 +73,8 @@ body and fails if it is missing.
 - Recreate a missing `files.csv` catalog during repair and close stacked catalog dialogs
 - Restore Home chrome after Android Back from a newly created set
 
-[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.3...v1.0.4

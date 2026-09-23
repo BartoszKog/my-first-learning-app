@@ -187,3 +187,4 @@ storage/
 .cursor/*
 !.cursor/environment.json
 !.cursor/Dockerfile
+!.cursor/mcp.json

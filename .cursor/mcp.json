@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "flet-mcp": {
+      "command": "uv",
+      "args": ["run", "flet", "mcp"],
+      "env": {}
+    }
+  }
+}

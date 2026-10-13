@@ -132,6 +132,7 @@ as the search close button, without popping the shell route.
 | Shared Home/export tile instance | `BodyRegistry` |
 | Practice queue and stats | `AppData` |
 | Learn-session retry flag | `LearnPreferences` |
+| Practice-queue size | `LearnPreferences` (Settings); read by `AppData` |
 | Tile list / learn loop / edit cards | `ui/components/` |
 | Screen chrome and navigation | Shell chrome + navigation helpers |
 

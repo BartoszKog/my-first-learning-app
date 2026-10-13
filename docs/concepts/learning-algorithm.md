@@ -49,14 +49,26 @@ to their defaults (`0` / `False` / `False` / `False`) and saves the file.
 
 ## Drawing a practice group
 
-`draw_index_group()` builds up to ten row indexes for the current round:
+`draw_index_group()` builds the row indexes for the current round. Group size
+comes from the two Settings queue sliders, stored on `LearnPreferences` and
+chosen by set kind:
+
+| Kind | Settings label | Range | Default |
+| --- | --- | --- | --- |
+| `words` | Word formations | 3–10 | 5 |
+| `definitions` | Definitions | 4–15 | 10 |
+
+`AppData.__init__` sets `kind` before the first draw, so a new session uses
+the saved limits. A slider change applies the next time `draw_index_group`
+runs (session start and a new `AppData`). The group already drawn stays as
+it is.
 
 1. Take rows in the Unknown state (`0/0/1`).
-2. If fewer than ten, add Unverified rows (`0/0/0`), preferring lower
-   `correct_answers`.
+2. If the group is still shorter than the limit, add Unverified rows
+   (`0/0/0`), preferring lower `correct_answers`.
 3. If still short, add Unconfirmed-known combinations, again preferring lower
    `correct_answers`.
-4. Sample at most ten indexes into `current_group_of_indexes`.
+4. Sample at most that many indexes into `current_group_of_indexes`.
 
 ```python
 count = self.words.draw_index_group(save_indexes_in_class_art=True)
@@ -151,6 +163,7 @@ Learn UI uses `are_all_words_learned()` before starting a session and may offer
 | Path and catalog | `FilePathManager`, module-level `app_data` helpers |
 | Queue and answer rules | `AppData` |
 | Retry-until-correct flag | `LearnPreferences` (Settings) |
+| Practice-queue size | `LearnPreferences` (Settings); `draw_index_group` reads it |
 | Presenting fields / buttons | `ui/components/` learn controls and `WordListMenu` |
 | Transient UI chrome lock | `AppSession` — never learning statistics |
 

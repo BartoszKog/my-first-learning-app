@@ -242,12 +242,14 @@ auto-speak on, word-formation and word speakers on, definition speakers off).
 
 ## Learning {#learning}
 
-The **retype until correct** switch is preference-backed and owned at runtime
-by `LearnPreferences` in `ui/learn_preferences.py`. Settings is the UI that
-edits it. `BaseWordField` reads the flag during Check: a wrong first answer
+The **retype until correct** switch and the two practice-queue size sliders
+are preference-backed and owned at runtime by `LearnPreferences` in
+`ui/learn_preferences.py`. Settings is the UI that edits them.
+`BaseWordField` reads the retry flag during Check: a wrong first answer
 still writes statistics once, then extra attempts stay on the same card and
-do not call `good_answer_at_current_row` / `bad_answer_at_current_row`. Queue
-rules remain on `AppData` — see
+do not call `good_answer_at_current_row` / `bad_answer_at_current_row`.
+`draw_index_group` reads the queue sizes for the next group. Queue rules
+remain on `AppData` — see
 [Learning algorithm](../concepts/learning-algorithm.md#retry-until-correct).
 
 ### Preference keys
@@ -255,8 +257,13 @@ rules remain on `AppData` — see
 | Key | Role |
 | --- | --- |
 | `learn_retry_until_correct` | `"true"` or `"false"`; stay on a card until Check is correct |
+| `learn_word_formations_queue_size` | integer string; max practice-queue size for word formations (3–10, default 5) |
+| `learn_definitions_queue_size` | integer string; max practice-queue size for definitions (4–15, default 10) |
 
-Missing keys are seeded in `LearnPreferences.load_from_preferences()` (on).
+Missing keys are seeded in `LearnPreferences.load_from_preferences()` (retry
+on, word formations 5, definitions 10). A queue size that cannot be read as
+an integer becomes that default. A stored integer outside the range is
+clamped to the minimum or maximum.
 
 ### Related
 
@@ -279,7 +286,8 @@ Catalog rows, set CSVs, and learning statistics belong on disk via
 `data/file_path_manager.py` and `data/app_data.py`. Resetting progress uses
 `set_default_progress`; deleting a set uses `delate_set`. During a learn
 session, queue and answer transitions live on `AppData` — not in
-`AppSession`. The retry-until-correct switch lives in `LearnPreferences`.
+`AppSession`. The retry-until-correct switch and practice-queue sizes live
+in `LearnPreferences`.
 See [Data and storage](../architecture/data-and-storage.md) and
 [Learning algorithm](../concepts/learning-algorithm.md).
 

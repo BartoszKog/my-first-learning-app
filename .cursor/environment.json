@@ -1,6 +1,11 @@
 {
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
-  "install": "uv sync --all-groups && uv pip install flet-mcp"
+  "name": "Word learning app",
+  "install": "set -euo pipefail\nif ! command -v uv >/dev/null 2>&1; then\n  curl -LsSf https://astral.sh/uv/0.8.22/install.sh | sh\nfi\nsudo ln -sfn \"$HOME/.local/bin/uv\" /usr/local/bin/uv\nsudo ln -sfn \"$HOME/.local/bin/uvx\" /usr/local/bin/uvx\nuv sync --all-groups --frozen --inexact\nflet_version=\"$(uv run python -c 'import importlib.metadata as m; print(m.version(\"flet\"))')\"\nuv pip install \"flet-web==${flet_version}\" \"flet-mcp==${flet_version}\"\n",
+  "start": "set -euo pipefail\nif curl -sf -o /dev/null --max-time 2 http://127.0.0.1:8000/; then\n  echo \"Flet web server already listening on port 8000\"\n  exit 0\nfi\nenv -u DISPLAY FLET_FORCE_WEB_SERVER=true PYTHONUNBUFFERED=1 uv run flet run --web --host 0.0.0.0 --port 8000 . > /tmp/flet-dev.log 2>&1 &\necho $! > /tmp/flet-dev.pid\nfor _ in $(seq 1 90); do\n  if curl -sf -o /dev/null --max-time 2 http://127.0.0.1:8000/; then\n    echo \"Flet web server ready on port 8000\"\n    wait \"$(cat /tmp/flet-dev.pid)\"\n    exit $?\n  fi\n  if ! kill -0 \"$(cat /tmp/flet-dev.pid)\" 2>/dev/null; then\n    echo \"Flet web server exited before it was ready\" >&2\n    exit 1\n  fi\n  sleep 1\ndone\necho \"Flet web server did not become ready on port 8000\" >&2\nexit 1\n",
+  "ports": [
+    {
+      "name": "web",
+      "port": 8000
+    }
+  ]
 }

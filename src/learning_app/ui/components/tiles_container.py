@@ -22,10 +22,18 @@ class TilesContainer(ft.Container):
     with ``BodyRegistry`` when the container is shared (Home, export, and
     in-place search).
 
+    On Home, an empty catalog replaces the list with a short explanation and
+    an "Add demo sets" button. That button uses the same install path as
+    Settings. Export mode keeps the list, including when it has no tiles.
+
     Args:
         page: Optional page used to refresh layout metrics on construction.
         export_mode: When ``True``, tiles use export-oriented actions.
     """
+
+    EMPTY_HOME_MESSAGE = (
+        "Start by creating a set with the + button,\nor add the demo sets."
+    )
 
     SCROLL_PIXELS_PER_TILE = 100
     SCROLL_OFFSET_CORRECTION = -100
@@ -100,11 +108,64 @@ class TilesContainer(ft.Container):
             controls=self.__build_list_controls(),
         )
 
+        self.empty_home = None
+        self.empty_home_text = None
+        self.add_demo_button = None
+        if not self.export_mode:
+            self.__create_empty_home()
+
         self.content = self.list_view
+        self.__apply_empty_home_state()
         self.padding = 10
         self.expand = True
         if page is not None:
             self.apply_flex_layout(LayoutMetricsStore.refresh(page))
+
+    def __create_empty_home(self) -> None:
+        """Center a short explanation and the demo-set button in the tile area."""
+        self.empty_home_text = ft.Text(
+            self.EMPTY_HOME_MESSAGE,
+            size=14,
+            text_align=ft.TextAlign.CENTER,
+        )
+        self.add_demo_button = ft.Button(
+            content="Add demo sets",
+            icon=ft.Icons.PLAYLIST_ADD,
+            on_click=self.on_add_demo_sets_click,
+        )
+        self.empty_home = ft.Column(
+            controls=[
+                self.empty_home_text,
+                self.add_demo_button,
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=16,
+            expand=True,
+        )
+
+    def on_add_demo_sets_click(self, e):
+        """Install demo sets through the shared Settings path, then refresh tiles."""
+        from learning_app.ui.screens.settings_control import add_demo_sets
+
+        page = getattr(e, "page", None)
+        if page is None and control_is_on_page(self):
+            page = self.page
+        if page is None:
+            page = AppSession.get_page()
+        add_demo_sets(page)
+
+    def __apply_empty_home_state(self) -> None:
+        """Show the empty Home state only when this Home list has no sets."""
+        if self.empty_home is None:
+            self.content = self.list_view
+            return
+        show = not self.files_and_titles
+        self.content = self.empty_home if show else self.list_view
+
+    def shows_empty_home_state(self) -> bool:
+        """Return whether the Home empty state is the visible body."""
+        return self.empty_home is not None and self.content is self.empty_home
 
     def __build_list_controls(self, pattern: str = "", main_key=None):
         tiles = [
@@ -186,8 +247,27 @@ class TilesContainer(ft.Container):
 
     def __reload_tiles(self, pattern: str = "", main_key=None):
         self.sort_dropdown.value = self.sort_mode.value
-        self.list_view.controls = self.__build_list_controls(pattern, main_key)
-        if control_is_on_page(self):
+        built = self.__build_list_controls(pattern, main_key)
+        show_empty = self.empty_home is not None and not self.files_and_titles
+        on_page = control_is_on_page(self)
+
+        # Flet diffs a ListView only while it is the mounted content. Swapping
+        # in the empty state in the same update that drops the last tile leaves
+        # that tile in the list snapshot. The next install then reconciles the
+        # new tiles against it and the client paints the extras as ghosts.
+        if show_empty and on_page and self.content is self.list_view:
+            self.list_view.controls = built
+            self.update()
+        elif not show_empty and on_page and self.content is not self.list_view:
+            snapshot = getattr(self.list_view, "__prev_lists", {}).get("controls")
+            if isinstance(snapshot, list):
+                self.list_view.controls = list(snapshot)
+            self.content = self.list_view
+            self.update()
+
+        self.list_view.controls = built
+        self.__apply_empty_home_state()
+        if on_page:
             self.update()
 
     def did_mount(self):
@@ -208,6 +288,8 @@ class TilesContainer(ft.Container):
         self.expand = True
         self.width = metrics.body_width
         self.height = None
+        if self.empty_home_text is not None:
+            self.empty_home_text.width = max(metrics.body_width - 40, 0)
         if control_is_on_page(self):
             self.update()
 

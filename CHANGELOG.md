@@ -14,6 +14,7 @@ body and fails if it is missing.
 ### Added
 - Settings sliders for the practice-queue size of word formations (3–10, default 5) and definitions (4–15, default 10)
 - Defaults section at the top of Settings with Restore defaults, which resets every preference on that page to the original values; a snackbar offers Undo for 4 seconds, and if settings are already default the snackbar only says so and has no Undo; learning sets, demo data, and CSV progress are not changed
+- Home empty state when there are no set tiles, with a two-line prompt to create a set with the + button or add the demo sets, and an Add demo sets button (playlist-add icon) that installs the same demo sets as Settings; the prompt and button disappear once tiles exist and return if every set is deleted; Import/Export does not show this empty state
 
 ### Changed
 - Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer

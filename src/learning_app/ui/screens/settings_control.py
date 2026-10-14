@@ -304,6 +304,43 @@ def _default_settings() -> _SettingsSnapshot:
     )
 
 
+def add_demo_sets(page) -> None:
+    """Install bundled demo sets and show the same dialogs as Settings.
+
+    When any set is added, refresh the registered Home and export tile lists.
+    """
+    try:
+        result = install_demo_sets()
+    except FileNotFoundError as exc:
+        create_alert_dialog(
+            page=page,
+            title="Demo sets",
+            content=f"Could not find demo files.\n{exc}",
+            close_button_text="OK",
+        )
+        return
+    except Exception as exc:
+        create_alert_dialog(
+            page=page,
+            title="Demo sets",
+            content=f"Failed to add demo sets.\n{exc}",
+            close_button_text="OK",
+        )
+        return
+
+    if result.added and BodyRegistry.has_home():
+        BodyRegistry.get_home().refresh_content()
+    if result.added and BodyRegistry.has_export():
+        BodyRegistry.get_export().refresh_content()
+
+    create_alert_dialog(
+        page=page,
+        title="Demo sets",
+        content=SettingsControl._format_install_message(result.added, result.skipped),
+        close_button_text="OK",
+    )
+
+
 class SettingsControl(RoutableScreenMixin, ft.Column):
     """Settings shell screen with Defaults, Appearance, TTS, Learning, and Demo sets.
 
@@ -942,37 +979,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             update()
 
     def on_add_demo_sets_click(self, e):
-        page = self._get_page()
-        try:
-            result = install_demo_sets()
-        except FileNotFoundError as exc:
-            create_alert_dialog(
-                page=page,
-                title="Demo sets",
-                content=f"Could not find demo files.\n{exc}",
-                close_button_text="OK",
-            )
-            return
-        except Exception as exc:
-            create_alert_dialog(
-                page=page,
-                title="Demo sets",
-                content=f"Failed to add demo sets.\n{exc}",
-                close_button_text="OK",
-            )
-            return
-
-        if result.added and BodyRegistry.has_home():
-            BodyRegistry.get_home().refresh_content()
-        if result.added and BodyRegistry.has_export():
-            BodyRegistry.get_export().refresh_content()
-
-        create_alert_dialog(
-            page=page,
-            title="Demo sets",
-            content=self._format_install_message(result.added, result.skipped),
-            close_button_text="OK",
-        )
+        add_demo_sets(self._get_page())
 
     @staticmethod
     def _format_install_message(added: list[str], skipped: list[str]) -> str:

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import flet as ft
 
 from learning_app.data.demo_sets import install_demo_sets
@@ -9,7 +11,7 @@ from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.preferences import get_shared_preferences
 from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.routable_screen import RoutableScreenMixin
-from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
+from learning_app.ui.tts_preferences import DEFAULT_LANGUAGE, TTS_LANGUAGES, TtsPreferences
 
 _PREVIEW_LABEL_COLOR = ft.Colors.BLUE_GREY_500
 # Same outline as word-list "To learn" cards — visible on dark backgrounds.
@@ -234,12 +236,117 @@ class PracticeQueueSlider(ft.Column):
             self.label.update()
 
 
-class SettingsControl(RoutableScreenMixin, ft.Column):
-    """Settings shell screen with Appearance, TTS, Learning, and Demo sets.
+def _stored_color(color) -> str | None:
+    """Return a preference color string, or ``None`` when unset."""
+    normalized = AppTheme._normalize_color(color)
+    if normalized is None:
+        return None
+    if isinstance(normalized, str):
+        return normalized
+    return str(normalized)
 
-    Owns the light/dark switch, ``BackgroundShadeSlider``, TTS language,
-    auto-speak, word-list speakers, learn-queue retry, practice-queue size
-    sliders, and demo-set installation. Persistence
+
+@dataclass(frozen=True)
+class _SettingsSnapshot:
+    """Runtime Settings preferences that Restore defaults can write back."""
+
+    theme_mode: ft.ThemeMode | None
+    dark_theme_slider_value: int
+    light_theme_slider_value: int
+    dark_theme_bgcolor: str | None
+    light_theme_bgcolor: str | None
+    language: str
+    auto_speak_definitions: bool
+    speakers_word_formations: bool
+    speakers_word: bool
+    speakers_definition: bool
+    retry_until_correct: bool
+    word_formations_queue_size: int
+    definitions_queue_size: int
+
+
+def _capture_settings() -> _SettingsSnapshot:
+    """Read the Settings preferences currently held in memory."""
+    return _SettingsSnapshot(
+        theme_mode=AppTheme.theme_mode,
+        dark_theme_slider_value=int(AppTheme.dark_theme_slider_value),
+        light_theme_slider_value=int(AppTheme.light_theme_slider_value),
+        dark_theme_bgcolor=_stored_color(AppTheme.dark_theme_bgcolor),
+        light_theme_bgcolor=_stored_color(AppTheme.light_theme_bgcolor),
+        language=TtsPreferences.language,
+        auto_speak_definitions=bool(TtsPreferences.auto_speak_definitions),
+        speakers_word_formations=bool(TtsPreferences.speakers_word_formations),
+        speakers_word=bool(TtsPreferences.speakers_word),
+        speakers_definition=bool(TtsPreferences.speakers_definition),
+        retry_until_correct=bool(LearnPreferences.retry_until_correct),
+        word_formations_queue_size=int(LearnPreferences.word_formations_queue_size),
+        definitions_queue_size=int(LearnPreferences.definitions_queue_size),
+    )
+
+
+def _default_settings() -> _SettingsSnapshot:
+    """Original Settings values from theme, TTS, and learn preferences."""
+    default_color = _stored_color(AppTheme.DEFAULT_BGCOLOR)
+    return _SettingsSnapshot(
+        theme_mode=AppTheme.DEFAULT_THEME_MODE,
+        dark_theme_slider_value=AppTheme.DEFAULT_SLIDER_VALUE,
+        light_theme_slider_value=AppTheme.DEFAULT_SLIDER_VALUE,
+        dark_theme_bgcolor=default_color,
+        light_theme_bgcolor=default_color,
+        language=DEFAULT_LANGUAGE,
+        auto_speak_definitions=TtsPreferences.DEFAULT_AUTO_SPEAK_DEFINITIONS,
+        speakers_word_formations=TtsPreferences.DEFAULT_SPEAKERS_WORD_FORMATIONS,
+        speakers_word=TtsPreferences.DEFAULT_SPEAKERS_WORD,
+        speakers_definition=TtsPreferences.DEFAULT_SPEAKERS_DEFINITION,
+        retry_until_correct=LearnPreferences.RETRY_UNTIL_CORRECT_DEFAULT,
+        word_formations_queue_size=LearnPreferences.WORD_FORMATIONS_QUEUE_DEFAULT,
+        definitions_queue_size=LearnPreferences.DEFINITIONS_QUEUE_DEFAULT,
+    )
+
+
+def add_demo_sets(page) -> None:
+    """Install bundled demo sets and show the same dialogs as Settings.
+
+    When any set is added, refresh the registered Home and export tile lists.
+    """
+    try:
+        result = install_demo_sets()
+    except FileNotFoundError as exc:
+        create_alert_dialog(
+            page=page,
+            title="Demo sets",
+            content=f"Could not find demo files.\n{exc}",
+            close_button_text="OK",
+        )
+        return
+    except Exception as exc:
+        create_alert_dialog(
+            page=page,
+            title="Demo sets",
+            content=f"Failed to add demo sets.\n{exc}",
+            close_button_text="OK",
+        )
+        return
+
+    if result.added and BodyRegistry.has_home():
+        BodyRegistry.get_home().refresh_content()
+    if result.added and BodyRegistry.has_export():
+        BodyRegistry.get_export().refresh_content()
+
+    create_alert_dialog(
+        page=page,
+        title="Demo sets",
+        content=SettingsControl._format_install_message(result.added, result.skipped),
+        close_button_text="OK",
+    )
+
+
+class SettingsControl(RoutableScreenMixin, ft.Column):
+    """Settings shell screen with Defaults, Appearance, TTS, Learning, and Demo sets.
+
+    Owns restore-defaults, the light/dark switch, ``BackgroundShadeSlider``,
+    TTS language, auto-speak, word-list speakers, learn-queue retry,
+    practice-queue size sliders, and demo-set installation. Persistence
     goes through preferences, ``AppTheme``, ``TtsPreferences``, and
     ``LearnPreferences``; shell chrome colors stay in ``app.py``.
     """
@@ -274,6 +381,22 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             alignment=ft.MainAxisAlignment.START,
         )
 
+        self.defaults_heading = ft.Text(
+            "Defaults",
+            size=18,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.defaults_description = ft.Text(
+            "Restore every setting on this page to its original value. Learning sets are not changed.",
+            size=14,
+            width=self._content_width,
+        )
+        self.restore_defaults_button = ft.Button(
+            content="Restore defaults",
+            on_click=self.on_restore_defaults_click,
+            width=self._content_width,
+        )
         self.appearance_heading = ft.Text(
             "Appearance",
             size=18,
@@ -444,6 +567,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             size=14,
             width=self._content_width,
         )
+        self.queue_size_divider = DashedDivider(self._content_width)
         self.queue_size_heading = ft.Text(
             "Queue size",
             size=16,
@@ -486,6 +610,15 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             width=self._content_width,
         )
 
+        self.defaults_section = ft.Column(
+            controls=[
+                self.defaults_heading,
+                self.defaults_description,
+                self.restore_defaults_button,
+            ],
+            spacing=12,
+            width=self._content_width,
+        )
         self.appearance_section = ft.Column(
             controls=[
                 self.appearance_heading,
@@ -511,6 +644,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 self.learning_heading,
                 self.retry_until_correct_row,
                 self.retry_until_correct_description,
+                self.queue_size_divider,
                 self.queue_size_heading,
                 self.queue_size_description,
                 self.word_formations_queue_slider,
@@ -529,12 +663,15 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             width=self._content_width,
         )
 
+        self.defaults_section_divider = self._section_divider()
         self.tts_section_divider = self._section_divider()
         self.learning_section_divider = self._section_divider()
         self.demo_section_divider = self._section_divider()
 
         self.controls = [
             ft.Container(height=24),
+            self.defaults_section,
+            self.defaults_section_divider,
             self.appearance_section,
             self.tts_section_divider,
             self.tts_section,
@@ -582,6 +719,11 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
 
         self._content_width = metrics.settings_width
         for control in (
+            self.defaults_heading,
+            self.defaults_description,
+            self.restore_defaults_button,
+            self.defaults_section,
+            self.defaults_section_divider,
             self.appearance_heading,
             self.demo_heading,
             self.tts_heading,
@@ -623,6 +765,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.tts_speakers_formations_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_definitions_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_divider.apply_layout(metrics.settings_width)
+        self.queue_size_divider.apply_layout(metrics.settings_width)
 
         self.update_if_mounted()
 
@@ -704,38 +847,139 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         if page is not None:
             page.run_task(LearnPreferences.save_definitions_queue_size, size)
 
-    def on_add_demo_sets_click(self, e):
+    async def on_restore_defaults_click(self, e):
+        """Reset Settings preferences, or say they are already at defaults.
+
+        A reset snapshots the current values first. The snackbar Undo action
+        writes that snapshot back even if the user edits Settings while the
+        snackbar is still open. Learning sets, demo data, and CSV progress
+        are left alone.
+        """
+        current = _capture_settings()
         page = self._get_page()
-        try:
-            result = install_demo_sets()
-        except FileNotFoundError as exc:
-            create_alert_dialog(
-                page=page,
-                title="Demo sets",
-                content=f"Could not find demo files.\n{exc}",
-                close_button_text="OK",
-            )
-            return
-        except Exception as exc:
-            create_alert_dialog(
-                page=page,
-                title="Demo sets",
-                content=f"Failed to add demo sets.\n{exc}",
-                close_button_text="OK",
+        if current == _default_settings():
+            page.show_dialog(
+                ft.SnackBar(ft.Text("Settings are already at their defaults."))
             )
             return
 
-        if result.added and BodyRegistry.has_home():
-            BodyRegistry.get_home().refresh_content()
-        if result.added and BodyRegistry.has_export():
-            BodyRegistry.get_export().refresh_content()
+        await self._apply_settings_snapshot(_default_settings())
 
-        create_alert_dialog(
-            page=page,
-            title="Demo sets",
-            content=self._format_install_message(result.added, result.skipped),
-            close_button_text="OK",
+        async def undo(_event=None):
+            await self._apply_settings_snapshot(current)
+
+        page.show_dialog(
+            ft.SnackBar(
+                content=ft.Text("Settings restored to their defaults."),
+                action="Undo",
+                on_action=undo,
+                persist=False,
+            )
         )
+
+    async def _apply_settings_snapshot(self, snapshot: _SettingsSnapshot) -> None:
+        """Write one snapshot to runtime objects, preferences, and controls."""
+        AppTheme.theme_mode = snapshot.theme_mode
+        AppTheme.set_slider_value(ft.ThemeMode.DARK, snapshot.dark_theme_slider_value)
+        AppTheme.set_slider_value(
+            ft.ThemeMode.LIGHT, snapshot.light_theme_slider_value
+        )
+        AppTheme.set_bgcolor(ft.ThemeMode.DARK, snapshot.dark_theme_bgcolor)
+        AppTheme.set_bgcolor(ft.ThemeMode.LIGHT, snapshot.light_theme_bgcolor)
+        await self._persist_theme(snapshot)
+        await TtsPreferences.save_language(snapshot.language)
+        await TtsPreferences.save_auto_speak_definitions(
+            snapshot.auto_speak_definitions
+        )
+        await TtsPreferences.save_speakers_word_formations(
+            snapshot.speakers_word_formations
+        )
+        await TtsPreferences.save_speakers_word(snapshot.speakers_word)
+        await TtsPreferences.save_speakers_definition(snapshot.speakers_definition)
+        await LearnPreferences.save_retry_until_correct(snapshot.retry_until_correct)
+        await LearnPreferences.save_word_formations_queue_size(
+            snapshot.word_formations_queue_size
+        )
+        await LearnPreferences.save_definitions_queue_size(
+            snapshot.definitions_queue_size
+        )
+        self._sync_controls_from_preferences()
+        self._apply_active_theme()
+
+    async def _persist_theme(self, snapshot: _SettingsSnapshot) -> None:
+        """Store theme mode and both background shades."""
+        storage = get_shared_preferences()
+        await self._set_preference(
+            storage,
+            "theme_mode",
+            None if snapshot.theme_mode is None else snapshot.theme_mode.value,
+        )
+        await storage.set(
+            f"{ft.ThemeMode.DARK.value}_theme_slider_value",
+            str(snapshot.dark_theme_slider_value),
+        )
+        await storage.set(
+            f"{ft.ThemeMode.LIGHT.value}_theme_slider_value",
+            str(snapshot.light_theme_slider_value),
+        )
+        await self._set_preference(
+            storage,
+            f"{ft.ThemeMode.DARK.value}_theme_bgcolor",
+            snapshot.dark_theme_bgcolor,
+        )
+        await self._set_preference(
+            storage,
+            f"{ft.ThemeMode.LIGHT.value}_theme_bgcolor",
+            snapshot.light_theme_bgcolor,
+        )
+
+    @staticmethod
+    async def _set_preference(storage, key: str, value: str | None) -> None:
+        if value is None:
+            await storage.remove(key)
+            return
+        await storage.set(key, value)
+
+    def _sync_controls_from_preferences(self) -> None:
+        """Show the current theme, TTS, and learn values on this page."""
+        self.theme_switch.value = AppTheme.theme_mode == ft.ThemeMode.LIGHT
+        self.background_shade_slider.slider.value = AppTheme.get_slider_value()
+        self.tts_language_dropdown.value = TtsPreferences.language
+        self.tts_auto_speak_switch.value = TtsPreferences.auto_speak_definitions
+        self.tts_speakers_word_formations_switch.value = (
+            TtsPreferences.speakers_word_formations
+        )
+        self.tts_speakers_word_switch.value = TtsPreferences.speakers_word
+        self.tts_speakers_definition_switch.value = TtsPreferences.speakers_definition
+        self.retry_until_correct_switch.value = LearnPreferences.retry_until_correct
+        words = self.word_formations_queue_slider
+        words.slider.value = LearnPreferences.word_formations_queue_size
+        words.label.value = words._format_label(
+            LearnPreferences.word_formations_queue_size
+        )
+        definitions = self.definitions_queue_slider
+        definitions.slider.value = LearnPreferences.definitions_queue_size
+        definitions.label.value = definitions._format_label(
+            LearnPreferences.definitions_queue_size
+        )
+        self._refresh_speakers_preview()
+        self.update_if_mounted()
+
+    def _apply_active_theme(self) -> None:
+        """Push the active theme mode and background onto the page."""
+        page = self._get_page()
+        if page is None:
+            return
+        if AppTheme.theme_mode is not None:
+            page.theme_mode = AppTheme.theme_mode
+        if getattr(page, "views", None) is not None:
+            AppTheme.apply_to_page(page)
+        update = getattr(page, "update", None)
+        if callable(update):
+            update()
+
+    def on_add_demo_sets_click(self, e):
+        add_demo_sets(self._get_page())
 
     @staticmethod
     def _format_install_message(added: list[str], skipped: list[str]) -> str:

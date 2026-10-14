@@ -27,6 +27,9 @@ LANGUAGE_CODES = frozenset(code for code, _label in TTS_LANGUAGES)
 class TtsPreferences:
     """Runtime TTS settings loaded at startup and edited from Settings.
 
+    ``DEFAULT_*`` flags are the original Settings values. The mutable class
+    attributes below start there and change when the user edits Settings.
+
     Attributes:
         language: gTTS language code used by ``AppSession.speak``.
         auto_speak_definitions: When ``True``, definitions Check auto-plays
@@ -39,11 +42,16 @@ class TtsPreferences:
             speaker on the definition field.
     """
 
+    DEFAULT_AUTO_SPEAK_DEFINITIONS = True
+    DEFAULT_SPEAKERS_WORD_FORMATIONS = True
+    DEFAULT_SPEAKERS_WORD = True
+    DEFAULT_SPEAKERS_DEFINITION = False
+
     language: str = DEFAULT_LANGUAGE
-    auto_speak_definitions: bool = True
-    speakers_word_formations: bool = True
-    speakers_word: bool = True
-    speakers_definition: bool = False
+    auto_speak_definitions: bool = DEFAULT_AUTO_SPEAK_DEFINITIONS
+    speakers_word_formations: bool = DEFAULT_SPEAKERS_WORD_FORMATIONS
+    speakers_word: bool = DEFAULT_SPEAKERS_WORD
+    speakers_definition: bool = DEFAULT_SPEAKERS_DEFINITION
 
     @classmethod
     def normalize_language(cls, language: object) -> str:

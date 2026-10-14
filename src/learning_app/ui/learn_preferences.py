@@ -20,6 +20,7 @@ class LearnPreferences:
             definitions set (``kind == "definitions"``).
     """
 
+    RETRY_UNTIL_CORRECT_DEFAULT = True
     WORD_FORMATIONS_QUEUE_MIN = 3
     WORD_FORMATIONS_QUEUE_MAX = 10
     WORD_FORMATIONS_QUEUE_DEFAULT = 5
@@ -27,7 +28,7 @@ class LearnPreferences:
     DEFINITIONS_QUEUE_MAX = 15
     DEFINITIONS_QUEUE_DEFAULT = 10
 
-    retry_until_correct: bool = True
+    retry_until_correct: bool = RETRY_UNTIL_CORRECT_DEFAULT
     word_formations_queue_size: int = WORD_FORMATIONS_QUEUE_DEFAULT
     definitions_queue_size: int = DEFINITIONS_QUEUE_DEFAULT
 

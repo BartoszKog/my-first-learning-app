@@ -140,6 +140,8 @@ def test_settings_includes_tts_section(restore_tts_preferences):
     assert screen.tts_speakers_divider.content.spacing == DashedDivider._GAP
     assert screen.controls == [
         screen.controls[0],
+        screen.defaults_section,
+        screen.defaults_section_divider,
         screen.appearance_section,
         screen.tts_section_divider,
         screen.tts_section,
@@ -151,6 +153,7 @@ def test_settings_includes_tts_section(restore_tts_preferences):
     ]
     assert screen.controls[-1].height == 32
     for divider in (
+        screen.defaults_section_divider,
         screen.tts_section_divider,
         screen.learning_section_divider,
         screen.demo_section_divider,

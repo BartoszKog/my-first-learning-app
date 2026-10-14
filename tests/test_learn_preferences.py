@@ -75,7 +75,7 @@ def test_settings_includes_learning_section(restore_learn_preferences):
 
 
 def test_settings_includes_queue_size_sliders(restore_learn_preferences):
-    from learning_app.ui.screens.settings_control import SettingsControl
+    from learning_app.ui.screens.settings_control import DashedDivider, SettingsControl
 
     LearnPreferences.word_formations_queue_size = 5
     LearnPreferences.definitions_queue_size = 10
@@ -105,7 +105,12 @@ def test_settings_includes_queue_size_sliders(restore_learn_preferences):
     assert screen.queue_size_description.size == 14
     assert learning_controls.index(
         screen.retry_until_correct_description
-    ) < learning_controls.index(screen.queue_size_heading)
+    ) < learning_controls.index(screen.queue_size_divider)
+    assert isinstance(screen.queue_size_divider, DashedDivider)
+    assert (
+        learning_controls.index(screen.queue_size_divider) + 1
+        == learning_controls.index(screen.queue_size_heading)
+    )
     assert learning_controls.index(screen.queue_size_heading) < learning_controls.index(
         screen.queue_size_description
     )
@@ -133,6 +138,7 @@ def test_settings_includes_queue_size_sliders(restore_learn_preferences):
     )
     assert screen.queue_size_heading.width == 420
     assert screen.queue_size_description.width == 420
+    assert screen.queue_size_divider.width == 420
 
     words.apply_layout(420)
     definitions.apply_layout(420)

@@ -64,11 +64,21 @@ class WordField(ft.TextField):
         # Checks if the word field contains the word.
         if not isinstance(word, str):
             word = "" if word is None else str(word)
-        splitted_word = word.split("/") if "/" in word else [word]
-        # making lower characters for comparison
-        splitted_word = [w.lower() for w in splitted_word]
+        # Spaces around "/" separate alternatives; they are not part of either answer.
+        if "/" in word:
+            stored = [part.strip().lower() for part in word.split("/")]
+        else:
+            stored = [word.lower()]
 
-        return self.get_value().strip().lower() in splitted_word
+        typed = self.get_value()
+        if "/" not in typed:
+            return typed.strip().lower() in stored
+
+        # Every typed form must be a stored alternative. An empty piece fails.
+        pieces = [part.strip().lower() for part in typed.split("/")]
+        if any(piece == "" for piece in pieces):
+            return False
+        return all(piece in stored for piece in pieces)
 
     def indicate_good_answer(self, word: str):
         self.set_green_border()

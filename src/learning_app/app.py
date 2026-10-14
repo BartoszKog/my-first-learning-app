@@ -133,14 +133,16 @@ async def main(page: ft.Page):
     )
 
     storage = get_shared_preferences()
+    default_bgcolor = AppTheme._normalize_color(AppTheme.DEFAULT_BGCOLOR)
+    default_slider = str(AppTheme.DEFAULT_SLIDER_VALUE)
     if not await storage.contains_key("light_theme_bgcolor"):
-        await storage.set("light_theme_bgcolor", ft.Colors.SURFACE.value)
-        await storage.set("light_theme_slider_value", "2")
+        await storage.set("light_theme_bgcolor", default_bgcolor)
+        await storage.set("light_theme_slider_value", default_slider)
     if not await storage.contains_key("dark_theme_bgcolor"):
-        await storage.set("dark_theme_bgcolor", ft.Colors.SURFACE.value)
-        await storage.set("dark_theme_slider_value", "2")
+        await storage.set("dark_theme_bgcolor", default_bgcolor)
+        await storage.set("dark_theme_slider_value", default_slider)
     if not await storage.contains_key("theme_mode"):
-        await storage.set("theme_mode", ft.ThemeMode.DARK.value)
+        await storage.set("theme_mode", AppTheme.DEFAULT_THEME_MODE.value)
 
     if await storage.get("theme_mode") == ft.ThemeMode.LIGHT.value:
         page.theme_mode = ft.ThemeMode.LIGHT

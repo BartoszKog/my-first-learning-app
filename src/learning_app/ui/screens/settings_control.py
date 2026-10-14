@@ -530,6 +530,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             size=14,
             width=self._content_width,
         )
+        self.queue_size_divider = DashedDivider(self._content_width)
         self.queue_size_heading = ft.Text(
             "Queue size",
             size=16,
@@ -606,6 +607,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 self.learning_heading,
                 self.retry_until_correct_row,
                 self.retry_until_correct_description,
+                self.queue_size_divider,
                 self.queue_size_heading,
                 self.queue_size_description,
                 self.word_formations_queue_slider,
@@ -726,6 +728,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.tts_speakers_formations_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_definitions_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_divider.apply_layout(metrics.settings_width)
+        self.queue_size_divider.apply_layout(metrics.settings_width)
 
         self.update_if_mounted()
 

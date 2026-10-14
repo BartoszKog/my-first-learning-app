@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 from learning_app.ui.keyboard_shortcuts import (
     install_keyboard_shortcuts,
+    is_ctrl_b,
     is_ctrl_enter,
-    is_ctrl_left_arrow,
     is_ctrl_s,
     pop_ctrl_enter_action,
     pop_ctrl_s_action,
@@ -39,12 +39,11 @@ def test_is_ctrl_enter_accepts_ctrl_or_meta_enter():
     assert not is_ctrl_enter(_event(key="Enter"))
 
 
-def test_is_ctrl_left_arrow_accepts_variants():
-    assert is_ctrl_left_arrow(_event(ctrl=True, key="Arrow Left"))
-    assert is_ctrl_left_arrow(_event(meta=True, key="ArrowLeft"))
-    assert is_ctrl_left_arrow(_event(ctrl=True, key="Left"))
-    assert not is_ctrl_left_arrow(_event(key="Arrow Left"))
-    assert not is_ctrl_left_arrow(_event(ctrl=True, key="Arrow Right"))
+def test_is_ctrl_b_accepts_variants():
+    assert is_ctrl_b(_event(ctrl=True, key="B"))
+    assert is_ctrl_b(_event(meta=True, key="b"))
+    assert not is_ctrl_b(_event(key="B"))
+    assert not is_ctrl_b(_event(ctrl=True, key="A"))
 
 
 def test_push_pop_dispatches_topmost_action():
@@ -92,13 +91,13 @@ def test_non_ctrl_enter_does_not_fire_action():
     reset_ctrl_enter_actions_for_tests()
 
 
-def test_ctrl_left_arrow_calls_go_back():
+def test_ctrl_b_calls_go_back():
     reset_ctrl_enter_actions_for_tests()
     page = _fake_page()
     install_keyboard_shortcuts(page)
 
     with patch("learning_app.ui.navigation.go_back") as go_back:
-        page.on_keyboard_event(_event(ctrl=True, key="Arrow Left", page=page))
+        page.on_keyboard_event(_event(ctrl=True, key="B", page=page))
         go_back.assert_called_once_with(page)
 
         go_back.reset_mock()
@@ -108,14 +107,14 @@ def test_ctrl_left_arrow_calls_go_back():
     reset_ctrl_enter_actions_for_tests()
 
 
-def test_ctrl_left_takes_priority_over_ctrl_enter_action():
+def test_ctrl_b_takes_priority_over_ctrl_enter_action():
     reset_ctrl_enter_actions_for_tests()
     page = _fake_page()
     calls = []
     push_ctrl_enter_action(page, lambda e: calls.append("enter"))
 
     with patch("learning_app.ui.navigation.go_back") as go_back:
-        page.on_keyboard_event(_event(ctrl=True, key="Arrow Left", page=page))
+        page.on_keyboard_event(_event(ctrl=True, key="B", page=page))
         go_back.assert_called_once_with(page)
         assert calls == []
 

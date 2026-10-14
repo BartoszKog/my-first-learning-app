@@ -330,6 +330,7 @@ class WordListMenu(ft.Column):
             content="Back",
             icon=ft.Icons.ARROW_BACK,
             on_click=on_button_click,
+            tooltip="Back (Ctrl+B)",
         )
         self._ctrl_enter_registered = False
 

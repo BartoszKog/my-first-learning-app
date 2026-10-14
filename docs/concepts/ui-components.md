@@ -88,9 +88,10 @@ word list, and **Check** / **Try again** / **Next** during a learn session.
 After the shortcut (and when a session starts), focus moves to the first empty
 editable answer field so typing can continue without a mouse click. Learn
 screens push that action through `ui/keyboard_shortcuts.py` while mounted.
-App-wide **Ctrl+Left Arrow** calls `go_back` (system / in-app back); see
-[Navigation](../guides/navigation.md). Definitions sessions also register
-**Ctrl+S** for pronunciation while the word is revealed.
+App-wide **Ctrl+B** calls `go_back` (system / in-app back); see
+[Navigation](../guides/navigation.md). The word-list **Back** button tooltip
+shows that shortcut. Definitions sessions also register **Ctrl+S** for
+pronunciation while the word is revealed.
 
 Responsive widths for learn fields come from
 [Layout](../guides/layout.md) (`form_width` and field-width helpers).

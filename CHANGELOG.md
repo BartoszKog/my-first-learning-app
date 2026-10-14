@@ -17,6 +17,7 @@ body and fails if it is missing.
 - Home empty state when there are no set tiles, with a two-line prompt to create a set with the + button or add the demo sets, and an Add demo sets button (playlist-add icon) that installs the same demo sets as Settings; the prompt and button disappear once tiles exist and return if every set is deleted; Import/Export does not show this empty state
 
 ### Changed
+- Navigational back shortcut from Ctrl+Left Arrow to Ctrl+B (Meta/Cmd+B); word-list Back button tooltip shows the shortcut
 - Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer
 
 ### Fixed

@@ -11,7 +11,7 @@ Choose the helper from the navigation intent:
 - Close the active Deep task, or in-place search when open → `go_back()`.
 - Search the active tile source (in-place, not a route) → `go_search()`.
 
-**Ctrl+Left Arrow** (also Meta/Cmd+Left) is installed in `app.py` via
+**Ctrl+B** (also Meta/Cmd+B) is installed in `app.py` via
 `install_keyboard_shortcuts` and calls `go_back(page)` — the same path as an
 in-app Back button and as closing search before popping a view on system back.
 

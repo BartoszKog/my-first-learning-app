@@ -71,7 +71,7 @@ Handlers wired here:
 | FAB | `push_view` to create-set after refreshing layout metrics |
 | Bottom / AppBar menu | `page.show_drawer()` |
 | Search | On Import/Export → `go_search(..., mode="export")`; otherwise `"home"`. Visibility on Import/Export is toggled by the Export tab (see [Import and export](../guides/import-export.md#search-on-the-export-tab)). |
-| `page.on_resized` | `handle_page_resize` |
+| `page.on_resize` | `handle_page_resize` |
 
 Shell chrome *visibility* per route still comes from `SHELL_CHROME` later,
 when the router builds a view. Startup only creates the shared control

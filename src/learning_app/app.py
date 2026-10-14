@@ -61,7 +61,7 @@ async def main(page: ft.Page):
     async def on_appbar_menu_click(e):
         await page.show_drawer()
 
-    page.on_resized = handle_page_resize
+    page.on_resize = handle_page_resize
 
     def on_search_click(e):
         if is_current_route(page, IMPORT_EXPORT_ROUTE):

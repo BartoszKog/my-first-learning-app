@@ -14,6 +14,12 @@ body and fails if it is missing.
 ### Added
 - Settings sliders for the practice-queue size of word formations (3–10, default 5) and definitions (4–15, default 10)
 
+### Changed
+- Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer
+
+### Fixed
+- Strip spaces around `/` when splitting a stored answer into alternatives, so `to rely on STH / SB` accepts `to rely on STH` or `SB`
+
 ## [1.0.7] - 2026-09-23
 
 ### Added

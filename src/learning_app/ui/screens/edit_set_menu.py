@@ -4,6 +4,12 @@ import pandas as pd
 from learning_app.data.app_data import create_empty_set, get_kind_of_file_and_validate, load_set, save_set
 from learning_app.data.constants import MAX_ROWS, PartsOfSpeech, StatsColumns, WordDefinitions
 from learning_app.ui.components.edit_cards import EditCardDefinitions, EditCardWords
+from learning_app.ui.keyboard_shortcuts import (
+    pop_ctrl_b_action,
+    pop_ctrl_s_action,
+    push_ctrl_b_action,
+    push_ctrl_s_action,
+)
 from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.navigation import go_back, navigate_to, reanchor_edit_on_home
 from learning_app.ui.page_functions import create_alert_dialog
@@ -26,6 +32,8 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
         self.subtitle = subtitle
         self._from_create = title is not None
         self._form_width = width
+        self._ctrl_b_registered = False
+        self._ctrl_s_registered = False
 
         self.kind = get_kind_of_file_and_validate(file_name)
 
@@ -39,11 +47,13 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
             content="Back",
             on_click=self.on_back_click,
             icon=ft.Icons.ARROW_BACK,
+            tooltip="Back (Ctrl+B)",
         )
         self.save_button = ft.Button(
             content="Save",
             on_click=self.on_save_click,
             icon=ft.Icons.SAVE,
+            tooltip="Save (Ctrl+S)",
         )
         buttons = [self.backButton, self.save_button]
         if self.kind == "definitions":
@@ -107,6 +117,29 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
         self._form_width = metrics.form_width
         self.main_container.width = metrics.form_width
         self.update_if_mounted()
+
+    def did_mount(self):
+        super().did_mount()
+        if not self._ctrl_b_registered:
+            push_ctrl_b_action(self.page, self._on_ctrl_b)
+            self._ctrl_b_registered = True
+        if not self._ctrl_s_registered:
+            push_ctrl_s_action(self.page, self._on_ctrl_s)
+            self._ctrl_s_registered = True
+
+    def will_unmount(self):
+        if self._ctrl_b_registered:
+            pop_ctrl_b_action(self.page, self._on_ctrl_b)
+            self._ctrl_b_registered = False
+        if self._ctrl_s_registered:
+            pop_ctrl_s_action(self.page, self._on_ctrl_s)
+            self._ctrl_s_registered = False
+
+    def _on_ctrl_b(self, e):
+        self.on_back_click(e)
+
+    def _on_ctrl_s(self, e):
+        self.on_save_click(e)
 
     def on_swap_all_click(self, e):
         for control in self.lv.controls:

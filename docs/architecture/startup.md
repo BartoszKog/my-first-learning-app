@@ -93,7 +93,8 @@ install_keyboard_shortcuts(page)
 Flet delivers navigation events to the router. These assignments happen
 before the first `initialize_routes` call so the initial Home navigation is
 handled consistently. Keyboard shortcuts (Ctrl+B for back, Ctrl+Enter for
-learn primary actions) are installed through `ui/keyboard_shortcuts.py`.
+learn primary actions, Ctrl+S for edit Save / definitions speak) are installed
+through `ui/keyboard_shortcuts.py`.
 
 See the [Router API](../reference/router.md) and
 [Routing](../concepts/routing.md).

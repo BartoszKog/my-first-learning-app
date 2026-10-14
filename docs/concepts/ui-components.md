@@ -88,10 +88,12 @@ word list, and **Check** / **Try again** / **Next** during a learn session.
 After the shortcut (and when a session starts), focus moves to the first empty
 editable answer field so typing can continue without a mouse click. Learn
 screens push that action through `ui/keyboard_shortcuts.py` while mounted.
-App-wide **Ctrl+B** calls `go_back` (system / in-app back); see
-[Navigation](../guides/navigation.md). The word-list **Back** button tooltip
-shows that shortcut. Definitions sessions also register **Ctrl+S** for
-pronunciation while the word is revealed.
+App-wide **Ctrl+B** calls a screen-registered back handler when one is mounted
+(edit-set: same as **Back**, including unsaved-changes confirm), otherwise
+`go_back`; see [Navigation](../guides/navigation.md). The word-list and
+edit-set **Back** button tooltips show that shortcut. **Ctrl+S** is registered
+while mounted for edit-set **Save**, and for pronunciation in definitions
+sessions while the word is revealed.
 
 Responsive widths for learn fields come from
 [Layout](../guides/layout.md) (`form_width` and field-width helpers).
@@ -106,8 +108,10 @@ Responsive widths for learn fields come from
 
 `EditSetMenu` builds a list of edit cards for the open set. Cards wrap the
 content columns for the set kind and track whether the user has edited them
-before save. Prefer extending `EditCardBase` over copying field layout into a
-new screen.
+before save. While mounted it registers **Ctrl+B** for **Back** and **Ctrl+S**
+for **Save** (same paths as those buttons, including the unsaved-changes
+dialog on back); the buttons show shortcut tooltips. Prefer extending
+`EditCardBase` over copying field layout into a new screen.
 
 ## Search control
 

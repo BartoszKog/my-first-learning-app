@@ -11,6 +11,9 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+### Added
+- Settings sliders for the practice-queue size of word formations (3–10, default 5) and definitions (4–15, default 10)
+
 ## [1.0.7] - 2026-09-23
 
 ### Added

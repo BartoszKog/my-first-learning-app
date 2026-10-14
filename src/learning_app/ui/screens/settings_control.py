@@ -190,12 +190,56 @@ class BackgroundShadeSlider(ft.Column):
         self.update_slider_position()
 
 
+class PracticeQueueSlider(ft.Column):
+    """Slider that sets one practice-queue size and shows the current integer."""
+
+    def __init__(
+        self,
+        title: str,
+        minimum: int,
+        maximum: int,
+        divisions: int,
+        initial_value: int,
+        on_change,
+        width: float,
+    ):
+        super().__init__()
+        self._title = title
+        self._on_change = on_change
+        initial_value = int(initial_value)
+        self.label = ft.Text(self._format_label(initial_value))
+        self.slider = ft.Slider(
+            min=minimum,
+            max=maximum,
+            divisions=divisions,
+            value=initial_value,
+            on_change=self.on_slider_change,
+        )
+        self.controls = [self.label, self.slider]
+        self.apply_layout(width)
+
+    def _format_label(self, value: int) -> str:
+        return f"{self._title}: {int(value)}"
+
+    def apply_layout(self, width: float):
+        self.width = width
+        self.label.width = width
+        self.slider.width = width
+
+    def on_slider_change(self, e):
+        value = int(e.control.value)
+        self.label.value = self._format_label(value)
+        self._on_change(value)
+        if control_is_on_page(self.label):
+            self.label.update()
+
+
 class SettingsControl(RoutableScreenMixin, ft.Column):
     """Settings shell screen with Appearance, TTS, Learning, and Demo sets.
 
     Owns the light/dark switch, ``BackgroundShadeSlider``, TTS language,
-    auto-speak, word-list speakers, learn-queue retry, and demo-set
-    installation. Persistence
+    auto-speak, word-list speakers, learn-queue retry, practice-queue size
+    sliders, and demo-set installation. Persistence
     goes through preferences, ``AppTheme``, ``TtsPreferences``, and
     ``LearnPreferences``; shell chrome colors stay in ``app.py``.
     """
@@ -400,6 +444,37 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             size=14,
             width=self._content_width,
         )
+        self.queue_size_heading = ft.Text(
+            "Queue size",
+            size=16,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
+        self.queue_size_description = ft.Text(
+            "How many items are drawn into the next practice round. Set word "
+            "formations and definitions separately. The round already started "
+            "keeps its length.",
+            size=14,
+            width=self._content_width,
+        )
+        self.word_formations_queue_slider = PracticeQueueSlider(
+            title="Word formations",
+            minimum=LearnPreferences.WORD_FORMATIONS_QUEUE_MIN,
+            maximum=LearnPreferences.WORD_FORMATIONS_QUEUE_MAX,
+            divisions=7,
+            initial_value=LearnPreferences.word_formations_queue_size,
+            on_change=self.on_word_formations_queue_size_change,
+            width=self._content_width,
+        )
+        self.definitions_queue_slider = PracticeQueueSlider(
+            title="Definitions",
+            minimum=LearnPreferences.DEFINITIONS_QUEUE_MIN,
+            maximum=LearnPreferences.DEFINITIONS_QUEUE_MAX,
+            divisions=11,
+            initial_value=LearnPreferences.definitions_queue_size,
+            on_change=self.on_definitions_queue_size_change,
+            width=self._content_width,
+        )
         self.demo_description = ft.Text(
             "Add sample learning sets so you can try the app quickly.",
             size=14,
@@ -436,6 +511,10 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 self.learning_heading,
                 self.retry_until_correct_row,
                 self.retry_until_correct_description,
+                self.queue_size_heading,
+                self.queue_size_description,
+                self.word_formations_queue_slider,
+                self.definitions_queue_slider,
             ],
             spacing=16,
             width=self._content_width,
@@ -509,6 +588,8 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.learning_heading,
             self.demo_description,
             self.retry_until_correct_description,
+            self.queue_size_heading,
+            self.queue_size_description,
             self.tts_speakers_heading,
             self.tts_speakers_description,
             self.tts_speakers_formations_heading,
@@ -537,6 +618,8 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         ):
             control.width = metrics.settings_width
         self.background_shade_slider.apply_layout(metrics.settings_width)
+        self.word_formations_queue_slider.apply_layout(metrics.settings_width)
+        self.definitions_queue_slider.apply_layout(metrics.settings_width)
         self.tts_speakers_formations_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_definitions_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_divider.apply_layout(metrics.settings_width)
@@ -606,6 +689,20 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         page = self._get_page()
         if page is not None:
             page.run_task(LearnPreferences.save_retry_until_correct, enabled)
+
+    def on_word_formations_queue_size_change(self, size: int):
+        size = int(size)
+        LearnPreferences.word_formations_queue_size = size
+        page = self._get_page()
+        if page is not None:
+            page.run_task(LearnPreferences.save_word_formations_queue_size, size)
+
+    def on_definitions_queue_size_change(self, size: int):
+        size = int(size)
+        LearnPreferences.definitions_queue_size = size
+        page = self._get_page()
+        if page is not None:
+            page.run_task(LearnPreferences.save_definitions_queue_size, size)
 
     def on_add_demo_sets_click(self, e):
         page = self._get_page()

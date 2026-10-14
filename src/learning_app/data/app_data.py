@@ -625,11 +625,10 @@ class AppData:
         self.current_group_of_indexes = []
         self.place_of_group_index = 0
         self.len_of_group = 0
+        self.kind = get_kind_of_file_and_validate(file_name)
         self.draw_index_group()
         self.current_word_index = 0
         self.current_word_row = self.words.loc[self.current_word_index]
-
-        self.kind = get_kind_of_file_and_validate(file_name)
 
         self.stats_columns = [
             StatsColumns.CORRECT_ANSWERS.value,
@@ -658,7 +657,13 @@ class AppData:
             assert col in self.words.columns, f"The column {col} is missing."
 
     def draw_index_group(self, save_indexes_in_class_art: bool = False) -> int:
-        """Draw up to ten row indexes for the next practice group.
+        """Draw row indexes for the next practice group.
+
+        The group is capped by the Settings queue size on
+        ``LearnPreferences`` for this set's kind. Word formations
+        (``kind == "words"``) use 3–10 items, default 5. Definitions use
+        4–15 items, default 10. An already drawn group is left unchanged
+        until this method runs again.
 
         Prefers ``word_to_learn`` rows, then fills from other statistics
         combinations ordered by ``correct_answers``.
@@ -671,15 +676,22 @@ class AppData:
             Number of indexes in the new group, or ``0`` when none are
             available.
         """
+        from learning_app.ui.learn_preferences import LearnPreferences
+
+        if self.kind == "definitions":
+            limit = LearnPreferences.definitions_queue_size
+        else:
+            limit = LearnPreferences.word_formations_queue_size
+
         indexes_to_draw = self.words[(self.words[StatsColumns.GOOD_ANSWER.value] == False) &
                                      (self.words[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == False) &
                                      (self.words[StatsColumns.WORD_TO_LEARN.value] == True)].index
 
         for i in range(2):
-            if len(indexes_to_draw) >= 10:
+            if len(indexes_to_draw) >= limit:
                 break
             elif i == 0:  # Add to indexes_to_draw indexes where:  0/0/0
-                qty_to_add = 10 - len(indexes_to_draw)
+                qty_to_add = limit - len(indexes_to_draw)
                 self.words.sort_values(by=StatsColumns.CORRECT_ANSWERS.value, inplace=True)
                 indexes_to_draw = indexes_to_draw.union(self.words[
                     (self.words[StatsColumns.GOOD_ANSWER.value] == False) &
@@ -687,7 +699,7 @@ class AppData:
                     (self.words[StatsColumns.WORD_TO_LEARN.value] == False)].index[:qty_to_add])
 
             elif i == 1:  # Add to indexes_to_draw indexes where:  1/0/0 or 1/0/1 or 1/1/1
-                qty_to_add = 10 - len(indexes_to_draw)
+                qty_to_add = limit - len(indexes_to_draw)
                 self.words.sort_values(by=StatsColumns.CORRECT_ANSWERS.value, inplace=True)
                 indexes_to_draw = indexes_to_draw.union(self.words[
                     ((self.words[StatsColumns.GOOD_ANSWER.value] == True) &
@@ -696,8 +708,8 @@ class AppData:
                      (self.words[StatsColumns.WORD_TO_LEARN.value] == True))].index[:qty_to_add])
 
         number_of_indexes = len(indexes_to_draw)
-        if number_of_indexes > 10:
-            number_of_indexes = 10
+        if number_of_indexes > limit:
+            number_of_indexes = limit
         elif number_of_indexes == 0:
             return 0
 

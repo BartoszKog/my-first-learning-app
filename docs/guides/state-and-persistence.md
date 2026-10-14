@@ -147,7 +147,7 @@ Theme **mode** and **content background** are preference-backed and owned at
 runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
 `ui/screens/settings_control.py`) is the UI that edits them. The same screen
-also hosts **Text to speech** (language, auto-speak, and word-list speakers; see
+also hosts **Defaults** / **Restore defaults** (resets the preference keys documented on that page and does not modify learning sets, demo install, or CSV progress), **Text to speech** (language, auto-speak, and word-list speakers; see
 [Text to speech](#text-to-speech)), **Learning** (retry until correct; see
 [Learning](#learning)), and **Demo sets** (install bundled samples
 via `install_demo_sets()`; that path writes CSVs and `files.csv`, not

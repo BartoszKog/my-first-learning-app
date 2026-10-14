@@ -22,9 +22,13 @@ class AppTheme:
         light_theme_bgcolor: Resolved light page/view background color.
     """
 
+    DEFAULT_THEME_MODE = ThemeMode.DARK
+    DEFAULT_SLIDER_VALUE = 2
+    DEFAULT_BGCOLOR = ft.Colors.SURFACE
+
     theme_mode: ThemeMode | None = None
-    dark_theme_slider_value = 2
-    light_theme_slider_value = 2
+    dark_theme_slider_value = DEFAULT_SLIDER_VALUE
+    light_theme_slider_value = DEFAULT_SLIDER_VALUE
     dark_theme_bgcolor = None
     light_theme_bgcolor = None
 
@@ -105,7 +109,7 @@ class AppTheme:
         bgcolor = cls.get_bgcolor()
         if bgcolor is not None:
             return bgcolor
-        return ft.Colors.SURFACE.value
+        return cls._normalize_color(cls.DEFAULT_BGCOLOR)
 
     @classmethod
     def apply_bgcolor(cls, page: ft.Page, bgcolor):

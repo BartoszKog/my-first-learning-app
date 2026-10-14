@@ -13,6 +13,7 @@ body and fails if it is missing.
 
 ### Added
 - Settings sliders for the practice-queue size of word formations (3–10, default 5) and definitions (4–15, default 10)
+- Defaults section at the top of Settings with Restore defaults, which resets every preference on that page to the original values; a snackbar offers Undo for 4 seconds, and if settings are already default the snackbar only says so and has no Undo; learning sets, demo data, and CSV progress are not changed
 
 ### Changed
 - Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer

@@ -11,9 +11,13 @@ Choose the helper from the navigation intent:
 - Close the active Deep task, or in-place search when open → `go_back()`.
 - Search the active tile source (in-place, not a route) → `go_search()`.
 
-**Ctrl+Left Arrow** (also Meta/Cmd+Left) is installed in `app.py` via
-`install_keyboard_shortcuts` and calls `go_back(page)` — the same path as an
-in-app Back button and as closing search before popping a view on system back.
+**Ctrl+B** (also Meta/Cmd+B) is installed in `app.py` via
+`install_keyboard_shortcuts`. When a screen has registered a back handler
+(edit-set uses the same path as its Back button, including the unsaved-changes
+dialog), that handler runs; otherwise Ctrl+B calls `go_back(page)` — the same
+path as closing search before popping a view on system back.
+**Ctrl+S** on the edit-set screen saves (same as the Save button) while that
+view is mounted.
 
 See [Two navigation roles](../architecture/routing-and-screens.md#two-navigation-roles) if the
 Shell/Deep distinction is not yet clear.

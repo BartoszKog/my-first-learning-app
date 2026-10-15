@@ -5,11 +5,13 @@ from unittest.mock import patch
 
 from learning_app.ui.keyboard_shortcuts import (
     install_keyboard_shortcuts,
+    is_ctrl_b,
     is_ctrl_enter,
-    is_ctrl_left_arrow,
     is_ctrl_s,
+    pop_ctrl_b_action,
     pop_ctrl_enter_action,
     pop_ctrl_s_action,
+    push_ctrl_b_action,
     push_ctrl_enter_action,
     push_ctrl_s_action,
     reset_ctrl_enter_actions_for_tests,
@@ -37,14 +39,15 @@ def test_is_ctrl_enter_accepts_ctrl_or_meta_enter():
     assert is_ctrl_enter(_event(ctrl=True, key="Numpad Enter"))
     assert not is_ctrl_enter(_event(ctrl=True, key="A"))
     assert not is_ctrl_enter(_event(key="Enter"))
+    assert not is_ctrl_enter(_event(ctrl=True, alt=True))
 
 
-def test_is_ctrl_left_arrow_accepts_variants():
-    assert is_ctrl_left_arrow(_event(ctrl=True, key="Arrow Left"))
-    assert is_ctrl_left_arrow(_event(meta=True, key="ArrowLeft"))
-    assert is_ctrl_left_arrow(_event(ctrl=True, key="Left"))
-    assert not is_ctrl_left_arrow(_event(key="Arrow Left"))
-    assert not is_ctrl_left_arrow(_event(ctrl=True, key="Arrow Right"))
+def test_is_ctrl_b_accepts_variants():
+    assert is_ctrl_b(_event(ctrl=True, key="B"))
+    assert is_ctrl_b(_event(meta=True, key="b"))
+    assert not is_ctrl_b(_event(key="B"))
+    assert not is_ctrl_b(_event(ctrl=True, key="A"))
+    assert not is_ctrl_b(_event(ctrl=True, alt=True, key="B"))
 
 
 def test_push_pop_dispatches_topmost_action():
@@ -92,13 +95,13 @@ def test_non_ctrl_enter_does_not_fire_action():
     reset_ctrl_enter_actions_for_tests()
 
 
-def test_ctrl_left_arrow_calls_go_back():
+def test_ctrl_b_calls_go_back():
     reset_ctrl_enter_actions_for_tests()
     page = _fake_page()
     install_keyboard_shortcuts(page)
 
     with patch("learning_app.ui.navigation.go_back") as go_back:
-        page.on_keyboard_event(_event(ctrl=True, key="Arrow Left", page=page))
+        page.on_keyboard_event(_event(ctrl=True, key="B", page=page))
         go_back.assert_called_once_with(page)
 
         go_back.reset_mock()
@@ -108,14 +111,36 @@ def test_ctrl_left_arrow_calls_go_back():
     reset_ctrl_enter_actions_for_tests()
 
 
-def test_ctrl_left_takes_priority_over_ctrl_enter_action():
+def test_ctrl_b_dispatches_registered_action_instead_of_go_back():
+    reset_ctrl_enter_actions_for_tests()
+    page = _fake_page()
+    calls = []
+
+    def back(e):
+        calls.append("back")
+
+    push_ctrl_b_action(page, back)
+    with patch("learning_app.ui.navigation.go_back") as go_back:
+        page.on_keyboard_event(_event(ctrl=True, key="B", page=page))
+        go_back.assert_not_called()
+        assert calls == ["back"]
+
+        go_back.reset_mock()
+        pop_ctrl_b_action(page, back)
+        page.on_keyboard_event(_event(ctrl=True, key="B", page=page))
+        go_back.assert_called_once_with(page)
+
+    reset_ctrl_enter_actions_for_tests()
+
+
+def test_ctrl_b_takes_priority_over_ctrl_enter_action():
     reset_ctrl_enter_actions_for_tests()
     page = _fake_page()
     calls = []
     push_ctrl_enter_action(page, lambda e: calls.append("enter"))
 
     with patch("learning_app.ui.navigation.go_back") as go_back:
-        page.on_keyboard_event(_event(ctrl=True, key="Arrow Left", page=page))
+        page.on_keyboard_event(_event(ctrl=True, key="B", page=page))
         go_back.assert_called_once_with(page)
         assert calls == []
 
@@ -127,6 +152,26 @@ def test_is_ctrl_s_accepts_ctrl_or_meta():
     assert is_ctrl_s(_event(meta=True, key="s"))
     assert not is_ctrl_s(_event(key="S"))
     assert not is_ctrl_s(_event(ctrl=True, key="A"))
+    # AltGr+S (Polish ś) reports as Ctrl+Alt+S on Windows — must not save/speak.
+    assert not is_ctrl_s(_event(ctrl=True, alt=True, key="S"))
+    assert not is_ctrl_s(_event(ctrl=True, alt=True, key="s"))
+
+
+def test_altgr_s_does_not_dispatch_ctrl_s_action():
+    reset_ctrl_enter_actions_for_tests()
+    page = _fake_page()
+    calls = []
+
+    def save(e):
+        calls.append("save")
+
+    push_ctrl_s_action(page, save)
+    page.on_keyboard_event(_event(ctrl=True, alt=True, key="S"))
+    assert calls == []
+    page.on_keyboard_event(_event(ctrl=True, key="S"))
+    assert calls == ["save"]
+    pop_ctrl_s_action(page, save)
+    reset_ctrl_enter_actions_for_tests()
 
 
 def test_ctrl_s_dispatches_topmost_action():

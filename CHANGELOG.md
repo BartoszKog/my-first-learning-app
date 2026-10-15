@@ -12,14 +12,18 @@ body and fails if it is missing.
 ## [Unreleased]
 
 ### Added
+- Ctrl+S shortcut to Save on the edit-set screen, with Save (Ctrl+S) and Back (Ctrl+B) button tooltips
+- Ctrl+B on the edit-set screen uses the same Back path as the button (unsaved-changes dialog when needed)
 - Settings sliders for the practice-queue size of word formations (3–10, default 5) and definitions (4–15, default 10)
 - Defaults section at the top of Settings with Restore defaults, which resets every preference on that page to the original values; a snackbar offers Undo for 4 seconds, and if settings are already default the snackbar only says so and has no Undo; learning sets, demo data, and CSV progress are not changed
 - Home empty state when there are no set tiles, with a two-line prompt to create a set with the + button or add the demo sets, and an Add demo sets button (playlist-add icon) that installs the same demo sets as Settings; the prompt and button disappear once tiles exist and return if every set is deleted; Import/Export does not show this empty state
 
 ### Changed
+- Navigational back shortcut from Ctrl+Left Arrow to Ctrl+B (Meta/Cmd+B); word-list Back button tooltip shows the shortcut
 - Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer
 
 ### Fixed
+- Ignore AltGr (Ctrl+Alt) in Ctrl shortcuts so typing Polish ś with AltGr+S does not trigger Save / speak
 - Strip spaces around `/` when splitting a stored answer into alternatives, so `to rely on STH / SB` accepts `to rely on STH` or `SB`
 
 ## [1.0.7] - 2026-09-23

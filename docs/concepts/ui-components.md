@@ -40,14 +40,15 @@ On Home, `ContentTile` also draws a bottom progress strip from
 learn-menu bar. Export tiles omit the strip. Returning to Home refreshes the
 shared `TilesContainer` so those bars stay current after a learn session.
 
-`ContentTile` opens learn or edit via `push_view`, and offers menu actions such
-as reset progress (`set_default_progress`), delete (`delate_set`), and export
-through `AppSession.get_export_csv_picker()` with `save_file(..., src_bytes=...)`.
-In export mode the tile is oriented toward picking a set to save out rather
-than full Home management.
+`ContentTile` opens learn, edit, or set settings via `push_view`, and offers
+menu actions such as reset progress (`set_default_progress`), delete
+(`delate_set`), and export through `AppSession.get_export_csv_picker()` with
+`save_file(..., src_bytes=...)`. In export mode the tile is oriented toward
+picking a set to save out rather than full Home management. Export copies the
+set CSV only; per-set catalog overrides stay in `files.csv`.
 
 ```text
-files.csv → TilesContainer → ContentTile → learn / edit / delete / export
+files.csv → TilesContainer → ContentTile → learn / edit / set settings / delete / export
 ```
 
 ## Learn fields
@@ -66,22 +67,25 @@ supply the visible fields; `BaseWordField` owns starting/stopping the session,
 calling `good_answer_at_current_row` / `bad_answer_at_current_row` on the
 **first** Check of a card, and resetting progress when all words are learned.
 
-When Settings **Retype until correct** is on (`LearnPreferences`), a wrong
-Check stays on the same card (`Try again`) until the answer is typed
-correctly. Extra attempts do not call the answer helpers. On word-formation
-retries, `WordFields.prepare_retry` keeps green fields filled and only resets
-missed forms.
+When the set's effective **Retype until correct** is on, a wrong Check stays
+on the same card (`Try again`) until the answer is typed correctly. An empty
+catalog cell uses `LearnPreferences`. Extra attempts do not call the answer
+helpers. On word-formation retries, `WordFields.prepare_retry` keeps green
+fields filled and only resets missed forms.
 
 `WordDefinitionField` adds a speaker button to the right of Check. It stays
 disabled until Check reveals the word, then `AppSession.speak` plays the
-**word** column (not the definition) in the language from `TtsPreferences`.
-Optional auto-speak after Check does not show error snackbars. Repeating the
-same cached file skips the load wait so the speaker can replay immediately.
-During a definitions session, **Ctrl+S** triggers the same pronunciation as the
-speaker button (only while the word is revealed).
+**word** column (not the definition) in the set's effective language. An
+empty `tts_language` cell uses `TtsPreferences`. Optional auto-speak after
+Check uses the set's effective flag and does not show error snackbars.
+Repeating the same cached file skips the load wait so the speaker can replay
+immediately. During a definitions session, **Ctrl+S** triggers the same
+pronunciation as the speaker button (only while the word is revealed).
 
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
-the learn menu list; it is a screen helper, not under `components/`.
+the learn menu list; it is a screen helper, not under `components/`. Its
+settings button opens `/set/settings` for this set. Speaker buttons on the
+list follow the set's effective speaker flags.
 
 **Ctrl+Enter** activates the primary action on these screens: **Start** on the
 word list, and **Check** / **Try again** / **Next** during a learn session.
@@ -136,8 +140,8 @@ as the search close button, without popping the shell route.
 | Which route hosts which body | `route_registry` / screen map |
 | Shared Home/export tile instance | `BodyRegistry` |
 | Practice queue and stats | `AppData` |
-| Learn-session retry flag | `LearnPreferences` |
-| Practice-queue size | `LearnPreferences` (Settings); read by `AppData` |
+| Learn-session retry and queue size | Effective set value in `files.csv`; empty cell uses `LearnPreferences`. Check and `draw_index_group` read it |
+| TTS language, auto-speak, word-list speakers | Effective set value; empty cell uses `TtsPreferences` |
 | Tile list / learn loop / edit cards | `ui/components/` |
 | Screen chrome and navigation | Shell chrome + navigation helpers |
 

@@ -50,8 +50,9 @@ to their defaults (`0` / `False` / `False` / `False`) and saves the file.
 ## Drawing a practice group
 
 `draw_index_group()` builds the row indexes for the current round. Group size
-comes from the two Settings queue sliders, stored on `LearnPreferences` and
-chosen by set kind:
+is that set's effective `queue_size`. An empty catalog cell uses the Settings
+slider for the set's kind (`LearnPreferences`); a stored cell is clamped to
+the same range:
 
 | Kind | Settings label | Range | Default |
 | --- | --- | --- | --- |
@@ -59,9 +60,9 @@ chosen by set kind:
 | `definitions` | Definitions | 4–15 | 10 |
 
 `AppData.__init__` sets `kind` before the first draw, so a new session uses
-the saved limits. A slider change applies the next time `draw_index_group`
-runs (session start and a new `AppData`). The group already drawn stays as
-it is.
+the set's limit. A change on Settings or on `/set/settings` applies the next
+time `draw_index_group` runs (session start and a new `AppData`). The group
+already drawn stays as it is.
 
 1. Take rows in the Unknown state (`0/0/1`).
 2. If the group is still shorter than the limit, add Unverified rows
@@ -119,8 +120,9 @@ usual.
 
 ## Retry until correct {#retry-until-correct}
 
-`LearnPreferences.retry_until_correct` is a UI flag, not an `AppData` rule.
-When it is on:
+Retry is a UI flag, not an `AppData` rule. Check reads the set's effective
+`retry_until_correct`: a stored catalog cell, or `LearnPreferences` when that
+cell is empty. When it is on:
 
 1. The first wrong Check still calls `bad_answer_at_current_row()` once.
 2. Check becomes **Try again**; the same row stays current.
@@ -133,8 +135,10 @@ On word-formation sets, `WordFields.prepare_retry` keeps already-green fields
 filled so only missed forms need typing again. Definitions reset the word
 field and lock the speaker until the next reveal.
 
-The flag is loaded at startup and edited from Settings — see
-[Learning](../guides/state-and-persistence.md#learning).
+The app default is loaded at startup and edited from Settings. One set can
+store its own value from `/set/settings` — see
+[Learning](../guides/state-and-persistence.md#learning) and
+[Per-set settings](../architecture/data-and-storage.md#per-set-settings).
 
 ## Progress helpers
 
@@ -162,8 +166,8 @@ Learn UI uses `are_all_words_learned()` before starting a session and may offer
 | --- | --- |
 | Path and catalog | `FilePathManager`, module-level `app_data` helpers |
 | Queue and answer rules | `AppData` |
-| Retry-until-correct flag | `LearnPreferences` (Settings) |
-| Practice-queue size | `LearnPreferences` (Settings); `draw_index_group` reads it |
+| Retry-until-correct flag | Effective set value; empty cell uses `LearnPreferences` |
+| Practice-queue size | Effective set `queue_size`; empty cell uses `LearnPreferences`; `draw_index_group` reads it |
 | Presenting fields / buttons | `ui/components/` learn controls and `WordListMenu` |
 | Transient UI chrome lock | `AppSession` — never learning statistics |
 

@@ -36,8 +36,8 @@ to confirm types, parameters, and return values.
 | [App session](app_session.md) | `ui/app_session.py` | Shared `Page`, export `FilePicker`, TTS playback, and navigation lock. | Wiring chrome/export/TTS at startup or locking navigation briefly. | [State and persistence](../guides/state-and-persistence.md) |
 | [Preferences](preferences.md) | `ui/preferences.py` | `SharedPreferences` factory for durable settings. | Reading or writing user settings outside a screen instance. | [State and persistence](../guides/state-and-persistence.md) |
 | [App theme](app_theme.md) | `ui/app_theme.py` | Theme mode and preference-backed page bgcolor. | Applying or persisting content background / mode. | [State and persistence](../guides/state-and-persistence.md#theming), [Startup](../architecture/startup.md) |
-| [TTS preferences](tts_preferences.md) | `ui/tts_preferences.py` | TTS language and auto-speak flags. | Applying or persisting pronunciation settings. | [State and persistence](../guides/state-and-persistence.md#text-to-speech), [Startup](../architecture/startup.md) |
-| [Learn preferences](learn_preferences.md) | `ui/learn_preferences.py` | Retry-until-correct flag for the learn queue. | Applying or persisting learn-session settings. | [State and persistence](../guides/state-and-persistence.md#learning), [Startup](../architecture/startup.md) |
+| [TTS preferences](tts_preferences.md) | `ui/tts_preferences.py` | App-default TTS language, auto-speak, and speaker flags. | Applying or persisting pronunciation defaults. | [State and persistence](../guides/state-and-persistence.md#text-to-speech), [Startup](../architecture/startup.md) |
+| [Learn preferences](learn_preferences.md) | `ui/learn_preferences.py` | App-default retry flag and practice-queue sizes. | Applying or persisting learn-session defaults. | [State and persistence](../guides/state-and-persistence.md#learning), [Startup](../architecture/startup.md) |
 
 ## Data & learning
 
@@ -45,6 +45,7 @@ to confirm types, parameters, and return values.
 | --- | --- | --- | --- | --- |
 | [File path manager](file_path_manager.md) | `data/file_path_manager.py` | Storage roots, `csv_files/`, and `tts_cache/` path helpers. | Resolving where catalogs, set CSVs, and TTS files live. | [Data and storage](../architecture/data-and-storage.md) |
 | [App data](app_data.md) | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData`. | Creating, listing, or learning a set on disk. | [Data and storage](../architecture/data-and-storage.md), [Learning algorithm](../concepts/learning-algorithm.md) |
+| [Set settings](set_settings.md) | `data/set_settings.py` | Per-set learning and TTS overrides on `files.csv`. | Reading or storing one set's language, speakers, retry, or queue size. | [Per-set settings](../architecture/data-and-storage.md#per-set-settings) |
 | [Constants](constants.md) | `data/constants.py` | Column enums, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
 | [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate, repair catalog, import save helpers. | Importing a set or checking `files.csv`. | [Import and export](../guides/import-export.md) |
 | [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into storage. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
@@ -58,9 +59,9 @@ to confirm types, parameters, and return values.
 4. [In-place search](inplace_search.md) — when tracing search UI without a route.
 5. [Routable screens](routable_screen.md), [Layout metrics](layout_metrics.md), and [Layout host](layout_host.md) — responsive behavior.
 6. [Chrome configuration](chrome_config.md) and [App chrome](app_chrome.md) — declarative Shell chrome vs live control registry ([App drawer](app_drawer.md) when changing drawer navigation).
-7. [File path manager](file_path_manager.md), [Constants](constants.md), and [App data](app_data.md) — where sets live on disk; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
+7. [File path manager](file_path_manager.md), [Constants](constants.md), [App data](app_data.md), and [Set settings](set_settings.md) — where sets live on disk and how one set overrides app defaults; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
 8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — import/catalog repair and bundled sample install.
-9. [TTS](tts.md) — pronunciation cache and providers; [TTS preferences](tts_preferences.md) for language and auto-speak.
+9. [TTS](tts.md) — pronunciation cache and providers; [TTS preferences](tts_preferences.md) for the app language and auto-speak, [Set settings](set_settings.md) when a set stores its own.
 10. [Preferences](preferences.md), [App theme](app_theme.md), and [Learn preferences](learn_preferences.md) — durable settings, content background, and learn-queue retry.
 11. [Router](router.md) — only when you change startup wiring or trace a route event.
 

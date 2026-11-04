@@ -14,7 +14,7 @@ from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.keyboard_shortcuts import pop_ctrl_enter_action, push_ctrl_enter_action
 from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
-from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE
+from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE, SET_SETTINGS_ROUTE
 
 BORDERS = {
     "To learn": ft.Border.all(1.5, ft.Colors.BLUE_GREY_700),
@@ -324,6 +324,8 @@ class WordListMenu(ft.Column):
             elif e.control is self.back_button:
                 self._on_back()
                 go_back(e.page)
+            elif e.control is self.settings_button:
+                push_view(e.page, SET_SETTINGS_ROUTE, file=self.file_name)
 
         self.start_button = ft.Button(
             content="Start",
@@ -337,6 +339,11 @@ class WordListMenu(ft.Column):
             icon=ft.Icons.ARROW_BACK,
             on_click=on_button_click,
             tooltip="Back (Ctrl+B)",
+        )
+        self.settings_button = ft.FilledTonalButton(
+            icon=ft.Icons.SETTINGS,
+            on_click=on_button_click,
+            tooltip="Set settings",
         )
         self._ctrl_enter_registered = False
 
@@ -357,7 +364,7 @@ class WordListMenu(ft.Column):
             self.filter_chips_row,
             self.container,
             ft.Row(
-                [self.back_button, self.start_button],
+                [self.back_button, self.start_button, self.settings_button],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
         ]

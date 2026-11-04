@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 
+import flet as ft
 import pandas as pd
 import pytest
 
@@ -165,6 +166,8 @@ def test_set_settings_checkbox_clears_columns(isolated_csv_dir, restore_preferen
 
     words_screen = SetSettingsMenu("alpha_words.csv", width=300)
     assert words_screen.kind_text.value == "Word formations"
+    assert words_screen.set_title_text.value == "Alpha"
+    assert isinstance(words_screen.back_button, ft.IconButton)
     assert words_screen.use_app_settings_switch.value is True
     assert words_screen.language_dropdown.disabled is True
     assert words_screen.language_dropdown.value == "de"

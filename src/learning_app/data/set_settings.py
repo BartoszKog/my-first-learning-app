@@ -174,6 +174,19 @@ def language_for_set_file(file_name: str) -> str:
     return effective_set_settings(file_name).language
 
 
+def catalog_title(file_name: str) -> str:
+    """Return the display title for ``file_name`` from ``files.csv``.
+
+    Falls back to the basename when the catalog row is missing or the title
+    cell is blank.
+    """
+    row = _catalog_row(file_name)
+    if row is None or FilesColumns.TITLE.value not in row.index:
+        return os.path.basename(file_name)
+    title = _cell_text(row[FilesColumns.TITLE.value])
+    return title or os.path.basename(file_name)
+
+
 def enable_set_overrides(file_name: str) -> None:
     """Copy the current app settings into this set's override columns.
 

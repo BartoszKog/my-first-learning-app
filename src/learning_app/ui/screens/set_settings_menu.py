@@ -5,6 +5,7 @@ import flet as ft
 from learning_app.data.app_data import get_kind_of_file_and_validate
 from learning_app.data.constants import FilesColumns
 from learning_app.data.set_settings import (
+    catalog_title,
     clear_set_overrides,
     effective_set_settings,
     enable_set_overrides,
@@ -19,7 +20,9 @@ from learning_app.ui.screens.settings_control import PracticeQueueSlider
 from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
 
 _FORM_BORDER_COLOR = ft.Colors.BLUE_GREY_700
+_MUTED_LABEL = ft.Colors.BLUE_GREY_400
 _SWITCH_LABEL = ft.TextStyle(size=16)
+_CARD_PADDING = 12
 
 
 class SetSettingsMenu(RoutableScreenMixin, ft.Column):
@@ -29,6 +32,9 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
     set's kind is empty. Turning it off copies the current app values into
     those cells. Turning it on clears them. Other controls save immediately
     and are disabled while the set follows the app.
+
+    Layout: top bar with back ``IconButton``, set title, and kind chip;
+    settings grouped into bordered Source / Text to speech / Learning cards.
     """
 
     def __init__(self, file_name: str, width: float = 340):
@@ -37,7 +43,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         self.scroll = ft.ScrollMode.AUTO
         self.alignment = ft.MainAxisAlignment.START
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        self.spacing = 12
+        self.spacing = 0
         self.file_name = file_name
         self.kind = get_kind_of_file_and_validate(file_name)
         self._form_width = width
@@ -46,14 +52,49 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         settings = effective_set_settings(file_name)
         use_app = settings.uses_app_defaults
         kind_label = "Word formations" if self.kind == "words" else "Definitions"
+        set_title = catalog_title(file_name)
+        inner = self._inner_width(width)
 
+        self.back_button = ft.IconButton(
+            icon=ft.Icons.ARROW_BACK,
+            on_click=self.on_back_click,
+            tooltip="Back (Ctrl+B)",
+            icon_size=22,
+        )
         self.heading = ft.Text(
             "Set settings",
-            size=18,
+            size=16,
             weight=ft.FontWeight.BOLD,
-            width=width,
         )
-        self.kind_text = ft.Text(kind_label, size=14, width=width)
+        self.set_title_text = ft.Text(
+            set_title,
+            size=14,
+            color=_MUTED_LABEL,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+        self.kind_text = ft.Text(kind_label, size=12)
+        self.kind_chip = ft.Chip(
+            label=self.kind_text,
+            leading=ft.Icon(ft.Icons.CATEGORY_OUTLINED, size=16),
+            show_checkmark=False,
+        )
+        self.top_bar = ft.Row(
+            [
+                self.back_button,
+                ft.Column(
+                    [self.heading, self.set_title_text],
+                    spacing=0,
+                    expand=True,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                self.kind_chip,
+            ],
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            width=width,
+            spacing=4,
+        )
+
         self.use_app_settings_switch = ft.Switch(
             label=" Use app settings",
             label_text_style=_SWITCH_LABEL,
@@ -63,13 +104,19 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         self.use_app_settings_row = ft.Row(
             [self.use_app_settings_switch],
             alignment=ft.MainAxisAlignment.START,
-            width=width,
+            width=inner,
         )
         self.use_app_settings_description = ft.Text(
             "Checked values come from the app. Uncheck to keep different "
             "values for this set. Only settings for this kind of set are shown.",
             size=14,
-            width=width,
+            width=inner,
+        )
+
+        self.tts_description = ft.Text(
+            f"Options for {kind_label.lower()} sets.",
+            size=14,
+            width=inner,
         )
         self.language_dropdown = ft.Dropdown(
             label="Language",
@@ -77,7 +124,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             options=[
                 ft.DropdownOption(key=code, text=label) for code, label in TTS_LANGUAGES
             ],
-            width=width,
+            width=inner,
             border_color=_FORM_BORDER_COLOR,
             disabled=use_app,
             on_select=self.on_language_select,
@@ -147,32 +194,73 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             divisions=divisions,
             initial_value=settings.queue_size,
             on_change=self.on_queue_change,
-            width=width,
+            width=inner,
         )
         self.queue_slider.slider.disabled = use_app
 
-        self.back_button = ft.Button(
-            content="Back",
-            icon=ft.Icons.ARROW_BACK,
-            on_click=self.on_back_click,
-            tooltip="Back (Ctrl+B)",
+        self.source_heading = self._section_heading("Source", inner)
+        self.tts_heading = self._section_heading("Text to speech", inner)
+        self.learning_heading = self._section_heading("Learning", inner)
+
+        self.source_card = self._section_card(
+            [
+                self.source_heading,
+                self.use_app_settings_row,
+                self.use_app_settings_description,
+            ],
+            width,
+            inner,
         )
-        self.buttons_row = ft.Row(
-            [self.back_button],
-            alignment=ft.MainAxisAlignment.CENTER,
+        self.tts_card = self._section_card(
+            [
+                self.tts_heading,
+                self.tts_description,
+                self.language_dropdown,
+                *option_rows,
+            ],
+            width,
+            inner,
+        )
+        self.learning_card = self._section_card(
+            [
+                self.learning_heading,
+                self.retry_row,
+                self.queue_slider,
+            ],
+            width,
+            inner,
         )
 
         self.controls = [
-            self.heading,
-            self.kind_text,
-            self.use_app_settings_row,
-            self.use_app_settings_description,
-            self.language_dropdown,
-            *option_rows,
-            self.retry_row,
-            self.queue_slider,
-            self.buttons_row,
+            self.top_bar,
+            ft.Container(height=16),
+            self.source_card,
+            ft.Container(height=12),
+            self.tts_card,
+            ft.Container(height=12),
+            self.learning_card,
+            ft.Container(height=24),
         ]
+
+    @staticmethod
+    def _inner_width(form_width: float) -> float:
+        return max(0, form_width - 2 * _CARD_PADDING)
+
+    @staticmethod
+    def _section_heading(text: str, width: float) -> ft.Text:
+        return ft.Text(text, size=18, weight=ft.FontWeight.BOLD, width=width)
+
+    @staticmethod
+    def _section_card(
+        children: list[ft.Control], form_width: float, inner_width: float
+    ) -> ft.Container:
+        return ft.Container(
+            content=ft.Column(children, spacing=12, width=inner_width),
+            padding=_CARD_PADDING,
+            border=ft.Border.all(1.5, _FORM_BORDER_COLOR),
+            border_radius=8,
+            width=form_width,
+        )
 
     def _switch(self, label: str, value: bool, disabled: bool, on_change) -> ft.Switch:
         return ft.Switch(
@@ -187,23 +275,30 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         return ft.Row(
             [switch],
             alignment=ft.MainAxisAlignment.START,
-            width=self._form_width,
+            width=self._inner_width(self._form_width),
         )
 
     def apply_layout(self, metrics: LayoutMetrics | None = None) -> None:
         metrics = self.resolve_layout_metrics(metrics)
         self._form_width = metrics.form_width
+        inner = self._inner_width(metrics.form_width)
+        self.top_bar.width = metrics.form_width
+        for card in (self.source_card, self.tts_card, self.learning_card):
+            card.width = metrics.form_width
+            card.content.width = inner
         for control in (
-            self.heading,
-            self.kind_text,
+            self.source_heading,
+            self.tts_heading,
+            self.learning_heading,
             self.use_app_settings_description,
             self.use_app_settings_row,
+            self.tts_description,
             self.language_dropdown,
             self.retry_row,
             *self.option_rows,
         ):
-            control.width = metrics.form_width
-        self.queue_slider.apply_layout(metrics.form_width)
+            control.width = inner
+        self.queue_slider.apply_layout(inner)
         self.update_if_mounted()
 
     def did_mount(self):

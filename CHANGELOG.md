@@ -12,6 +12,10 @@ body and fails if it is missing.
 ## [Unreleased]
 
 ### Added
+- Per-set learning and speech settings from the set tile menu: a set can keep its own language, speakers, retype-until-correct rule, and queue size, while empty catalog cells still follow the app defaults; deleting a set drops TTS audio for languages no remaining set still uses
+- Set settings screen with a top bar (back, set title, kind chip) and Source / Text to speech / Learning section cards, including a Use app settings switch
+- Icon-only shortcut beside Start on the word list that opens that set's settings
+- Icons on set tile popup menu items (Edit, Set settings, Change title, Set default progress, Delete)
 - Ctrl+S shortcut to Save on the edit-set screen, with Save (Ctrl+S) and Back (Ctrl+B) button tooltips
 - Ctrl+B on the edit-set screen uses the same Back path as the button (unsaved-changes dialog when needed)
 - Settings sliders for the practice-queue size of word formations (3–10, default 5) and definitions (4–15, default 10)
@@ -19,10 +23,13 @@ body and fails if it is missing.
 - Home empty state when there are no set tiles, with a two-line prompt to create a set with the + button or add the demo sets, and an Add demo sets button (playlist-add icon) that installs the same demo sets as Settings; the prompt and button disappear once tiles exist and return if every set is deleted; Import/Export does not show this empty state
 
 ### Changed
+- Require Flet 1.0.5+ and migrate TextField / Dropdown borders to `OutlineInputBorder` (including focused-state maps where needed)
+- Document per-set learning and speech settings, and that app Settings values are the defaults for sets without overrides
 - Navigational back shortcut from Ctrl+Left Arrow to Ctrl+B (Meta/Cmd+B); word-list Back button tooltip shows the shortcut
 - Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer
 
 ### Fixed
+- Update the empty-home patch test for the Flet 1.0 `Message` API so pytest collection succeeds after the upgrade
 - Ignore AltGr (Ctrl+Alt) in Ctrl shortcuts so typing Polish ś with AltGr+S does not trigger Save / speak
 - Strip spaces around `/` when splitting a stored answer into alternatives, so `to rely on STH / SB` accepts `to rely on STH` or `SB`
 

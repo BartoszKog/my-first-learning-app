@@ -430,7 +430,9 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 ft.DropdownOption(key=code, text=label) for code, label in TTS_LANGUAGES
             ],
             width=self._content_width,
-            border_color=_FORM_BORDER_COLOR,
+            border=ft.OutlineInputBorder(
+                side=ft.BorderSide(color=_FORM_BORDER_COLOR),
+            ),
             on_select=self.on_tts_language_select,
         )
         self.tts_auto_speak_switch = ft.Switch(

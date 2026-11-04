@@ -67,9 +67,16 @@ class TilesContainer(ft.Container):
             # fill_color = closed field (blend with Card); bgcolor = open menu panel
             fill_color=ft.Colors.TRANSPARENT,
             bgcolor=ft.Colors.SURFACE,
-            border_color=ft.Colors.TRANSPARENT,
-            focused_border_color=ft.Colors.TEAL_ACCENT,
-            border_radius=10,
+            border={
+                ft.ControlState.DEFAULT: ft.OutlineInputBorder(
+                    side=ft.BorderSide(color=ft.Colors.TRANSPARENT),
+                    border_radius=10,
+                ),
+                ft.ControlState.FOCUSED: ft.OutlineInputBorder(
+                    side=ft.BorderSide(color=ft.Colors.TEAL_ACCENT),
+                    border_radius=10,
+                ),
+            },
             leading_icon=ft.Icons.SORT,
             text_align=ft.TextAlign.CENTER,
             disabled=AppSession.is_navigation_disabled(),

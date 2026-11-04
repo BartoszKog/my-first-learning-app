@@ -16,11 +16,14 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
         self._form_width = width
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
+        form_border = ft.OutlineInputBorder(
+            side=ft.BorderSide(color=ft.Colors.BLUE_GREY_700),
+        )
         self.title_field = ft.TextField(
             label="Title",
             width=width,
             max_length=TITLE_MAX_LENGTH,
-            border_color=ft.Colors.BLUE_GREY_700,
+            border=form_border,
         )
 
         self.subtitle_field = ft.TextField(
@@ -29,7 +32,7 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
             multiline=True,
             min_lines=1,
             max_lines=2,
-            border_color=ft.Colors.BLUE_GREY_700,
+            border=form_border,
         )
 
         self.kind_dropdown = ft.Dropdown(
@@ -39,7 +42,7 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
                 ft.DropdownOption("Definitions"),
             ],
             width=width,
-            border_color=ft.Colors.BLUE_GREY_700,
+            border=form_border,
         )
         def on_cancel_click(e):
             go_back(e.page)

@@ -46,12 +46,22 @@ class SearchControl(ft.Row):
             focused_bgcolor=self.FIELD_FILL,
             color=self.ICON_COLOR,
             cursor_color=self.ICON_COLOR,
-            border=ft.InputBorder.OUTLINE,
-            border_color=ft.Colors.TRANSPARENT,
-            focused_border_color=ft.Colors.with_opacity(0.65, self.ICON_COLOR),
-            border_width=1.5,
-            focused_border_width=2,
-            border_radius=28,
+            border={
+                ft.ControlState.DEFAULT: ft.OutlineInputBorder(
+                    side=ft.BorderSide(
+                        color=ft.Colors.TRANSPARENT,
+                        width=1.5,
+                    ),
+                    border_radius=28,
+                ),
+                ft.ControlState.FOCUSED: ft.OutlineInputBorder(
+                    side=ft.BorderSide(
+                        color=ft.Colors.with_opacity(0.65, self.ICON_COLOR),
+                        width=2,
+                    ),
+                    border_radius=28,
+                ),
+            },
             dense=True,
             content_padding=ft.Padding.symmetric(horizontal=16, vertical=12),
         )

@@ -125,7 +125,9 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
                 ft.DropdownOption(key=code, text=label) for code, label in TTS_LANGUAGES
             ],
             width=inner,
-            border_color=_FORM_BORDER_COLOR,
+            border=ft.OutlineInputBorder(
+                side=ft.BorderSide(color=_FORM_BORDER_COLOR),
+            ),
             disabled=use_app,
             on_select=self.on_language_select,
         )

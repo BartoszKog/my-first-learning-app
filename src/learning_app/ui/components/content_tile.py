@@ -59,11 +59,31 @@ class ContentTile(ft.Card):
         self.popUpButton = ft.PopupMenuButton(
             icon=ft.Icons.MORE_VERT,
             items=[
-                ft.PopupMenuItem(content="Edit", on_click=self.edit),
-                ft.PopupMenuItem(content="Set settings", on_click=self.open_set_settings),
-                ft.PopupMenuItem(content="Change title", on_click=self.show_change_title_dialog),
-                ft.PopupMenuItem(content="Set default progress", on_click=self.show_set_default_progress_dialog),
-                ft.PopupMenuItem(content="Delete", on_click=self.show_delete_dialog),
+                ft.PopupMenuItem(
+                    content="Edit",
+                    icon=ft.Icons.EDIT,
+                    on_click=self.edit,
+                ),
+                ft.PopupMenuItem(
+                    content="Set settings",
+                    icon=ft.Icons.SETTINGS,
+                    on_click=self.open_set_settings,
+                ),
+                ft.PopupMenuItem(
+                    content="Change title",
+                    icon=ft.Icons.TITLE,
+                    on_click=self.show_change_title_dialog,
+                ),
+                ft.PopupMenuItem(
+                    content="Set default progress",
+                    icon=ft.Icons.RESTART_ALT,
+                    on_click=self.show_set_default_progress_dialog,
+                ),
+                ft.PopupMenuItem(
+                    content="Delete",
+                    icon=ft.Icons.DELETE,
+                    on_click=self.show_delete_dialog,
+                ),
             ],
             on_open=lambda e: self.file_not_found_dialog(e) if not self.__file_exist() else None,
         )

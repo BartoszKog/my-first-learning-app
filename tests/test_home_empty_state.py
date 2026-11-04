@@ -8,7 +8,7 @@ import msgpack
 import pytest
 from flet.controls.base_control import BaseControl
 from flet.messaging.connection import Connection
-from flet.messaging.protocol import ClientMessage, configure_encode_object_for_msgpack
+from flet.messaging.protocol import Message, configure_encode_object_for_msgpack
 from flet.messaging.session import Session
 from flet.pubsub.pubsub_hub import PubSubHub
 
@@ -191,11 +191,11 @@ class _EncodingConnection(Connection):
 
     def __init__(self):
         super().__init__()
-        self.messages: list[ClientMessage] = []
+        self.messages: list[Message] = []
         self.patch_events: list[list[tuple]] = []
         self.pubsubhub = PubSubHub()
 
-    def send_message(self, message: ClientMessage):
+    def send_message(self, message: Message):
         msgpack.packb(
             [message.action, message.body],
             default=configure_encode_object_for_msgpack(BaseControl),

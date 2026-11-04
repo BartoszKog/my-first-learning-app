@@ -22,7 +22,7 @@ class WordField(ft.TextField):
         self.width = width
         self.read_only = read_only
         self.width_border_indicator = 1
-        self.default_border_color = self.border_color
+        self.default_border = self.border
 
         if autofocus:
             self.autofocus = True
@@ -34,22 +34,24 @@ class WordField(ft.TextField):
     def get_value(self):
         return self.value
 
+    def _indicator_border(self, color) -> ft.OutlineInputBorder:
+        return ft.OutlineInputBorder(
+            side=ft.BorderSide(color=color, width=self.width_border_indicator),
+        )
+
     def set_green_border(self):
-        self.border_color = ft.Colors.GREEN
-        self.border_width = self.width_border_indicator
+        self.border = self._indicator_border(ft.Colors.GREEN)
         self.update()
 
     def set_red_border(self):
-        self.border_color = ft.Colors.RED
-        self.border_width = self.width_border_indicator
+        self.border = self._indicator_border(ft.Colors.RED)
         self.update()
 
     def reset(self):
-        self.border_color = self.default_border_color
+        self.border = self.default_border
         self.value = ""
         self.disabled = False
         self.read_only = False
-        self.border_width = 1
         self.update()
 
     def disable(self):
@@ -92,7 +94,13 @@ class WordField(ft.TextField):
 
     def is_indicated_correct(self) -> bool:
         """Return whether this field is locked after a correct Check."""
-        return bool(self.read_only) and self.border_color == ft.Colors.GREEN
+        if not self.read_only:
+            return False
+        border = self.border
+        if isinstance(border, dict):
+            border = border.get(ft.ControlState.DEFAULT)
+        side = getattr(border, "side", None)
+        return side is not None and side.color == ft.Colors.GREEN
 
     def is_awaiting_input(self) -> bool:
         """Return whether this field is editable and still empty."""

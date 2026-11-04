@@ -73,7 +73,9 @@ push_view(page, SET_LEARN_SESSION_ROUTE, file="animals_words.csv")
 ```
 
 `SET_LEARN_ROUTE` is the set menu; `SET_LEARN_SESSION_ROUTE` is the active
-practice view. Both require `file` (the set basename).
+practice view. Both require `file` (the set basename). Home **Set settings**
+and the settings button on that menu open `SET_SETTINGS_ROUTE`
+(`/set/settings`) with the same `file` parameter.
 
 `push_view()` is the normal entry point for a registered Deep route. If it
 receives a Shell route, the router does not push that route onto the stack; it

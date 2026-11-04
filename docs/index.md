@@ -109,6 +109,7 @@ src/
     data/
       file_path_manager.py  # storage roots, csv_files, tts_cache paths
       app_data.py           # catalog CRUD, load/save, AppData session
+      set_settings.py       # per-set learning and TTS overrides on files.csv
       constants.py          # CSV column enums, MAX_ROWS, import messages
       csv_processor.py      # import validation and specialized saves
       demo_sets.py          # bundled demo registry, reserved names, install
@@ -132,8 +133,8 @@ src/
       app_session.py        # page, export FilePicker, TTS playback, navigation lock
       preferences.py        # SharedPreferences accessor
       app_theme.py          # theme mode and page bgcolor
-      tts_preferences.py    # TTS language and auto-speak flags
-      learn_preferences.py  # retry-until-correct learn-session flag
+      tts_preferences.py    # app-default TTS language, auto-speak, and speakers
+      learn_preferences.py  # app-default retry flag and practice-queue sizes
       screens/              # application screens (+ _screen_template.py)
       components/           # reusable controls
 tests/                      # pytest / flet test (not packaged into the app)

@@ -30,6 +30,7 @@ preferences, and the first Home route is described in
 | --- | --- |
 | `data/file_path_manager.py` | Resolves storage directories, CSV paths, and the TTS cache root. |
 | `data/app_data.py` | Set catalog CRUD, load/save, and in-memory learning session state. |
+| `data/set_settings.py` | Per-set learning and TTS overrides on the catalog row. |
 | `data/constants.py` | CSV column enums, row cap, and import error/warning messages. |
 | `data/csv_processor.py` | Import validation, repair, and save paths for CSV sets. |
 | `data/demo_sets.py` | Bundled demo templates, reserved basenames, and install into storage. |
@@ -70,8 +71,8 @@ and the screen map.
 | `ui/app_session.py` | In-memory session bag for app-wide runtime UI services (including TTS playback). |
 | `ui/preferences.py` | `SharedPreferences` factory for durable settings. |
 | `ui/app_theme.py` | Theme mode and preference-backed page bgcolor. |
-| `ui/tts_preferences.py` | TTS language and auto-speak flags backed by preferences. |
-| `ui/learn_preferences.py` | Retry-until-correct flag for the learn queue, backed by preferences. |
+| `ui/tts_preferences.py` | App-default TTS language, auto-speak, and speaker flags, backed by preferences. A set may override them. |
+| `ui/learn_preferences.py` | App-default retry flag and practice-queue sizes, backed by preferences. A set may override them. |
 
 ### Screens
 

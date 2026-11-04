@@ -43,6 +43,13 @@ class FilesColumns(Enum):
     CREATED_AT = "created_at"
     LAST_USED = "last_used"
     USE_COUNT = "use_count"
+    TTS_LANGUAGE = "tts_language"
+    TTS_AUTO_SPEAK = "tts_auto_speak"
+    SPEAKERS_WORD_FORMATIONS = "speakers_word_formations"
+    SPEAKERS_WORD = "speakers_word"
+    SPEAKERS_DEFINITION = "speakers_definition"
+    RETRY_UNTIL_CORRECT = "retry_until_correct"
+    QUEUE_SIZE = "queue_size"
 
 
 class SetSortMode(Enum):

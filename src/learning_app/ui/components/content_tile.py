@@ -17,7 +17,7 @@ from learning_app.ui.navigation import push_view
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.app_session import AppSession
 from learning_app.ui.app_theme import AppTheme
-from learning_app.ui.route_paths import SET_EDIT_ROUTE, SET_LEARN_ROUTE
+from learning_app.ui.route_paths import SET_EDIT_ROUTE, SET_LEARN_ROUTE, SET_SETTINGS_ROUTE
 
 
 class ContentTile(ft.Card):
@@ -59,10 +59,31 @@ class ContentTile(ft.Card):
         self.popUpButton = ft.PopupMenuButton(
             icon=ft.Icons.MORE_VERT,
             items=[
-                ft.PopupMenuItem(content="Edit", on_click=self.edit),
-                ft.PopupMenuItem(content="Change title", on_click=self.show_change_title_dialog),
-                ft.PopupMenuItem(content="Set default progress", on_click=self.show_set_default_progress_dialog),
-                ft.PopupMenuItem(content="Delete", on_click=self.show_delete_dialog),
+                ft.PopupMenuItem(
+                    content="Edit",
+                    icon=ft.Icons.EDIT,
+                    on_click=self.edit,
+                ),
+                ft.PopupMenuItem(
+                    content="Set settings",
+                    icon=ft.Icons.SETTINGS,
+                    on_click=self.open_set_settings,
+                ),
+                ft.PopupMenuItem(
+                    content="Change title",
+                    icon=ft.Icons.TITLE,
+                    on_click=self.show_change_title_dialog,
+                ),
+                ft.PopupMenuItem(
+                    content="Set default progress",
+                    icon=ft.Icons.RESTART_ALT,
+                    on_click=self.show_set_default_progress_dialog,
+                ),
+                ft.PopupMenuItem(
+                    content="Delete",
+                    icon=ft.Icons.DELETE,
+                    on_click=self.show_delete_dialog,
+                ),
             ],
             on_open=lambda e: self.file_not_found_dialog(e) if not self.__file_exist() else None,
         )
@@ -91,6 +112,9 @@ class ContentTile(ft.Card):
 
     def edit(self, e):
         push_view(e.page, SET_EDIT_ROUTE, file=self.file_name)
+
+    def open_set_settings(self, e):
+        push_view(e.page, SET_SETTINGS_ROUTE, file=self.file_name)
 
     def show_change_title_dialog(self, e):
         title_field = ft.TextField(

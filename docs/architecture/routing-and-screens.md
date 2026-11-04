@@ -123,6 +123,7 @@ builds a `TilesContainer` and registers it with
 | `/info` | Shell | `InfoControl` | In-app product information |
 | `/create-set` | Deep | `CreateSetMenu` | Create an empty set, then open edit |
 | `/set/edit` | Deep | `EditSetMenu` | Edit cards for one set |
+| `/set/settings` | Deep | `SetSettingsMenu` | One set's learning and speech overrides ([Per-set settings](data-and-storage.md#per-set-settings)) |
 | `/set/learn` | Deep | `WordFields` or `WordDefinitionField` (`session=False`) | Learn menu / word list |
 | `/set/learn/session` | Deep | Same control (`session=True`) | Active learn session |
 

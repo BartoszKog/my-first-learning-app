@@ -144,6 +144,7 @@ nav:
       - Data & learning:
           - File path manager: reference/file_path_manager.md
           - App data: reference/app_data.md
+          - Set settings: reference/set_settings.md
           - Constants: reference/constants.md
           - CSV processor: reference/csv_processor.md
           - Demo sets: reference/demo_sets.md

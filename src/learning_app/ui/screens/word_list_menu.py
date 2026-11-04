@@ -4,6 +4,7 @@ import flet as ft
 
 from learning_app.data.app_data import AppData, get_kind_of_file_and_validate, set_default_progress
 from learning_app.data.constants import PartsOfSpeech, StatsColumns, WordDefinitions
+from learning_app.data.set_settings import EffectiveSetSettings, effective_set_settings
 from learning_app.tts import TtsError, TtsNetworkError
 from learning_app.ui.app_session import AppSession
 from learning_app.ui.components.controls import ProgressBar
@@ -13,8 +14,7 @@ from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.keyboard_shortcuts import pop_ctrl_enter_action, push_ctrl_enter_action
 from learning_app.ui.navigation import go_back, push_view
 from learning_app.ui.page_functions import create_alert_dialog
-from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE
-from learning_app.ui.tts_preferences import TtsPreferences
+from learning_app.ui.route_paths import SET_LEARN_SESSION_ROUTE, SET_SETTINGS_ROUTE
 
 BORDERS = {
     "To learn": ft.Border.all(1.5, ft.Colors.BLUE_GREY_700),
@@ -40,13 +40,13 @@ def _is_blank_cell(value) -> bool:
     return value is None or str(value).strip() in ("", "nan")
 
 
-def _speaker_enabled_for(column: str) -> bool:
+def _speaker_enabled_for(column: str, settings: EffectiveSetSettings) -> bool:
     if column in _WORD_FORMATION_COLUMNS:
-        return TtsPreferences.speakers_word_formations
+        return settings.speakers_word_formations
     if column == WordDefinitions.WORD.value:
-        return TtsPreferences.speakers_word
+        return settings.speakers_word
     if column == WordDefinitions.DEFINITION.value:
-        return TtsPreferences.speakers_definition
+        return settings.speakers_definition
     return False
 
 
@@ -79,7 +79,7 @@ def _wrap_space_cell(text: str, char_threshold: float) -> str:
 
 
 class WordContainer(ft.Container):
-    def __init__(self, words_row, width, was_in_previous_session=False):
+    def __init__(self, words_row, width, was_in_previous_session=False, settings: EffectiveSetSettings | None = None):
         super().__init__()
         # checking if the row have correct columns
         stats_columns = [
@@ -123,6 +123,7 @@ class WordContainer(ft.Container):
             and words_row[StatsColumns.WORD_TO_LEARN.value] == False
 
         self.in_previous_session = was_in_previous_session
+        self._settings = settings
 
         if self.to_learn:
             # indicating by gray border
@@ -161,7 +162,11 @@ class WordContainer(ft.Container):
             if word in stats_columns:
                 continue
             original = words_row[word]
-            show_speaker = (not _is_blank_cell(original)) and _speaker_enabled_for(word)
+            show_speaker = (
+                self._settings is not None
+                and not _is_blank_cell(original)
+                and _speaker_enabled_for(word, self._settings)
+            )
             wrap_width = width - _SPEAKER_RESERVE_PX if show_speaker else width
             char_threshold = 20 / 250 * wrap_width
             if word in _DEFINITION_CONTENT_COLUMNS:
@@ -209,7 +214,8 @@ class WordContainer(ft.Container):
 
     async def _speak_cell(self, e, text: str):
         try:
-            await AppSession.speak(text, TtsPreferences.language)
+            language = self._settings.language if self._settings is not None else "en"
+            await AppSession.speak(text, language)
         except TtsNetworkError:
             self._show_tts_error(
                 getattr(e, "page", None),
@@ -318,6 +324,8 @@ class WordListMenu(ft.Column):
             elif e.control is self.back_button:
                 self._on_back()
                 go_back(e.page)
+            elif e.control is self.settings_button:
+                push_view(e.page, SET_SETTINGS_ROUTE, file=self.file_name)
 
         self.start_button = ft.Button(
             content="Start",
@@ -331,6 +339,11 @@ class WordListMenu(ft.Column):
             icon=ft.Icons.ARROW_BACK,
             on_click=on_button_click,
             tooltip="Back (Ctrl+B)",
+        )
+        self.settings_button = ft.FilledTonalButton(
+            icon=ft.Icons.SETTINGS,
+            on_click=on_button_click,
+            tooltip="Set settings",
         )
         self._ctrl_enter_registered = False
 
@@ -351,7 +364,7 @@ class WordListMenu(ft.Column):
             self.filter_chips_row,
             self.container,
             ft.Row(
-                [self.back_button, self.start_button],
+                [self.back_button, self.start_button, self.settings_button],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
         ]
@@ -383,12 +396,14 @@ class WordListMenu(ft.Column):
 
     def __add_words_to_list_view(self, label):
         self.words.refresh()
+        settings = effective_set_settings(self.file_name)
         for row in self.words.words.iterrows():
             is_in_previous_session = self.words.was_this_index_drawn(row[0])
             wc = WordContainer(
                 row[1],
                 width=self._content_width,
                 was_in_previous_session=is_in_previous_session,
+                settings=settings,
             )
             if self.__should_add_word(label, wc):
                 self.lv.controls.append(wc)

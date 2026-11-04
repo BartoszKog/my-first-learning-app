@@ -43,7 +43,8 @@ See the [File path manager API](../reference/file_path_manager.md).
 ## Set catalog: `files.csv`
 
 The catalog lists every learning set the Home and export UIs can show.
-Columns come from `FilesColumns` in `data/constants.py`:
+Columns come from `FilesColumns` in `data/constants.py`. Identity and usage
+columns:
 
 | Column | Meaning |
 | --- | --- |
@@ -55,8 +56,10 @@ Columns come from `FilesColumns` in `data/constants.py`:
 | `use_count` | How many times the learn screen was opened |
 
 Older catalogs that only have the first three columns are migrated on read:
-missing fields are filled with defaults and the file is rewritten. Validation
-still requires only `file_name`, `title`, and `subtitle`.
+missing fields are filled with defaults and the file is rewritten. The seven
+override columns below are added empty, so an existing set keeps the app
+settings until someone stores a value. Validation still requires only
+`file_name`, `title`, and `subtitle`.
 
 Catalog helpers in `data/app_data.py`:
 
@@ -79,6 +82,38 @@ as written. Empty subtitle cells still become empty strings after load.
 
 `get_file_names_and_titles()` returns full paths via `FilePathManager` so tile
 code can open the matching CSV without recomputing directories.
+
+### Per-set settings {#per-set-settings}
+
+Seven catalog columns store one set's learning and speech choices. An empty
+cell inherits the matching app setting. A non-empty cell is that set's own
+value, including `false`. Columns that belong to the other set kind stay
+empty and are ignored.
+
+| Column | Applies to | Empty cell uses |
+| --- | --- | --- |
+| `tts_language` | both kinds | `TtsPreferences.language` |
+| `tts_auto_speak` | `definitions` | `TtsPreferences.auto_speak_definitions` |
+| `speakers_word_formations` | `words` | `TtsPreferences.speakers_word_formations` |
+| `speakers_word` | `definitions` | `TtsPreferences.speakers_word` |
+| `speakers_definition` | `definitions` | `TtsPreferences.speakers_definition` |
+| `retry_until_correct` | both kinds | `LearnPreferences.retry_until_correct` |
+| `queue_size` | both kinds | the queue size for that kind on `LearnPreferences` |
+
+`data/set_settings.py` (`effective_set_settings`) fills the blanks.
+`add_new_file` and demo install write empty cells. Home **Set settings** and
+the learn-menu settings button open `/set/settings`, where **Use app
+settings** copies the current app values into the kind's columns or clears
+them again. `set_default_progress` does not touch these cells. Settings
+**Restore defaults** resets the app preferences only: sets with empty cells
+follow the restored values, and sets with their own cells stay as stored.
+
+A queue cell is clamped when read (word formations 3–10, definitions 4–15).
+Text that is not a whole number falls back to the app size. An unknown
+language code becomes English on read. Bool cells are the text `true` or
+`false`; any other non-empty text is off.
+
+See the [Set settings API](../reference/set_settings.md).
 
 ## Set files: words and definitions
 
@@ -130,14 +165,18 @@ See the [Constants API](../reference/constants.md) and
 
 Pronunciation MP3s live under `tts_cache/<hash[:2]>/<hash>.mp3` plus a JSON
 sidecar (`learning_app/tts/`). Cache keys include provider, voice, language,
-and normalized text. Garbage collection keeps a recording while its phrase
-still appears in any set CSV (language is ignored), and runs after
-`delate_set` and content saves with `prune_tts=True`. Empty shard folders may
-remain after GC.
+and normalized text. Garbage collection keeps a recording while some set still
+speaks that phrase in that language. The language is the set's
+`tts_language` cell, or the app language when the cell is empty. The same
+spelling in two languages is two live pairs. GC runs after `delate_set` and
+content saves with `prune_tts=True`. Saving a set's language from
+`/set/settings` does not run GC until the next content edit or delete. Empty
+shard folders may remain after GC.
 
 Playback is session-owned (`AppSession.speak`); screens must not construct
-`Audio`. Language and auto-speak flags are preferences — see
-[Text to speech](../guides/state-and-persistence.md#text-to-speech).
+`Audio`. The language and auto-speak used for a set are the effective values
+from [Per-set settings](#per-set-settings). App defaults live in preferences —
+see [Text to speech](../guides/state-and-persistence.md#text-to-speech).
 Signatures are in the [TTS API](../reference/tts.md).
 
 ## `AppData` versus catalog helpers

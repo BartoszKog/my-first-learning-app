@@ -147,7 +147,7 @@ Theme **mode** and **content background** are preference-backed and owned at
 runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
 `ui/screens/settings_control.py`) is the UI that edits them. The same screen
-also hosts **Defaults** / **Restore defaults** (resets the preference keys documented on that page and does not modify learning sets, demo install, or CSV progress), **Text to speech** (language, auto-speak, and word-list speakers; see
+also hosts **Defaults** / **Restore defaults** (resets the preference keys documented on that page and does not modify learning sets, their per-set overrides, demo install, or CSV progress), **Text to speech** (language, auto-speak, and word-list speakers; see
 [Text to speech](#text-to-speech)), **Learning** (retry until correct; see
 [Learning](#learning)), and **Demo sets** (install bundled samples
 via `install_demo_sets()`; that path writes CSVs and `files.csv`, not
@@ -205,16 +205,20 @@ intentionally design a second prefs surface for them.
 ## Text to speech
 
 TTS **language**, **auto-speak on definitions Check**, and **word-list
-speakers** are preference-backed and owned at runtime by `TtsPreferences` in
-`ui/tts_preferences.py`. Settings is the UI that edits them. Under Text to
-speech, **Word list speakers** separates word-formation switches from
-definition-card switches, warns that definition text may not match the global
-TTS language, and shows always-visible sample cards under Word formations and
-Definitions.
-Definitions learn (`WordDefinitionField`) calls `AppSession.speak` with that
-language; auto-speak does not show error snackbars (the speaker button still
-does). Word-list cards (`WordContainer`) show per-field speakers when the
-matching switch is on.
+speakers** have app defaults owned at runtime by `TtsPreferences` in
+`ui/tts_preferences.py`. Settings is the UI that edits those defaults. A set
+can store its own values in `files.csv`; an empty cell keeps using the app
+default. See
+[Per-set settings](../architecture/data-and-storage.md#per-set-settings).
+Under Text to speech, **Word list speakers** separates word-formation switches
+from definition-card switches, warns that definition text may not match the
+global TTS language, and shows always-visible sample cards under Word
+formations and Definitions.
+Definitions learn (`WordDefinitionField`) calls `AppSession.speak` with the
+set's effective language; auto-speak uses the set's effective flag and does
+not show error snackbars (the speaker button still does). Word-list cards
+(`WordContainer`) show per-field speakers when the set's effective switch is
+on.
 
 Cached MP3s live under `tts_cache/` and are pruned when set content is deleted
 or rewritten — see [Data and storage](../architecture/data-and-storage.md#tts-cache).
@@ -234,22 +238,25 @@ auto-speak on, word-formation and word speakers on, definition speakers off).
 
 ### Related
 
-- Screen: `/settings` in
+- Screen: `/settings` for the app defaults, `/set/settings` for one set, in
   [Routing and screens](../architecture/routing-and-screens.md)
 - Playback: [App session](../reference/app_session.md)
 - APIs: [TTS preferences](../reference/tts_preferences.md),
+  [Set settings](../reference/set_settings.md),
   [TTS](../reference/tts.md)
 
 ## Learning {#learning}
 
 The **retype until correct** switch and the two practice-queue size sliders
-are preference-backed and owned at runtime by `LearnPreferences` in
-`ui/learn_preferences.py`. Settings is the UI that edits them.
-`BaseWordField` reads the retry flag during Check: a wrong first answer
-still writes statistics once, then extra attempts stay on the same card and
-do not call `good_answer_at_current_row` / `bad_answer_at_current_row`.
-`draw_index_group` reads the queue sizes for the next group. Queue rules
-remain on `AppData` — see
+are the app defaults, owned at runtime by `LearnPreferences` in
+`ui/learn_preferences.py`. Settings is the UI that edits those defaults. A
+set can store `retry_until_correct` and `queue_size` on its catalog row; an
+empty cell keeps the app default.
+`BaseWordField` reads the set's effective retry flag during Check: a wrong
+first answer still writes statistics once, then extra attempts stay on the
+same card and do not call `good_answer_at_current_row` /
+`bad_answer_at_current_row`. `draw_index_group` reads the set's effective
+queue size for the next group. Queue rules remain on `AppData` — see
 [Learning algorithm](../concepts/learning-algorithm.md#retry-until-correct).
 
 ### Preference keys
@@ -267,10 +274,11 @@ clamped to the minimum or maximum.
 
 ### Related
 
-- Screen: `/settings` in
+- Screen: `/settings` for the app defaults, `/set/settings` for one set, in
   [Routing and screens](../architecture/routing-and-screens.md)
 - Session UI: [UI components](../concepts/ui-components.md)
-- API: [Learn preferences](../reference/learn_preferences.md)
+- API: [Learn preferences](../reference/learn_preferences.md),
+  [Set settings](../reference/set_settings.md)
 
 ## Where `BodyRegistry` fits
 
@@ -283,11 +291,12 @@ preferences, route parameters, form state, or general domain data. See
 ## Where set data fits
 
 Catalog rows, set CSVs, and learning statistics belong on disk via
-`data/file_path_manager.py` and `data/app_data.py`. Resetting progress uses
-`set_default_progress`; deleting a set uses `delate_set`. During a learn
-session, queue and answer transitions live on `AppData` — not in
-`AppSession`. The retry-until-correct switch and practice-queue sizes live
-in `LearnPreferences`.
+`data/file_path_manager.py` and `data/app_data.py`. Per-set learning and
+speech overrides are cells on the catalog row (`data/set_settings.py`), not
+preference keys. Resetting progress uses `set_default_progress`; deleting a
+set uses `delate_set`. During a learn session, queue and answer transitions
+live on `AppData` — not in `AppSession`. Retry and queue size for that
+session are the set's effective values.
 See [Data and storage](../architecture/data-and-storage.md) and
 [Learning algorithm](../concepts/learning-algorithm.md).
 
@@ -298,6 +307,7 @@ For generated contracts, see the
 [TTS preferences API](../reference/tts_preferences.md),
 [TTS API](../reference/tts.md),
 [Learn preferences API](../reference/learn_preferences.md),
+[Set settings API](../reference/set_settings.md),
 [Body registry API](../reference/body_registry.md),
 [File path manager API](../reference/file_path_manager.md),
 [App data API](../reference/app_data.md),

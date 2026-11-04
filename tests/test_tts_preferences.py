@@ -108,7 +108,9 @@ def test_settings_includes_tts_section(restore_tts_preferences):
         screen.tts_speakers_definitions_preview,
     ]
     assert "different language" in screen.tts_speakers_definition_hint.value
-    assert "globally" in screen.tts_speakers_definition_hint.value
+    assert "Set settings" in screen.tts_speakers_definition_hint.value
+    assert "Set settings" in screen.tts_description.value
+    assert "Pronounce after Check" in screen.tts_description.value
     assert screen.tts_speakers_group.controls == [
         screen.tts_speakers_heading,
         screen.tts_speakers_description,
@@ -129,6 +131,7 @@ def test_settings_includes_tts_section(restore_tts_preferences):
     assert _speaker_icon_count(screen.tts_speakers_definitions_preview) == 1
     assert screen.tts_section.controls == [
         screen.tts_heading,
+        screen.tts_description,
         screen.tts_language_dropdown,
         screen.tts_auto_speak_row,
         screen.tts_speakers_divider,

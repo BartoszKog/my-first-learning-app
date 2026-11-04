@@ -26,11 +26,14 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
         self.last_tab_index = 0
 
         # import controls
+        form_border = ft.OutlineInputBorder(
+            side=ft.BorderSide(color=ft.Colors.CYAN),
+        )
         self.title_field = ft.TextField(
             label="Title",
             value="",
             max_length=TITLE_MAX_LENGTH,
-            border_color=ft.Colors.CYAN,
+            border=form_border,
             on_focus=self.__on_focus_field,
             on_blur=self.__on_blur_field,
             visible=False,
@@ -42,7 +45,7 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
             multiline=True,
             min_lines=1,
             max_lines=2,
-            border_color=ft.Colors.CYAN,
+            border=form_border,
             on_focus=self.__on_focus_field,
             on_blur=self.__on_blur_field,
             visible=False,

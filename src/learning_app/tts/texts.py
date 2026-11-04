@@ -49,25 +49,31 @@ def speakable_phrases(text: str) -> list[str]:
     return phrases
 
 
-def collect_speakable_texts() -> set[str]:
-    """Return normalized content phrases still present in set CSVs.
+def collect_speakable_texts() -> set[tuple[str, str]]:
+    """Return phrases still spoken, paired with each set's TTS language.
 
     Statistics columns and empty cells are ignored. Unreadable set files are
-    skipped so GC can still run after a partial catalog failure.
+    skipped so GC can still run after a partial catalog failure. The language
+    is the set's ``tts_language`` override, or the app language when that
+    cell is empty. The same spelling in two languages yields two pairs.
 
     Returns:
-        Distinct slash-split phrases from ``*_words.csv`` and
+        Distinct ``(phrase, language)`` pairs from ``*_words.csv`` and
         ``*_definitions.csv`` under the CSV directory.
     """
+    from learning_app.data.set_settings import language_for_set_file
+
     csv_dir = Path(FilePathManager.get_csv_dir())
-    texts: set[str] = set()
+    texts: set[tuple[str, str]] = set()
     if not csv_dir.is_dir():
         return texts
 
     for path in csv_dir.iterdir():
         if not path.name.endswith(_SET_SUFFIXES):
             continue
-        texts.update(_texts_from_set_csv(path))
+        language = language_for_set_file(path.name)
+        for phrase in _texts_from_set_csv(path):
+            texts.add((phrase, language))
     return texts
 
 

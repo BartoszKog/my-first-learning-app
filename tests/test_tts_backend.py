@@ -14,6 +14,16 @@ from learning_app.tts.service import TtsService
 from learning_app.tts.texts import collect_speakable_texts, normalize_text, speakable_phrases
 
 
+@pytest.fixture
+def english_tts_language():
+    from learning_app.ui.tts_preferences import TtsPreferences
+
+    previous = TtsPreferences.language
+    TtsPreferences.language = "en"
+    yield
+    TtsPreferences.language = previous
+
+
 class FakeProvider(TtsProvider):
     name = "fake"
     voice = "test"
@@ -93,7 +103,7 @@ def test_cache_get_path_rejects_empty_mp3(tts_cache: TtsCache):
     assert tts_cache.get_path(key) is None
 
 
-def test_garbage_collect_keeps_live_phrases_across_languages(tts_cache: TtsCache):
+def test_garbage_collect_keeps_only_live_language_pairs(tts_cache: TtsCache):
     insult_en = tts_cache.make_key("fake", "en", "insult")
     insult_pl = tts_cache.make_key("fake", "pl", "insult")
     gone = tts_cache.make_key("fake", "en", "obsolete")
@@ -101,11 +111,11 @@ def test_garbage_collect_keeps_live_phrases_across_languages(tts_cache: TtsCache
     tts_cache.put(insult_pl, b"pl", text="insult", language="pl", provider="fake")
     tts_cache.put(gone, b"old", text="obsolete", language="en", provider="fake")
 
-    removed = tts_cache.garbage_collect({"insult"})
+    removed = tts_cache.garbage_collect({("insult", "en")})
 
-    assert removed == 1
+    assert removed == 2
     assert tts_cache.get_path(insult_en) is not None
-    assert tts_cache.get_path(insult_pl) is not None
+    assert tts_cache.get_path(insult_pl) is None
     assert tts_cache.get_path(gone) is None
 
 
@@ -172,6 +182,10 @@ async def test_service_get_mp3_bytes(tts_cache: TtsCache):
 
 
 def test_collect_speakable_texts_ignores_stats_and_empty_cells(isolated_csv_dir: Path):
+    from learning_app.ui.tts_preferences import TtsPreferences
+
+    previous_language = TtsPreferences.language
+    TtsPreferences.language = "en"
     words = pd.DataFrame(
         {
             "verb": ["analyse", ""],
@@ -199,22 +213,29 @@ def test_collect_speakable_texts_ignores_stats_and_empty_cells(isolated_csv_dir:
     )
     definitions.to_csv(isolated_csv_dir / "demo_definitions.csv", index=True)
 
-    texts = collect_speakable_texts()
+    try:
+        texts = collect_speakable_texts()
+    finally:
+        TtsPreferences.language = previous_language
 
-    assert "analyse" in texts
-    assert "insult" in texts
-    assert "znieważać" in texts
-    assert "pretty" in texts
-    assert "unused" in texts
-    assert "dependent" in texts
-    assert "dependable" in texts
-    assert "dependent/dependable" not in texts
+    assert ("analyse", "en") in texts
+    assert ("insult", "en") in texts
+    assert ("znieważać", "en") in texts
+    assert ("pretty", "en") in texts
+    assert ("unused", "en") in texts
+    assert ("dependent", "en") in texts
+    assert ("dependable", "en") in texts
+    assert ("dependent/dependable", "en") not in texts
     assert "0" not in texts
     assert "False" not in texts
     assert "" not in texts
 
 
-def test_service_garbage_collect_uses_live_set_texts(isolated_csv_dir: Path, tts_cache: TtsCache):
+def test_service_garbage_collect_uses_live_set_texts(
+    isolated_csv_dir: Path,
+    tts_cache: TtsCache,
+    english_tts_language,
+):
     definitions = pd.DataFrame({"definition": ["znieważać"], "word": ["insult"]})
     definitions.to_csv(isolated_csv_dir / "live_definitions.csv", index=True)
 
@@ -231,7 +252,7 @@ def test_service_garbage_collect_uses_live_set_texts(isolated_csv_dir: Path, tts
     assert tts_cache.get_path(drop) is None
 
 
-def test_save_set_prune_tts_drops_removed_phrase(isolated_csv_dir: Path):
+def test_save_set_prune_tts_drops_removed_phrase(isolated_csv_dir: Path, english_tts_language):
     generate_empty_files_data()
     frame = pd.DataFrame({"definition": ["znieważać"], "word": ["insult"]})
     save_set(frame, "live_definitions.csv")
@@ -250,7 +271,7 @@ def test_save_set_prune_tts_drops_removed_phrase(isolated_csv_dir: Path):
     assert cache.get_path(drop) is None
 
 
-def test_delate_set_prunes_unused_tts_cache(isolated_csv_dir: Path):
+def test_delate_set_prunes_unused_tts_cache(isolated_csv_dir: Path, english_tts_language):
     generate_empty_files_data()
     frame = pd.DataFrame({"definition": ["znieważać"], "word": ["insult"]})
     save_set(frame, "live_definitions.csv")
@@ -262,6 +283,66 @@ def test_delate_set_prunes_unused_tts_cache(isolated_csv_dir: Path):
     delate_set("live_definitions.csv")
 
     assert cache.get_path(key) is None
+
+
+def test_delate_set_releases_only_the_unused_language(isolated_csv_dir: Path, english_tts_language):
+    from learning_app.data.constants import FilesColumns
+    from learning_app.data.set_settings import enable_set_overrides, set_override_value
+
+    generate_empty_files_data()
+    frame = pd.DataFrame({"definition": ["meaning"], "word": ["kot"]})
+    save_set(frame, "polish_definitions.csv")
+    save_set(frame, "german_definitions.csv")
+    add_new_file("polish_definitions.csv", "Polish")
+    add_new_file("german_definitions.csv", "German")
+    enable_set_overrides("polish_definitions.csv")
+    enable_set_overrides("german_definitions.csv")
+    set_override_value("polish_definitions.csv", FilesColumns.TTS_LANGUAGE.value, "pl")
+    set_override_value("german_definitions.csv", FilesColumns.TTS_LANGUAGE.value, "de")
+
+    cache = TtsCache()
+    polish = cache.make_key("fake", "pl", "kot")
+    german = cache.make_key("fake", "de", "kot")
+    cache.put(polish, b"pl", text="kot", language="pl", provider="fake")
+    cache.put(german, b"de", text="kot", language="de", provider="fake")
+
+    delate_set("polish_definitions.csv")
+
+    assert cache.get_path(polish) is None
+    assert cache.get_path(german) is not None
+
+    delate_set("german_definitions.csv")
+
+    assert cache.get_path(german) is None
+
+
+def test_delate_set_keeps_cache_while_another_set_uses_the_language(
+    isolated_csv_dir: Path,
+    english_tts_language,
+):
+    from learning_app.data.constants import FilesColumns
+    from learning_app.data.set_settings import enable_set_overrides, set_override_value
+
+    generate_empty_files_data()
+    frame = pd.DataFrame({"definition": ["meaning"], "word": ["kot"]})
+    save_set(frame, "first_definitions.csv")
+    save_set(frame, "second_definitions.csv")
+    add_new_file("first_definitions.csv", "First")
+    add_new_file("second_definitions.csv", "Second")
+    enable_set_overrides("first_definitions.csv")
+    enable_set_overrides("second_definitions.csv")
+    set_override_value("first_definitions.csv", FilesColumns.TTS_LANGUAGE.value, "pl")
+    set_override_value("second_definitions.csv", FilesColumns.TTS_LANGUAGE.value, "pl")
+
+    cache = TtsCache()
+    polish = cache.make_key("fake", "pl", "kot")
+    cache.put(polish, b"pl", text="kot", language="pl", provider="fake")
+
+    delate_set("first_definitions.csv")
+    assert cache.get_path(polish) is not None
+
+    delate_set("second_definitions.csv")
+    assert cache.get_path(polish) is None
 
 
 @pytest.mark.asyncio

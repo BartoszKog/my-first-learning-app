@@ -173,7 +173,8 @@ Export tiles reuse the shared export `TilesContainer` from
 the set CSV from application storage, then calls
 `AppSession.get_export_csv_picker().save_file(..., src_bytes=...)` so Flet
 writes or downloads the bytes (required on web and mobile; also used on
-desktop). A `SnackBar` confirms success; failures still use
+desktop). The file is the set CSV only. Per-set overrides stay on the catalog
+row and are not part of the export. A `SnackBar` confirms success; failures still use
 `create_alert_dialog`. Export does not re-run `validate_file`; the file
 already lives under application storage.
 

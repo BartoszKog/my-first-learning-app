@@ -26,6 +26,7 @@ from learning_app.ui.route_paths import (
     INFO_ROUTE,
     SET_EDIT_ROUTE,
     SET_LEARN_ROUTE,
+    SET_SETTINGS_ROUTE,
     SET_LEARN_SESSION_ROUTE,
     SETTINGS_ROUTE,
 )
@@ -159,6 +160,15 @@ def _build_edit_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.C
     return [edit]
 
 
+def _build_set_settings_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
+    from learning_app.ui.screens.set_settings_menu import SetSettingsMenu
+
+    file_name = params.get("file")
+    if not file_name or not _set_csv_exists(file_name):
+        return None
+    return [SetSettingsMenu(file_name, width=_content_width(page))]
+
+
 def _build_learn_set_controls(page: ft.Page, params: dict[str, str]) -> list[ft.Control] | None:
     file_name = params.get("file")
     if not file_name or not _set_csv_exists(file_name):
@@ -276,6 +286,15 @@ ROUTE_REGISTRY: tuple[RouteDef, ...] = (
         layout_kind=LayoutKind.DEEP_FORM,
         chrome=None,
         build_factory=_build_edit_set_controls,
+        fallback_path=HOME_ROUTE,
+    ),
+    RouteDef(
+        path=SET_SETTINGS_ROUTE,
+        kind=RouteKind.DEEP,
+        body_wrapper=BodyWrapperKind.DEEP,
+        layout_kind=LayoutKind.DEEP_FORM,
+        chrome=None,
+        build_factory=_build_set_settings_controls,
         fallback_path=HOME_ROUTE,
     ),
     RouteDef(

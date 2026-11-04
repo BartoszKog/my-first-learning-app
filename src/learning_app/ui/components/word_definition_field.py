@@ -1,6 +1,7 @@
 import flet as ft
 
 from learning_app.data.constants import WordDefinitions
+from learning_app.data.set_settings import effective_set_settings
 from learning_app.tts import TtsError, TtsNetworkError
 from learning_app.ui.app_session import AppSession
 from learning_app.ui.components.base_word_field import BaseWordField
@@ -15,7 +16,6 @@ from learning_app.ui.layout_metrics import (
 )
 from learning_app.ui.layout_tokens import LEARN_DEFINITION_CHECK_BUTTON_SCALE
 from learning_app.ui.screens.word_list_menu import WordListMenu
-from learning_app.ui.tts_preferences import TtsPreferences
 
 
 class WordDefinitionField(BaseWordField):
@@ -140,7 +140,7 @@ class WordDefinitionField(BaseWordField):
         self._set_speak_unlocked(revealed)
         if control_is_on_page(self):
             self.update()
-        if revealed and TtsPreferences.auto_speak_definitions:
+        if revealed and effective_set_settings(self.file_name).auto_speak:
             page = self._get_page()
             if page is not None:
                 page.run_task(self._speak_current_word, False)
@@ -163,7 +163,10 @@ class WordDefinitionField(BaseWordField):
         if control_is_on_page(self):
             self.update()
         try:
-            await AppSession.speak(str(word), TtsPreferences.language)
+            await AppSession.speak(
+                str(word),
+                effective_set_settings(self.file_name).language,
+            )
         except TtsNetworkError:
             if notify_errors:
                 self._show_tts_error("Could not play pronunciation. Check your internet connection.")

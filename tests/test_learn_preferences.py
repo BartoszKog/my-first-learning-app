@@ -98,9 +98,10 @@ def test_settings_includes_queue_size_sliders(restore_learn_preferences):
     assert screen.queue_size_heading.size == 16
     assert screen.queue_size_heading.weight == ft.FontWeight.BOLD
     assert screen.queue_size_description.value == (
-        "How many items are drawn into the next practice round. Set word "
-        "formations and definitions separately. The round already started "
-        "keeps its length."
+        "How many items are drawn into the next practice round. Word "
+        "formations and definitions have separate defaults here. A set "
+        "uses one queue size and can override it from its menu "
+        "(Set settings). The round already started keeps its length."
     )
     assert screen.queue_size_description.size == 14
     assert learning_controls.index(

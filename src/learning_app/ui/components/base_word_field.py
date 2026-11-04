@@ -3,8 +3,8 @@ import threading
 import flet as ft
 
 from learning_app.data.app_data import AppData, set_default_progress
+from learning_app.data.set_settings import effective_set_settings
 from learning_app.ui.keyboard_shortcuts import pop_ctrl_enter_action, push_ctrl_enter_action
-from learning_app.ui.learn_preferences import LearnPreferences
 from learning_app.ui.page_functions import create_alert_dialog
 
 _SESSION_PRIMARY_LABELS = frozenset({"Check", "Try again", "Next"})
@@ -182,7 +182,7 @@ class BaseWordField(ft.Column):
                         self._set_check_button_text("Next")
                     else:
                         self.words.bad_answer_at_current_row()
-                        if LearnPreferences.retry_until_correct:
+                        if effective_set_settings(self.file_name).retry_until_correct:
                             self._retrying_after_wrong = True
                             self._set_check_button_text("Try again")
                         else:

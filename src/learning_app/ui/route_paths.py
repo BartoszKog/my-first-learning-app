@@ -10,6 +10,7 @@ Attributes:
     INFO_ROUTE: Information shell with reduced chrome.
     CREATE_SET_ROUTE: Deep form for creating a new set.
     SET_EDIT_ROUTE: Deep form for editing an existing set.
+    SET_SETTINGS_ROUTE: Deep form for one set's learning and TTS settings.
     SET_LEARN_ROUTE: Deep learn-mode entry for a set.
     SET_LEARN_SESSION_ROUTE: Deep active learn session for a set.
 """
@@ -20,5 +21,6 @@ SETTINGS_ROUTE = "/settings"
 INFO_ROUTE = "/info"
 CREATE_SET_ROUTE = "/create-set"
 SET_EDIT_ROUTE = "/set/edit"
+SET_SETTINGS_ROUTE = "/set/settings"
 SET_LEARN_ROUTE = "/set/learn"
 SET_LEARN_SESSION_ROUTE = "/set/learn/session"

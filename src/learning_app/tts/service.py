@@ -11,7 +11,7 @@ from learning_app.tts.texts import collect_speakable_texts, speakable_phrases
 
 
 def garbage_collect_tts_cache(cache: TtsCache | None = None) -> int:
-    """Remove cached MP3s whose phrases no longer appear in any set CSV.
+    """Remove cached MP3s whose phrase and language no longer appear in any set.
 
     Uses the default app TTS directory when ``cache`` is omitted. Safe to call
     after deleting or rewriting set content. Do not call after progress-only
@@ -129,7 +129,7 @@ class TtsService:
         return path.read_bytes()
 
     def garbage_collect(self) -> int:
-        """Remove cached audio for phrases that no longer appear in any set.
+        """Remove cached audio for phrase/language pairs no set still speaks.
 
         Returns:
             Number of MP3 files removed.

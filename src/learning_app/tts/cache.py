@@ -18,7 +18,7 @@ class TtsCache:
 
     Files live under ``FilePathManager.get_tts_cache_dir()``. Each object is
     ``<hash[:2]>/<hash>.mp3`` plus a JSON sidecar used by garbage collection
-    so recordings stay as long as the phrase still exists in any set.
+    so recordings stay while some set still speaks that phrase in that language.
     """
 
     def __init__(self, root: Path | str | None = None):
@@ -109,26 +109,30 @@ class TtsCache:
         )
         return mp3_path
 
-    def garbage_collect(self, live_texts: Iterable[str]) -> int:
-        """Delete recordings whose phrase is no longer in ``live_texts``.
+    def garbage_collect(self, live_texts: Iterable[tuple[str, str]]) -> int:
+        """Delete recordings whose phrase and language are no longer live.
 
-        Language and provider are ignored: if the phrase still exists in any
-        set, every cached rendering of it is kept.
+        Provider and voice are ignored: if a set still speaks that phrase in
+        that language, every cached rendering of the pair is kept. A recording
+        in another language is removed even when the same spelling remains.
 
         Args:
-            live_texts: Phrases still present in learning sets.
+            live_texts: ``(phrase, language)`` pairs still spoken by a set.
 
         Returns:
             Number of MP3 files removed.
         """
-        live = {normalize_text(text) for text in live_texts}
-        live.discard("")
+        live: set[tuple[str, str]] = set()
+        for text, language in live_texts:
+            normalized = normalize_text(text)
+            if normalized and isinstance(language, str) and language.strip():
+                live.add((normalized, language.strip()))
         removed = 0
 
         for sidecar_path in self.root.rglob("*.json"):
             mp3_path = sidecar_path.with_suffix(".mp3")
-            text = self._text_from_sidecar(sidecar_path)
-            if text is not None and text in live:
+            phrase = self._phrase_from_sidecar(sidecar_path)
+            if phrase is not None and phrase in live:
                 continue
             if mp3_path.is_file():
                 mp3_path.unlink()
@@ -149,12 +153,19 @@ class TtsCache:
         return self.root / key[:2] / f"{key}.json"
 
     @staticmethod
-    def _text_from_sidecar(path: Path) -> str | None:
+    def _phrase_from_sidecar(path: Path) -> tuple[str, str] | None:
         try:
             payload = json.loads(path.read_text(encoding=_SIDECAR_ENCODING))
         except (OSError, UnicodeError, json.JSONDecodeError):
             return None
-        text = payload.get("text") if isinstance(payload, dict) else None
-        if not isinstance(text, str):
+        if not isinstance(payload, dict):
             return None
-        return normalize_text(text)
+        text = payload.get("text")
+        language = payload.get("language")
+        if not isinstance(text, str) or not isinstance(language, str):
+            return None
+        normalized = normalize_text(text)
+        language = language.strip()
+        if not normalized or not language:
+            return None
+        return normalized, language

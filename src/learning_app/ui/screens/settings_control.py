@@ -415,6 +415,14 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             weight=ft.FontWeight.BOLD,
             width=self._content_width,
         )
+        self.tts_description = ft.Text(
+            "Language is used when a speaker plays. Pronounce after Check "
+            "speaks the word on definition cards after Check. These are the "
+            "defaults for sets without their own settings. Open a set's menu "
+            "and choose Set settings to use different values for that set.",
+            size=14,
+            width=self._content_width,
+        )
         self.tts_language_dropdown = ft.Dropdown(
             label="Language",
             value=TtsPreferences.language,
@@ -442,7 +450,9 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             width=self._content_width,
         )
         self.tts_speakers_description = ft.Text(
-            "Show or hide speaker buttons on the set word list cards.",
+            "Show or hide speaker buttons on the set word list cards. These "
+            "defaults are separate for word formations and definitions. A set "
+            "overrides only its own fields from the set menu (Set settings).",
             size=14,
             width=self._content_width,
         )
@@ -513,9 +523,10 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         )
         self.tts_speakers_definition_hint = ft.Text(
             "Definitions may be written in a different language than the one "
-            "you are learning. TTS language is set globally above, so "
-            "pronouncing definitions can sound wrong when that language does "
-            "not match the definition text.",
+            "you are learning. Pronunciation uses the set language, which "
+            "defaults to the language above. Open a set's menu and choose "
+            "Set settings to change it. Speaking definitions can sound wrong "
+            "when that language does not match the definition text.",
             size=13,
             width=self._content_width,
         )
@@ -563,7 +574,10 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             alignment=ft.MainAxisAlignment.START,
         )
         self.retry_until_correct_description = ft.Text(
-            "After a wrong answer, type the correct one before continuing. Extra attempts do not change statistics.",
+            "After a wrong answer, type the correct one before continuing. "
+            "Extra attempts do not change statistics. This is the default for "
+            "every set. Open a set's menu and choose Set settings to change "
+            "it for that set.",
             size=14,
             width=self._content_width,
         )
@@ -575,9 +589,10 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             width=self._content_width,
         )
         self.queue_size_description = ft.Text(
-            "How many items are drawn into the next practice round. Set word "
-            "formations and definitions separately. The round already started "
-            "keeps its length.",
+            "How many items are drawn into the next practice round. Word "
+            "formations and definitions have separate defaults here. A set "
+            "uses one queue size and can override it from its menu "
+            "(Set settings). The round already started keeps its length.",
             size=14,
             width=self._content_width,
         )
@@ -631,6 +646,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.tts_section = ft.Column(
             controls=[
                 self.tts_heading,
+                self.tts_description,
                 self.tts_language_dropdown,
                 self.tts_auto_speak_row,
                 self.tts_speakers_divider,
@@ -727,6 +743,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.appearance_heading,
             self.demo_heading,
             self.tts_heading,
+            self.tts_description,
             self.learning_heading,
             self.demo_description,
             self.retry_until_correct_description,

@@ -14,6 +14,16 @@ import pandas as pd
 from learning_app.data.constants import FilesColumns, PartsOfSpeech, SetSortMode, StatsColumns, WordDefinitions
 from learning_app.data.file_path_manager import FilePathManager
 
+_SET_OVERRIDE_COLUMNS = [
+    FilesColumns.TTS_LANGUAGE.value,
+    FilesColumns.TTS_AUTO_SPEAK.value,
+    FilesColumns.SPEAKERS_WORD_FORMATIONS.value,
+    FilesColumns.SPEAKERS_WORD.value,
+    FilesColumns.SPEAKERS_DEFINITION.value,
+    FilesColumns.RETRY_UNTIL_CORRECT.value,
+    FilesColumns.QUEUE_SIZE.value,
+]
+
 _CATALOG_COLUMN_ORDER = [
     FilesColumns.FILE_NAME.value,
     FilesColumns.TITLE.value,
@@ -21,6 +31,7 @@ _CATALOG_COLUMN_ORDER = [
     FilesColumns.CREATED_AT.value,
     FilesColumns.LAST_USED.value,
     FilesColumns.USE_COUNT.value,
+    *_SET_OVERRIDE_COLUMNS,
 ]
 
 
@@ -49,7 +60,8 @@ def ensure_files_catalog_columns(df: pd.DataFrame | None = None, *, persist: boo
     Missing columns are added with defaults. Rows missing ``created_at`` get
     stable timestamps in existing row order so creation sort matches historical
     append order. Older catalogs without usage fields get empty ``last_used``
-    and ``use_count`` of ``0``.
+    and ``use_count`` of ``0``. Per-set setting columns are added empty so a
+    set keeps using the app defaults until someone stores an override.
 
     Args:
         df: Catalog table to migrate. When ``None``, loads ``files.csv`` (or
@@ -98,6 +110,11 @@ def ensure_files_catalog_columns(df: pd.DataFrame | None = None, *, persist: boo
         df[FilesColumns.USE_COUNT.value] = (
             pd.to_numeric(df[FilesColumns.USE_COUNT.value], errors="coerce").fillna(0).astype(int)
         )
+
+    for column in _SET_OVERRIDE_COLUMNS:
+        if column not in df.columns:
+            df[column] = ""
+            changed = True
 
     ordered = [col for col in _CATALOG_COLUMN_ORDER if col in df.columns]
     ordered.extend(col for col in df.columns if col not in _CATALOG_COLUMN_ORDER)
@@ -475,6 +492,8 @@ def add_new_file(file_name: str, title: str, subtitle: str = "") -> None:
         FilesColumns.LAST_USED.value: "",
         FilesColumns.USE_COUNT.value: 0,
     }
+    for column in _SET_OVERRIDE_COLUMNS:
+        new_row[column] = ""
     df_files = pd.concat([df_files, pd.DataFrame([new_row])], ignore_index=True)
     df_files.to_csv(files_data_path, index=False)
 
@@ -659,8 +678,8 @@ class AppData:
     def draw_index_group(self, save_indexes_in_class_art: bool = False) -> int:
         """Draw row indexes for the next practice group.
 
-        The group is capped by the Settings queue size on
-        ``LearnPreferences`` for this set's kind. Word formations
+        The group is capped by this set's queue size. An empty catalog cell
+        uses the Settings size for this kind. Word formations
         (``kind == "words"``) use 3–10 items, default 5. Definitions use
         4–15 items, default 10. An already drawn group is left unchanged
         until this method runs again.
@@ -676,12 +695,9 @@ class AppData:
             Number of indexes in the new group, or ``0`` when none are
             available.
         """
-        from learning_app.ui.learn_preferences import LearnPreferences
+        from learning_app.data.set_settings import effective_set_settings
 
-        if self.kind == "definitions":
-            limit = LearnPreferences.definitions_queue_size
-        else:
-            limit = LearnPreferences.word_formations_queue_size
+        limit = effective_set_settings(self.file_name).queue_size
 
         indexes_to_draw = self.words[(self.words[StatsColumns.GOOD_ANSWER.value] == False) &
                                      (self.words[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == False) &

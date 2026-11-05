@@ -11,6 +11,8 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-11-05
+
 ### Added
 - Per-set learning and speech settings from the set tile menu: a set can keep its own language, speakers, retype-until-correct rule, and queue size, while empty catalog cells still follow the app defaults; deleting a set drops TTS audio for languages no remaining set still uses
 - Set settings screen with a top bar (back, set title, kind chip) and Source / Text to speech / Learning section cards, including a Use app settings switch
@@ -96,7 +98,8 @@ body and fails if it is missing.
 - Recreate a missing `files.csv` catalog during repair and close stacked catalog dialogs
 - Restore Home chrome after Android Back from a newly created set
 
-[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.8...HEAD
+[1.0.8]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/BartoszKog/my-first-learning-app/compare/v1.0.4...v1.0.5

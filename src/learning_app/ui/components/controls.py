@@ -39,12 +39,20 @@ class WordField(ft.TextField):
             side=ft.BorderSide(color=color, width=self.width_border_indicator),
         )
 
+    def _indicator_border_states(self, color) -> dict:
+        """Keep DEFAULT and FOCUSED the same so theme focus color does not hide the result."""
+        border = self._indicator_border(color)
+        return {
+            ft.ControlState.DEFAULT: border,
+            ft.ControlState.FOCUSED: border,
+        }
+
     def set_green_border(self):
-        self.border = self._indicator_border(ft.Colors.GREEN)
+        self.border = self._indicator_border_states(ft.Colors.GREEN)
         self.update()
 
     def set_red_border(self):
-        self.border = self._indicator_border(ft.Colors.RED)
+        self.border = self._indicator_border_states(ft.Colors.RED)
         self.update()
 
     def reset(self):

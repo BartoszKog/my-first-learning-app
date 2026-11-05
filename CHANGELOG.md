@@ -23,7 +23,8 @@ body and fails if it is missing.
 - Home empty state when there are no set tiles, with a two-line prompt to create a set with the + button or add the demo sets, and an Add demo sets button (playlist-add icon) that installs the same demo sets as Settings; the prompt and button disappear once tiles exist and return if every set is deleted; Import/Export does not show this empty state
 
 ### Changed
-- Require Flet 1.0.5+ and migrate TextField / Dropdown borders to `OutlineInputBorder` (including focused-state maps where needed)
+- Require Flet 1.1.0+ and flet-audio 1.1.0+; migrate TextField / Dropdown borders to `OutlineInputBorder` (including focused-state maps where needed)
+- TTS Audio sets `AudioContext(focus=DUCK_OTHERS)`, so other phone audio is ducked for the pronunciation instead of stopped
 - Document per-set learning and speech settings, and that app Settings values are the defaults for sets without overrides
 - Navigational back shortcut from Ctrl+Left Arrow to Ctrl+B (Meta/Cmd+B); word-list Back button tooltip shows the shortcut
 - Accept a typed answer of several slash-separated forms when every piece is a stored alternative; order does not matter, and one unknown or empty piece fails the whole answer

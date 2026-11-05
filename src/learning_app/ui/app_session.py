@@ -133,6 +133,7 @@ class AppSession:
             autoplay=True,
             volume=1.0,
             release_mode=fta.ReleaseMode.STOP,
+            context=fta.AudioContext(focus=fta.AudioFocus.DUCK_OTHERS),
             on_state_change=cls._on_audio_state_change,
             on_loaded=cls._on_audio_loaded,
         )

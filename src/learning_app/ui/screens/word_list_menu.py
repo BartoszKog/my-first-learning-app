@@ -340,7 +340,7 @@ class WordListMenu(ft.Column):
             on_click=on_button_click,
             tooltip="Back (Ctrl+B)",
         )
-        self.settings_button = ft.FilledTonalButton(
+        self.settings_button = ft.FilledTonalIconButton(
             icon=ft.Icons.SETTINGS,
             on_click=on_button_click,
             tooltip="Set settings",

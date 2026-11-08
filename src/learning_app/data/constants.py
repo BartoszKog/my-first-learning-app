@@ -86,7 +86,7 @@ class Warnings(Enum):
     INSUFFICIENT_NON_EMPTY_VALUES = "Some rows have insufficient non-empty values in typical columns."
 
 
-MAX_ROWS = 40
+MAX_ROWS = 80
 """Maximum number of content rows allowed in one learning set."""
 
 TITLE_MAX_LENGTH = 20

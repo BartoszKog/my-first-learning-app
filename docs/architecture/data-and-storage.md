@@ -254,7 +254,7 @@ the column, and starts a new card at 0. Positions are rewritten after a
 temporary negative flush so the unique `(set_id, position)` constraint holds.
 
 `MAX_ROWS` in `data/constants.py` caps how many content rows a set may
-contain (currently `40`). Import validation enforces that limit.
+contain (currently `80`). Import validation enforces that limit.
 
 `set_default_progress(file_name)` resets card statistics, including `checks`,
 without removing content or visits. `get_set_learn_progress(file_name)`

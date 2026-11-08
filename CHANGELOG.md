@@ -19,6 +19,7 @@ body and fails if it is missing.
 - CSV is the import, export, and demo-template format. Home, create, edit, learn, reset, and delete read and write the database
 - Tile use count is the old catalog balance plus later visits. Opening a set records a visit and does not increment that balance
 - Document the SQLite store, visit log, `checks`, and the CSV migration
+- Raise the per-set card limit from 40 to 80 for import, create, and edit
 
 ## [1.0.8] - 2026-11-05
 

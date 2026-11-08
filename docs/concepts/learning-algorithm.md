@@ -2,18 +2,19 @@
 
 Source: `data/app_data.py` (`AppData`)
 
-Learn sessions keep one set in memory as an `AppData` instance. Statistics
-columns on each row drive which items are drawn next. After every answer the
-table is written back with `save_set`, so progress survives leaving the
-screen.
+Learn sessions keep one set in memory as an `AppData` instance. The four
+statistics columns on each row drive which items are drawn next. After every
+graded Check that card is written by id, so progress survives leaving the
+screen. The whole frame is not saved: `draw_index_group` sorts rows, and a
+full save would store that order as new positions.
 
 ```mermaid
 flowchart LR
-    CSV[Set CSV on disk] --> Load[AppData.__init__ / refresh]
+    DB[Card rows in SQLite] --> Load[AppData.__init__ / refresh]
     Load --> Group[draw_index_group]
     Group --> Row[current row]
     Row --> Answer[good / bad answer]
-    Answer --> CSV
+    Answer --> DB
 ```
 
 Catalog CRUD and path resolution stay outside this class. See
@@ -23,7 +24,10 @@ when a learn session starts; they do not reimplement queue rules.
 
 ## Statistics columns
 
-Each set row stores four columns from `StatsColumns`:
+Each set row stores four columns from `StatsColumns`. `checks` counts graded
+Checks on that card (bad answers are `checks - correct_answers`). The queue
+and the progress bar do not read it. Both answer helpers increment it, then
+write that card and the open visit when one exists.
 
 | Column | Type | Meaning in the algorithm |
 | --- | --- | --- |
@@ -31,6 +35,7 @@ Each set row stores four columns from `StatsColumns`:
 | `good_answer` | bool | Whether the latest answer was correct |
 | `good_answers_in_a_row` | bool | Whether consecutive correct answers have been confirmed |
 | `word_to_learn` | bool | Whether the row is prioritized for practice |
+| `checks` | int | Graded Checks. Not used to choose the next group |
 
 Developers often write the three booleans as `good_answer` /
 `good_answers_in_a_row` / `word_to_learn`, abbreviated `G/S/W` or as a
@@ -44,14 +49,15 @@ Developers often write the three booleans as `good_answer` /
 | Known | `1/1/0` | Correct streak confirmed; not marked to learn |
 
 `number_of_known_words()` counts the Known triple. Progress reset uses
-module-level `set_default_progress(file_name)`, which sets all four columns
-to their defaults (`0` / `False` / `False` / `False`) and saves the file.
+module-level `set_default_progress(file_name)`, which sets the four columns
+and `checks` back to their defaults (`0` / `False` / `False` / `False` / `0`).
+Visit rows stay.
 
 ## Drawing a practice group
 
 `draw_index_group()` builds the row indexes for the current round. Group size
-is that set's effective `queue_size`. An empty catalog cell uses the Settings
-slider for the set's kind (`LearnPreferences`); a stored cell is clamped to
+is that set's effective `queue_size`. A `NULL` override uses the Settings
+slider for the set's kind (`LearnPreferences`); a stored value is clamped to
 the same range:
 
 | Kind | Settings label | Range | Default |
@@ -90,7 +96,7 @@ reports whether more indexes remain before the group is cleared.
 
 ## Answer transitions
 
-Both answer helpers mutate the current row and call `save_set` immediately.
+Both answer helpers mutate the current row and persist that card immediately.
 
 ### Correct: `good_answer_at_current_row()`
 
@@ -121,8 +127,8 @@ usual.
 ## Retry until correct {#retry-until-correct}
 
 Retry is a UI flag, not an `AppData` rule. Check reads the set's effective
-`retry_until_correct`: a stored catalog cell, or `LearnPreferences` when that
-cell is empty. When it is on:
+`retry_until_correct`: a stored override, or `LearnPreferences` when that
+column is `NULL`. When it is on:
 
 1. The first wrong Check still calls `bad_answer_at_current_row()` once.
 2. Check becomes **Try again**; the same row stays current.
@@ -149,13 +155,13 @@ store its own value from `/set/settings` — see
 | `number_of_all_words()` | Total rows in the loaded set |
 | `are_all_words_learned()` | `True` when known count equals total |
 | `get_set_learn_progress(file_name)` | Module helper: `(units, max_units)` in quarter-word weights for Home tiles and the learn-menu bar |
-| `refresh()` | Reload the CSV into `words` after an external reset |
-| `set_default_progress(file_name)` | Module helper: wipe stats on disk |
+| `refresh()` | Reload the set from the database into `words` after an external reset |
+| `set_default_progress(file_name)` | Module helper: wipe card stats, including `checks`; visits stay |
 
 `get_set_learn_progress` does not start a learn session. Known rows count as
 `1`, rows still in the mix as `0.25`, and unverified `0/0/0` as `0`, stored
 as `known * 4 + learning` over `total * 4`. Home `ContentTile` bars use this
-helper; returning to Home refreshes the tile list so the strip matches disk.
+helper; returning to Home refreshes the tile list so the strip matches the database.
 
 Learn UI uses `are_all_words_learned()` before starting a session and may offer
 `set_default_progress` when every row is Known.
@@ -164,15 +170,16 @@ Learn UI uses `are_all_words_learned()` before starting a session and may offer
 
 | Concern | Owner |
 | --- | --- |
-| Path and catalog | `FilePathManager`, module-level `app_data` helpers |
+| Path and catalog | `FilePathManager`, `repository`, module-level `app_data` helpers |
 | Queue and answer rules | `AppData` |
-| Retry-until-correct flag | Effective set value; empty cell uses `LearnPreferences` |
-| Practice-queue size | Effective set `queue_size`; empty cell uses `LearnPreferences`; `draw_index_group` reads it |
+| Retry-until-correct flag | Effective set value; `NULL` uses `LearnPreferences` |
+| Practice-queue size | Effective set `queue_size`; `NULL` uses `LearnPreferences`; `draw_index_group` reads it |
+| Open visit counters | `set_opened`, updated with the graded card while `/set/learn` is on the stack |
 | Presenting fields / buttons | `ui/components/` learn controls and `WordListMenu` |
 | Transient UI chrome lock | `AppSession` — never learning statistics |
 
 Do not keep a second copy of row statistics in screen fields or session bags.
-Reload with `refresh()` or construct a new `AppData` when the file may have
+Reload with `refresh()` or construct a new `AppData` when the set may have
 changed outside the session.
 
 ## Continue reading

@@ -23,7 +23,7 @@ src/
   assets/                 # app icons / splash / bundled demo CSVs for flet build
   learning_app/
     app.py                # Flet application entrypoint
-    data/                 # CSV processing, data model, file paths, demo sets, constants
+    data/                 # SQLite store, CSV import/export, file paths, demo sets, constants
     ui/
       components/         # reusable Flet controls
       screens/            # larger application screens and menus
@@ -99,7 +99,7 @@ State codes (e.g., 0/0/0) represent the following word attributes:
 
 ## 📊 File Formats
 
-The application supports two types of CSV files:
+The app keeps sets in a local SQLite database. Import and export still use two CSV shapes:
 
 ### 1. `_words.csv` Files
 
@@ -124,6 +124,7 @@ Contain definitions and their corresponding words:
 - `good_answers_in_a_row`: whether there were correct answers in a row (boolean)
 - `good_answer`: whether the last answer was correct (boolean)
 - `word_to_learn`: whether the word requires learning (boolean)
+- `checks`: how many times the card was graded (integer, optional; when missing and statistics are kept, it is copied from `correct_answers`)
 
 ### Sample CSV File
 
@@ -149,6 +150,7 @@ The application was created using:
 - **Flet** - a modern framework combining Flutter and Python
 - **Python** - backend programming language
 - **Pandas** - data manipulation library
+- **SQLModel / SQLite** - local storage for sets, progress, and visits
 
 ---
 

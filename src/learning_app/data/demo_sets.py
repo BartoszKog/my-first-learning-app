@@ -73,7 +73,7 @@ def is_set_name_reserved(file_name: str) -> bool:
 
 
 def is_demo_already_installed(file_name: str, existing_basenames: list[str] | None = None) -> bool:
-    """Return whether a demo basename is already in the catalog or on disk."""
+    """Return whether a demo basename is already stored."""
     basename = os.path.basename(file_name)
     names = existing_basenames if existing_basenames is not None else get_file_names()
     if basename in names:
@@ -82,7 +82,7 @@ def is_demo_already_installed(file_name: str, existing_basenames: list[str] | No
 
 
 def is_set_name_taken(file_name: str, existing_basenames: list[str] | None = None) -> bool:
-    """Return whether a set basename is reserved, catalogued, or present on disk.
+    """Return whether a set basename is reserved or already stored.
 
     Used when allocating names for create/import so reserved demo basenames
     cannot be claimed. Demo installation uses ``is_demo_already_installed``
@@ -97,8 +97,8 @@ def is_set_name_taken(file_name: str, existing_basenames: list[str] | None = Non
 def allocate_unique_set_basename(preferred_basename: str) -> str:
     """Return a free ``*_words.csv`` / ``*_definitions.csv`` basename.
 
-    Reserved demo names, catalog entries, and on-disk files are treated as
-    occupied. When ``preferred_basename`` is taken, appends ``1``, ``2``, …
+    Reserved demo names and stored sets are treated as occupied. When
+    ``preferred_basename`` is taken, appends ``1``, ``2``, …
     before the kind suffix.
     """
     if preferred_basename is None:
@@ -136,10 +136,10 @@ def _reset_statistics(df):
 
 
 def install_demo_sets() -> DemoInstallResult:
-    """Copy missing demo templates into storage and register them in the catalog.
+    """Read missing demo templates and register them in the database.
 
-    Skips a demo when its fixed basename is already in the catalog or on disk.
-    Always resets learning statistics on newly installed copies.
+    Skips a demo when its fixed basename is already stored. Always resets
+    learning statistics, including ``checks``, on newly installed copies.
     """
     existing = list(get_file_names())
     result = DemoInstallResult()

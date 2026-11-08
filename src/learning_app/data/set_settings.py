@@ -197,7 +197,7 @@ def enable_set_overrides(file_name: str) -> None:
     follows later changes to the app settings.
 
     Args:
-        file_name: Set basename or path present in ``files.csv``.
+        file_name: Set basename or path stored in the database.
     """
     from learning_app.data.app_data import get_kind_of_file_and_validate
 
@@ -209,7 +209,7 @@ def clear_set_overrides(file_name: str) -> None:
     """Blank every override column so the set uses app settings again.
 
     Args:
-        file_name: Set basename or path present in ``files.csv``.
+        file_name: Set basename or path stored in the database.
     """
     _write_overrides(file_name, {}, clear_others=True)
 
@@ -218,7 +218,7 @@ def set_override_value(file_name: str, column: str, value: str) -> None:
     """Store one override cell when ``column`` applies to this set's kind.
 
     Args:
-        file_name: Set basename or path present in ``files.csv``.
+        file_name: Set basename or path stored in the database.
         column: A ``FilesColumns`` override name.
         value: Explicit stored text, such as ``"true"``, ``"pl"``, or ``"8"``.
     """

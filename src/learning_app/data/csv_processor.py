@@ -1,8 +1,9 @@
-"""Import validation, catalog repair, and CSV save helpers for learning sets.
+"""Import validation and save helpers for learning sets.
 
-``CSVProcessor`` inspects picked files, reports ``Errors`` / ``Warnings``, and
-writes normalized set CSVs plus ``files.csv`` catalog rows. Prefer the public
-static methods from Import/Export UI code; private ``__`` helpers stay
+``CSVProcessor`` inspects picked CSV files, reports ``Errors`` / ``Warnings``,
+and writes the set into the local database. ``validate_files_csv`` and
+``repair_files_csv`` still operate on a leftover ``files.csv``. Prefer the
+public static methods from Import/Export UI code; private ``__`` helpers stay
 internal.
 """
 
@@ -254,7 +255,7 @@ class CSVProcessor:
         """Import a CSV that needs no warning-driven repair.
 
         Adds or resets statistics columns, normalizes the index, allocates a
-        unique basename, registers the catalog row, and saves the set.
+        unique basename, registers the set, and saves its cards.
 
         Args:
             file_path: Absolute path of the picked source file.

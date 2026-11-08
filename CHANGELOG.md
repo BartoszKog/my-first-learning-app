@@ -11,6 +11,15 @@ body and fails if it is missing.
 
 ## [Unreleased]
 
+### Added
+- Local SQLite store (`learning.sqlite`) for sets, cards, per-set overrides, and a visit log opened from the learn screen; graded Checks update that card and the open visit
+- One-time startup copy of existing `files.csv` sets into the database, without importing the same file again or bringing a deleted set back
+
+### Changed
+- CSV is the import, export, and demo-template format. Home, create, edit, learn, reset, and delete read and write the database
+- Tile use count is the old catalog balance plus later visits. Opening a set records a visit and does not increment that balance
+- Document the SQLite store, visit log, `checks`, and the CSV migration
+
 ## [1.0.8] - 2026-11-05
 
 ### Added

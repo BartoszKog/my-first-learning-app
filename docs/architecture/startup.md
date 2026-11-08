@@ -3,8 +3,8 @@
 Source: `app.py` (`main`), launched from `src/main.py` via `ft.run(main)`
 
 Application startup builds shared chrome and runtime services **before** the
-first routed view. Order matters: storage and session must exist before CSV
-UI runs, chrome controls must be registered before the router attaches them
+first routed view. Order matters: storage and the database must exist before
+set UI runs, chrome controls must be registered before the router attaches them
 to Shell views, and theme, TTS, and learn preferences should load before the home
 route is shown.
 
@@ -12,7 +12,8 @@ route is shown.
 flowchart TD
     Run[src/main.py ft.run] --> Main[app.main]
     Main --> Paths[FilePathManager.initialize]
-    Paths --> Session[AppSession page + export picker + TTS]
+    Paths --> Db[init_db]
+    Db --> Session[AppSession page + export picker + TTS]
     Session --> ChromeUI[Drawer AppBar FAB search]
     ChromeUI --> Register[AppChrome.register]
     Register --> Prefs[AppTheme + TtsPreferences + LearnPreferences]
@@ -28,10 +29,13 @@ modules each phase configures.
 
 ```python
 FilePathManager.initialize()
+init_db()
 ```
 
-Creates `csv_files/` under Flet storage (or falls back to the working
-directory). Any later catalog or set I/O assumes this ran first.
+`initialize()` creates `csv_files/` under Flet storage (or falls back to the
+working directory). `init_db()` creates `learning.sqlite` beside that
+directory, creates the four tables, and copies catalogued CSVs that are not
+already in the database. Any later set I/O assumes both ran first.
 
 See [Data and storage](data-and-storage.md) and the
 [File path manager API](../reference/file_path_manager.md).
@@ -156,7 +160,7 @@ See [Navigation](../guides/navigation.md).
 
 | If you skip or reorder… | Risk |
 | --- | --- |
-| Paths after first CSV use | Missing `csv_files/` or wrong roots |
+| Paths or `init_db` after the first set use | Missing `csv_files/`, missing tables, or a skipped CSV copy |
 | Session after export/import UI | No shared page or picker |
 | `AppChrome.register` after first Shell view | Chrome sync cannot find controls |
 | Theme / TTS / learn prefs after `initialize_routes` | First Home paint may flash wrong theme; Settings TTS and Learning controls may show defaults |

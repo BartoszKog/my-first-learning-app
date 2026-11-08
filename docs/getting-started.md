@@ -56,8 +56,8 @@ uv run mkdocs build
 
 | Symptom | What to check |
 | --- | --- |
-| Sets or catalog missing after restart | Confirm `FilePathManager.initialize()` ran and storage under `FLET_APP_STORAGE_DATA` (or the CWD fallback) is writable. See [Data and storage](architecture/data-and-storage.md). |
-| Import blocked with “restart the app” | `files.csv` failed `validate_files_csv`. Restart after fixing or repairing the catalog; see [Import and export](guides/import-export.md#catalog-integrity-filescsv). |
+| Sets missing after restart | Confirm `FilePathManager.initialize()` and `init_db()` ran, and that `learning.sqlite` under `FLET_APP_STORAGE_DATA` (or the CWD fallback) is writable. See [Data and storage](architecture/data-and-storage.md). |
+| Old CSV sets did not appear | Startup copies only rows listed in `files.csv` whose set file can be read, and only once. A CSV dropped into `csv_files/` without a catalog row is not a set. |
 | Docs build noisy / `--strict` fails | Prefer `uv run mkdocs build` without `--strict` while iterating. Strict mode can fail on Griffe type-annotation warnings from generated API pages (for example `app_theme`). |
 
 ## Next steps

@@ -70,16 +70,6 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
         self.update_if_mounted()
 
     def on_create_click(self, e):
-        from learning_app.data.csv_processor import CSVProcessor
-        if not CSVProcessor.validate_files_csv()["is_valid"]:
-            create_alert_dialog(
-                page=e.page,
-                title="Error",
-                content="files.csv has been changed. \nPlease restore it to its original state.",
-                close_button_text="OK",
-            )
-            return
-
         if not (self.title_field.value or "").strip():
             self.title_field.error = "This field is required"
         else:

@@ -13,7 +13,16 @@ import warnings as py_warnings
 import pandas as pd
 
 from learning_app.data.app_data import add_new_file, read_catalog_csv, read_set_csv, save_set, stringify_content_columns
-from learning_app.data.constants import Errors, FilesColumns, MAX_ROWS, PartsOfSpeech, StatsColumns, Warnings, WordDefinitions
+from learning_app.data.constants import (
+    CHECKS_COLUMN,
+    Errors,
+    FilesColumns,
+    MAX_ROWS,
+    PartsOfSpeech,
+    StatsColumns,
+    Warnings,
+    WordDefinitions,
+)
 from learning_app.data.demo_sets import allocate_unique_set_basename
 from learning_app.data.file_path_manager import FilePathManager
 
@@ -144,12 +153,15 @@ class CSVProcessor:
         df[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] = False
         df[StatsColumns.GOOD_ANSWER.value] = False
         df[StatsColumns.WORD_TO_LEARN.value] = False
+        df[CHECKS_COLUMN] = 0
         return df
 
     @staticmethod
     def __reset_statistics_columns(df: pd.DataFrame) -> pd.DataFrame:
         # Only drop columns that actually exist in the dataframe
         stat_cols_to_drop = [col.value for col in StatsColumns if col.value in df.columns]
+        if CHECKS_COLUMN in df.columns:
+            stat_cols_to_drop.append(CHECKS_COLUMN)
         if stat_cols_to_drop:
             df = df.drop(columns=stat_cols_to_drop)
         # Add all statistics columns (whether they existed before or not)
@@ -269,6 +281,7 @@ class CSVProcessor:
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)
 
         file_name = CSVProcessor.__create_appropriate_file_name(file_name)
+        df = CSVProcessor.__ensure_checks_column(df, keep_statistics=has_statistics and keep_statistics)
         add_new_file(file_name, title, subtitle)
         save_set(df, file_name, prune_tts=True)
 
@@ -335,6 +348,8 @@ class CSVProcessor:
             if has_statistics:
                 # Check which statistics columns actually exist before dropping
                 stat_cols_to_drop = [col.value for col in StatsColumns if col.value in df.columns]
+                if CHECKS_COLUMN in df.columns:
+                    stat_cols_to_drop.append(CHECKS_COLUMN)
                 if stat_cols_to_drop:
                     df = df.drop(columns=stat_cols_to_drop)
                 has_statistics = False
@@ -370,9 +385,29 @@ class CSVProcessor:
         # correct the index
         df = CSVProcessor.__make_index_from_zero_increasing_by_one(df)
 
+        df = CSVProcessor.__ensure_checks_column(df, keep_statistics=has_statistics and keep_statistics)
         add_new_file(file_name, title, subtitle)
         save_set(df, file_name, prune_tts=True)
         return information_after_processing
+
+    @staticmethod
+    def __ensure_checks_column(df: pd.DataFrame, *, keep_statistics: bool) -> pd.DataFrame:
+        """Fill ``checks`` for an import.
+
+        A file that already has the column keeps it when statistics are kept.
+        An older file without it copies ``correct_answers`` so the new counter
+        does not start below the known-good total. A reset stores 0.
+        """
+        if keep_statistics and CHECKS_COLUMN in df.columns:
+            df[CHECKS_COLUMN] = pd.to_numeric(df[CHECKS_COLUMN], errors="coerce").fillna(0).astype(int)
+            return df
+        if keep_statistics and StatsColumns.CORRECT_ANSWERS.value in df.columns:
+            df[CHECKS_COLUMN] = pd.to_numeric(
+                df[StatsColumns.CORRECT_ANSWERS.value], errors="coerce"
+            ).fillna(0).astype(int)
+            return df
+        df[CHECKS_COLUMN] = 0
+        return df
 
     @staticmethod
     def validate_file(file_path: str, original_name: str | None = None) -> dict:
@@ -406,7 +441,9 @@ class CSVProcessor:
             if not expected_columns.issubset(df_columns):
                 errors.append(error_message.value)
                 return False
-            unnecessary_columns = set(df_columns) - expected_columns - {col.value for col in StatsColumns}
+            unnecessary_columns = (
+                set(df_columns) - expected_columns - {col.value for col in StatsColumns} - {CHECKS_COLUMN}
+            )
             if unnecessary_columns:
                 warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
                 requires_specific_actions = True

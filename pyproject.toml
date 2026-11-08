@@ -8,6 +8,12 @@ dependencies = [
     "flet-audio>=1.1.0",
     "gTTS>=2.5.0",
     "pandas==3.0.3",
+    # Pinned to wheels published for Flet mobile builds. Newer pydantic
+    # asks for a pydantic-core wheel that pypi.flet.dev does not ship.
+    "sqlmodel==0.0.48",
+    "SQLAlchemy==2.0.50",
+    "greenlet==3.5.1",
+    "pydantic==2.11.7",
 ]
 
 [build-system]

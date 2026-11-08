@@ -2,7 +2,7 @@ import flet as ft
 import pandas as pd
 
 from learning_app.data.app_data import create_empty_set, get_kind_of_file_and_validate, load_set, save_set
-from learning_app.data.constants import MAX_ROWS, PartsOfSpeech, StatsColumns, WordDefinitions
+from learning_app.data.constants import CHECKS_COLUMN, MAX_ROWS, PartsOfSpeech, StatsColumns, WordDefinitions
 from learning_app.ui.components.edit_cards import EditCardDefinitions, EditCardWords
 from learning_app.ui.keyboard_shortcuts import (
     pop_ctrl_b_action,
@@ -248,6 +248,7 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
             StatsColumns.GOOD_ANSWERS_IN_A_ROW.value,
             StatsColumns.GOOD_ANSWER.value,
             StatsColumns.WORD_TO_LEARN.value,
+            CHECKS_COLUMN,
         ]
 
         new_data = []
@@ -266,6 +267,7 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
                         StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: False,
                         StatsColumns.GOOD_ANSWER.value: False,
                         StatsColumns.WORD_TO_LEARN.value: False,
+                        CHECKS_COLUMN: 0,
                     })
                     new_data.append(values)
 

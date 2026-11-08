@@ -199,7 +199,9 @@ def test_collect_speakable_texts_ignores_stats_and_empty_cells(isolated_csv_dir:
             "word_to_learn": [False, False],
         }
     )
-    words.to_csv(isolated_csv_dir / "demo_words.csv", index=True)
+    from learning_app.data.app_data import save_set
+
+    save_set(words, "demo_words.csv")
 
     definitions = pd.DataFrame(
         {
@@ -211,7 +213,7 @@ def test_collect_speakable_texts_ignores_stats_and_empty_cells(isolated_csv_dir:
             "word_to_learn": [False],
         }
     )
-    definitions.to_csv(isolated_csv_dir / "demo_definitions.csv", index=True)
+    save_set(definitions, "demo_definitions.csv")
 
     try:
         texts = collect_speakable_texts()
@@ -236,8 +238,10 @@ def test_service_garbage_collect_uses_live_set_texts(
     tts_cache: TtsCache,
     english_tts_language,
 ):
+    from learning_app.data.app_data import save_set
+
     definitions = pd.DataFrame({"definition": ["znieważać"], "word": ["insult"]})
-    definitions.to_csv(isolated_csv_dir / "live_definitions.csv", index=True)
+    save_set(definitions, "live_definitions.csv")
 
     service = TtsService(FakeProvider(), cache=tts_cache)
     keep = tts_cache.make_key("fake", "en", "insult", voice="test")

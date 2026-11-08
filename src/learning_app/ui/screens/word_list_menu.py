@@ -159,7 +159,7 @@ class WordContainer(ft.Container):
         Column_with_words = ft.Column()
 
         for word in words_row.index:
-            if word in stats_columns:
+            if word in stats_columns or word not in dict_index_names:
                 continue
             original = words_row[word]
             show_speaker = (

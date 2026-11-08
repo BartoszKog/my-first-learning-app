@@ -1,7 +1,7 @@
 """Bundled demo learning sets: registry, reserved names, and install helpers.
 
-Demo CSV templates live under the app assets directory. Installation copies them
-into ``csv_files/`` with fixed basenames and registers catalog rows. Those
+Demo CSV templates live under the app assets directory. Installation reads
+them, clears statistics, and registers the sets in the local database. The
 basenames stay reserved so create/import cannot claim them.
 """
 
@@ -11,10 +11,15 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import pandas as pd
-
-from learning_app.data.app_data import add_new_file, get_file_names, save_set, set_file_exists
-from learning_app.data.constants import StatsColumns
+from learning_app.data.app_data import (
+    add_new_file,
+    get_file_names,
+    read_set_csv,
+    save_set,
+    set_file_exists,
+    stringify_content_columns,
+)
+from learning_app.data.constants import CHECKS_COLUMN, StatsColumns
 
 DEMO_SETS: list[dict[str, str]] = [
     {
@@ -120,12 +125,13 @@ def allocate_unique_set_basename(preferred_basename: str) -> str:
         i += 1
 
 
-def _reset_statistics(df: pd.DataFrame) -> pd.DataFrame:
+def _reset_statistics(df):
     df = df.copy()
     df[StatsColumns.CORRECT_ANSWERS.value] = 0
     df[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] = False
     df[StatsColumns.GOOD_ANSWER.value] = False
     df[StatsColumns.WORD_TO_LEARN.value] = False
+    df[CHECKS_COLUMN] = 0
     return df
 
 
@@ -150,7 +156,7 @@ def install_demo_sets() -> DemoInstallResult:
         if not asset_path.is_file():
             raise FileNotFoundError(f"Demo asset not found: {asset_path}")
 
-        df = pd.read_csv(asset_path, index_col=0)
+        df = stringify_content_columns(read_set_csv(asset_path, index_col=0))
         df = _reset_statistics(df)
         save_set(df, file_name)
         add_new_file(file_name, title, demo["subtitle"])

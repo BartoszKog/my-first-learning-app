@@ -106,12 +106,13 @@ def test_get_set_learn_progress_missing_file(isolated_csv_dir: Path):
 
 
 def test_get_set_learn_progress_missing_stats_columns(isolated_csv_dir: Path):
+    """A CSV left in the folder is not a set until import or startup migration."""
     pd.DataFrame({"verb": ["go"], "person": ["walker"]}).to_csv(
         isolated_csv_dir / "nostats_words.csv",
         index=True,
     )
 
-    assert get_set_learn_progress("nostats_words.csv") == (0, 4)
+    assert get_set_learn_progress("nostats_words.csv") == (0, 0)
 
 
 def test_load_set_keeps_numeric_looking_content_as_strings(isolated_csv_dir: Path):

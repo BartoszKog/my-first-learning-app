@@ -1,17 +1,10 @@
 """Normalize phrases and collect live set texts for TTS cache GC."""
 
-from pathlib import Path
-
-import pandas as pd
-
 from learning_app.data.constants import PartsOfSpeech, WordDefinitions
-from learning_app.data.app_data import read_set_csv
-from learning_app.data.file_path_manager import FilePathManager
 
 _CONTENT_COLUMNS = {member.value for member in PartsOfSpeech} | {
     member.value for member in WordDefinitions
 }
-_SET_SUFFIXES = ("_words.csv", "_definitions.csv")
 
 
 def normalize_text(text: str) -> str:
@@ -52,44 +45,30 @@ def speakable_phrases(text: str) -> list[str]:
 def collect_speakable_texts() -> set[tuple[str, str]]:
     """Return phrases still spoken, paired with each set's TTS language.
 
-    Statistics columns and empty cells are ignored. Unreadable set files are
-    skipped so GC can still run after a partial catalog failure. The language
-    is the set's ``tts_language`` override, or the app language when that
-    cell is empty. The same spelling in two languages yields two pairs.
+    Statistics are ignored. Empty card text is ignored. The language is the
+    set's ``tts_language`` override, or the app language when that column is
+    NULL. The same spelling in two languages yields two pairs.
 
     Returns:
-        Distinct ``(phrase, language)`` pairs from ``*_words.csv`` and
-        ``*_definitions.csv`` under the CSV directory.
+        Distinct ``(phrase, language)`` pairs stored on learning-set cards.
     """
+    from learning_app.data.repository import iter_speakable_sets
     from learning_app.data.set_settings import language_for_set_file
+    from learning_app.ui.tts_preferences import TtsPreferences
 
-    csv_dir = Path(FilePathManager.get_csv_dir())
     texts: set[tuple[str, str]] = set()
-    if not csv_dir.is_dir():
-        return texts
-
-    for path in csv_dir.iterdir():
-        if not path.name.endswith(_SET_SUFFIXES):
-            continue
-        language = language_for_set_file(path.name)
-        for phrase in _texts_from_set_csv(path):
-            texts.add((phrase, language))
-    return texts
-
-
-def _texts_from_set_csv(path: Path) -> set[str]:
-    try:
-        frame = read_set_csv(path, index_col=0)
-    except (OSError, UnicodeError, ValueError, pd.errors.ParserError):
-        return set()
-
-    columns = [column for column in frame.columns if column in _CONTENT_COLUMNS]
-    if not columns:
-        return set()
-
-    texts: set[str] = set()
-    for value in frame[columns].to_numpy().ravel():
-        if pd.isna(value):
-            continue
-        texts.update(speakable_phrases(str(value)))
+    for learning_set, cards in iter_speakable_sets():
+        if learning_set.source_file_name:
+            language = language_for_set_file(learning_set.source_file_name)
+        elif learning_set.tts_language:
+            language = TtsPreferences.normalize_language(learning_set.tts_language)
+        else:
+            language = TtsPreferences.language
+        for card in cards:
+            for column in _CONTENT_COLUMNS:
+                value = getattr(card, column, "") or ""
+                if not str(value).strip():
+                    continue
+                for phrase in speakable_phrases(str(value)):
+                    texts.add((phrase, language))
     return texts

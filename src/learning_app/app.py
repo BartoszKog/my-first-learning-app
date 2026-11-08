@@ -1,6 +1,7 @@
 import flet as ft
 
 from learning_app.data.file_path_manager import FilePathManager
+from learning_app.data.repository import init_db
 from learning_app.ui.app_drawer import AppDrawer
 from learning_app.ui.page_functions import set_theme_from_bgcolor
 from learning_app.ui.navigation import go_search, push_view
@@ -33,8 +34,9 @@ colors = {
 
 
 async def main(page: ft.Page):
-    # Initialize FilePathManager at the beginning of the application
+    # Initialize storage, then copy any csv_files that are not in the database yet.
     FilePathManager.initialize()
+    init_db()
 
     page.padding = ft.Padding(left=25, right=25, top=0, bottom=0)
 

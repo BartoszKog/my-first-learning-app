@@ -48,6 +48,8 @@ async def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
     page.title = "Leaning App"
+    page.theme = ft.Theme(color_scheme_seed=ft.Colors.TEAL)
+    page.dark_theme = ft.Theme(color_scheme_seed=ft.Colors.TEAL)
 
     drawer = AppDrawer(page)
     page.drawer = drawer

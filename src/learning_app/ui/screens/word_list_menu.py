@@ -327,7 +327,7 @@ class WordListMenu(ft.Column):
             elif e.control is self.settings_button:
                 push_view(e.page, SET_SETTINGS_ROUTE, file=self.file_name)
 
-        self.start_button = ft.Button(
+        self.start_button = ft.FilledButton(
             content="Start",
             icon=ft.Icons.PLAY_ARROW,
             on_click=on_button_click,

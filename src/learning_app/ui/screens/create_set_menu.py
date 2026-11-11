@@ -50,7 +50,7 @@ class CreateSetMenu(RoutableScreenMixin, ft.Column):
         self.buttons_row = ft.Row(
             controls=[
                 ft.Button(content="Cancel", on_click=on_cancel_click),
-                ft.Button(content="Create", on_click=self.on_create_click),
+                ft.FilledButton(content="Create", on_click=self.on_create_click),
             ],
             alignment=ft.MainAxisAlignment.CENTER,
         )

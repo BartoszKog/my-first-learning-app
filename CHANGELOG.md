@@ -20,6 +20,7 @@ body and fails if it is missing.
 - Tile use count is the old catalog balance plus later visits. Opening a set records a visit and does not increment that balance
 - Document the SQLite store, visit log, `checks`, and the CSV migration
 - Raise the per-set card limit from 40 to 80 for import, create, and edit
+- Changed theme seed to teal and changed some buttons to filled ones
 
 ## [1.0.8] - 2026-11-05
 

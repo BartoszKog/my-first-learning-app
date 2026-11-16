@@ -103,9 +103,9 @@ def _build_edit_set_controls(
     title = params.get("title")
 ```
 
-If required data is absent, a set CSV referenced by ``file`` no longer
-exists on disk, or a create-set edit URL still carries ``title`` after that
-CSV was already created, the factory can return `None`. The router then builds
+If required data is absent, a set referenced by ``file`` is no longer
+in the database, or a create-set edit URL still carries ``title`` after that
+set was already created, the factory can return `None`. The router then builds
 the route configured in `RouteDef.fallback_path` (usually Home), pushes that
 fallback URL so browser history stays consistent, and may show a short
 SnackBar (`This set no longer exists.` or `This set already exists.`). This

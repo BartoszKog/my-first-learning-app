@@ -16,15 +16,13 @@ flowchart TD
     Pick[FilePicker CSV] --> Validate[CSVProcessor.validate_file]
     Validate -->|errors| Block[Show errors; do not import]
     Validate -->|valid| Form[Title / subtitle form]
-    Form --> CatalogOK{files.csv valid?}
-    CatalogOK -->|no| Restart[Ask user to restart]
-    CatalogOK -->|yes| Branch{requires_specific_actions?}
+    Form --> Branch{requires_specific_actions?}
     Branch -->|no| SaveSimple[save_set_with_no_specific_actions]
     Branch -->|yes| SaveFix[save_set_with_specific_actions]
     SaveSimple --> KeepStats{has_statistics?}
     SaveFix --> KeepStats
     KeepStats -->|ask| Dialog[Keep progress Yes/No]
-    KeepStats -->|no stats| Done[Catalog row + set CSV]
+    KeepStats -->|no stats| Done[Set row in SQLite]
     Dialog --> Done
 ```
 
@@ -101,11 +99,14 @@ Both helpers:
 2. Normalize or rebuild statistics columns according to `has_statistics` and
    `keep_statistics`.
 3. Rebuild a contiguous index from zero.
-4. Allocate a unique basename under `csv_files/` via
-   `allocate_unique_set_basename()` from `data/demo_sets.py` (also used when
-   creating a set). Catalog entries, on-disk files, and **reserved demo
-   basenames** count as taken, so import/create cannot claim a demo slot.
-5. Call `add_new_file` and `save_set`.
+4. Allocate a unique basename via `allocate_unique_set_basename()` from
+   `data/demo_sets.py` (also used when creating a set). Stored sets and
+   **reserved demo basenames** count as taken, so import/create cannot claim
+   a demo slot.
+5. Call `add_new_file` and `save_set`, which write the database. When
+   statistics are kept and the file has a `checks` column, that count is
+   kept. When statistics are kept and the column is absent, `checks` is
+   copied from `correct_answers`. Otherwise `checks` is 0.
 
 ```python
 CSVProcessor.save_set_with_no_specific_actions(
@@ -142,41 +143,33 @@ maps to `keep_statistics=True` (Yes) or `False` / treating the file as
 without usable stats (No). Do not invent a third persistence path in screen
 code; pass the flag into the matching save helper.
 
-## Catalog integrity: `files.csv`
+## Leftover catalog: `files.csv`
 
-Before adding a set, the Import screen checks the catalog:
+The live catalog is the database. Home, create, and import do not read
+`files.csv` and do not ask for a restart when that file is invalid. Startup
+copies it once; see
+[Startup copy from CSV](../architecture/data-and-storage.md#startup-copy-from-csv).
 
-```python
-if not CSVProcessor.validate_files_csv()["is_valid"]:
-    # UI asks the user to restart; navigation may stay locked
-    ...
-```
-
-`validate_files_csv` checks existence, required columns, empty names/titles,
-duplicate basenames, suffix rules, and whether listed files exist on disk.
-Missing files are warnings; structural problems are errors.
-
-`repair_files_csv` attempts cleanup (recover rows when pandas cannot parse
-the file, add missing catalog columns or rebuild from set files on disk,
-drop bad rows, fill empty subtitle cells when they are missing, remove
-duplicates or missing-file entries). A catalog that cannot be read as text is left unchanged rather
-than replaced with an empty file. A missing catalog is valid and is created
-later by catalog readers, not by repair. Prefer calling it from maintenance
-or recovery flows after understanding the validation result; the default
-Import path currently asks for an app restart when the catalog is invalid
-rather than auto-repairing mid-import.
+`validate_files_csv` and `repair_files_csv` remain for that leftover file.
+Validation checks existence, required columns, empty names/titles, duplicate
+basenames, suffix rules, and whether listed files exist on disk. Missing
+files are warnings; structural problems are errors. Repair may recover rows
+when pandas cannot parse the file, add missing catalog columns or rebuild
+from set files on disk, drop bad rows, fill empty subtitle cells when they
+are missing, and remove duplicates or missing-file entries. A catalog that
+cannot be read as text is left unchanged. A missing catalog is not created
+by repair. These helpers do not write SQLite.
 
 ## Export
 
 Export tiles reuse the shared export `TilesContainer` from
-[Body registry](../concepts/body-registry.md). Choosing export on a tile reads
-the set CSV from application storage, then calls
-`AppSession.get_export_csv_picker().save_file(..., src_bytes=...)` so Flet
-writes or downloads the bytes (required on web and mobile; also used on
-desktop). The file is the set CSV only. Per-set overrides stay on the catalog
-row and are not part of the export. A `SnackBar` confirms success; failures still use
-`create_alert_dialog`. Export does not re-run `validate_file`; the file
-already lives under application storage.
+[Body registry](../concepts/body-registry.md). Choosing export on a tile builds CSV bytes from the database
+(`export_set_csv_bytes`: row index, statistics, and `checks`; no `card_id`),
+then calls `AppSession.get_export_csv_picker().save_file(..., src_bytes=...)`
+so Flet writes or downloads the bytes (required on web and mobile; also used
+on desktop). Per-set overrides stay on the set row and are not part of the
+export. A `SnackBar` confirms success; failures still use
+`create_alert_dialog`. Export does not re-run `validate_file`.
 
 ### Search on the Export tab
 
@@ -197,7 +190,7 @@ search before visiting Import/Export — see
 | Dialogs and form state | `ImportExportControl` (+ `create_alert_dialog`) |
 | Import file picker | `ImportExportControl.csv_file_selector` |
 | Shared export picker | `AppSession` |
-| Disk paths and catalog helpers | `FilePathManager` / `app_data` helpers |
+| Database paths and catalog helpers | `FilePathManager` / `app_data` / `repository` |
 
 Do not keep imported DataFrames or catalog rows in `AppSession`.
 

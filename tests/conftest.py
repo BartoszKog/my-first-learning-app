@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from learning_app.data.file_path_manager import FilePathManager
+from learning_app.data.repository import reset_storage
 
 
 @pytest.fixture(autouse=True)
@@ -17,4 +18,5 @@ def isolated_csv_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(FilePathManager, "_temp_dir", str(tmp_path / "storage_temp"), raising=False)
     monkeypatch.setattr(FilePathManager, "_csv_dir", str(csv_dir), raising=False)
     monkeypatch.setattr(FilePathManager, "_initialized", True)
+    reset_storage()
     return csv_dir

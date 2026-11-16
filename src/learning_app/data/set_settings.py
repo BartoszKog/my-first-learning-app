@@ -1,7 +1,9 @@
-"""Per-set learning and TTS overrides stored as empty-or-set cells in ``files.csv``.
+"""Per-set learning and TTS overrides stored on the ``learning_set`` row.
 
-An empty cell inherits the matching app setting. A non-empty cell is the set's
-own value. Columns that belong to the other set kind stay empty.
+NULL inherits the matching app setting. A stored value is the set's own
+choice, including ``false``. Columns that belong to the other set kind stay
+NULL. Callers still see an empty string for NULL, the same way a blank
+catalog cell used to mean "inherit".
 """
 
 from __future__ import annotations
@@ -82,19 +84,19 @@ def columns_for_kind(kind: str) -> tuple[str, ...]:
 def read_override_cells(file_name: str) -> dict[str, str]:
     """Return stored override text for ``file_name``.
 
-    Missing catalog rows and blank cells are empty strings. Empty means the
-    set inherits the app setting for that column.
+    A missing set and a NULL column are empty strings. Empty means the set
+    inherits the app setting for that column.
 
     Args:
         file_name: Set basename or path.
     """
+    from learning_app.data.repository import get_learning_set
+
     blank = {column: "" for column in _ALL_OVERRIDE_COLUMNS}
-    row = _catalog_row(file_name)
-    if row is None:
+    learning_set = get_learning_set(file_name)
+    if learning_set is None:
         return blank
-    for column in _ALL_OVERRIDE_COLUMNS:
-        blank[column] = _cell_text(row[column]) if column in row.index else ""
-    return blank
+    return _override_texts(learning_set)
 
 
 def effective_set_settings(file_name: str) -> EffectiveSetSettings:
@@ -175,15 +177,16 @@ def language_for_set_file(file_name: str) -> str:
 
 
 def catalog_title(file_name: str) -> str:
-    """Return the display title for ``file_name`` from ``files.csv``.
+    """Return the display title for ``file_name``.
 
-    Falls back to the basename when the catalog row is missing or the title
-    cell is blank.
+    Falls back to the basename when the set is missing or the title is blank.
     """
-    row = _catalog_row(file_name)
-    if row is None or FilesColumns.TITLE.value not in row.index:
+    from learning_app.data.repository import get_learning_set
+
+    learning_set = get_learning_set(file_name)
+    if learning_set is None:
         return os.path.basename(file_name)
-    title = _cell_text(row[FilesColumns.TITLE.value])
+    title = (learning_set.title or "").strip()
     return title or os.path.basename(file_name)
 
 
@@ -194,7 +197,7 @@ def enable_set_overrides(file_name: str) -> None:
     follows later changes to the app settings.
 
     Args:
-        file_name: Set basename or path present in ``files.csv``.
+        file_name: Set basename or path stored in the database.
     """
     from learning_app.data.app_data import get_kind_of_file_and_validate
 
@@ -206,7 +209,7 @@ def clear_set_overrides(file_name: str) -> None:
     """Blank every override column so the set uses app settings again.
 
     Args:
-        file_name: Set basename or path present in ``files.csv``.
+        file_name: Set basename or path stored in the database.
     """
     _write_overrides(file_name, {}, clear_others=True)
 
@@ -215,7 +218,7 @@ def set_override_value(file_name: str, column: str, value: str) -> None:
     """Store one override cell when ``column`` applies to this set's kind.
 
     Args:
-        file_name: Set basename or path present in ``files.csv``.
+        file_name: Set basename or path stored in the database.
         column: A ``FilesColumns`` override name.
         value: Explicit stored text, such as ``"true"``, ``"pl"``, or ``"8"``.
     """
@@ -265,39 +268,72 @@ def _write_overrides(
     *,
     clear_others: bool,
 ) -> None:
-    from learning_app.data.app_data import ensure_files_catalog_columns, read_catalog_csv
-    from learning_app.data.file_path_manager import FilePathManager
+    from learning_app.data.app_data import get_kind_of_file_and_validate
+    from learning_app.data.repository import write_overrides
 
-    path = FilePathManager.get_files_data_path()
-    if not os.path.exists(path):
-        return
-    frame = ensure_files_catalog_columns(read_catalog_csv(path))
-    basename = os.path.basename(file_name)
-    mask = frame[FilesColumns.FILE_NAME.value] == basename
-    if not mask.any():
-        return
-    for column in _ALL_OVERRIDE_COLUMNS:
-        frame[column] = frame[column].astype("object")
-        if clear_others:
-            frame.loc[mask, column] = ""
-    for column, value in values.items():
-        frame.loc[mask, column] = value
-    frame.to_csv(path, index=False)
+    kind = get_kind_of_file_and_validate(file_name)
+    stored = {
+        column: db_override_from_text(column, text, kind)
+        for column, text in values.items()
+    }
+    write_overrides(file_name, stored, clear_others=clear_others)
+    if clear_others or FilesColumns.TTS_LANGUAGE.value in values:
+        _prune_tts_after_language_change()
 
 
-def _catalog_row(file_name: str) -> pd.Series | None:
-    from learning_app.data.app_data import ensure_files_catalog_columns, read_catalog_csv
-    from learning_app.data.file_path_manager import FilePathManager
+def override_cell_text(value: object) -> str:
+    """Return catalog text for one override cell, or ``\"\"`` when it is blank."""
+    return _cell_text(value)
 
-    path = FilePathManager.get_files_data_path()
-    if not os.path.exists(path):
+
+def db_override_from_text(column: str, text: str, kind: str):
+    """Map one catalog cell to the value stored on ``learning_set``.
+
+    A blank cell and a column that does not belong to ``kind`` become NULL.
+    ``false`` stays false. An integer queue size is kept even outside the
+    slider range; text that is not an integer becomes NULL. A language cell
+    is stored as written, without normalizing unknown codes.
+    """
+    if column not in columns_for_kind(kind):
         return None
-    frame = ensure_files_catalog_columns(read_catalog_csv(path))
-    basename = os.path.basename(file_name)
-    mask = frame[FilesColumns.FILE_NAME.value] == basename
-    if not mask.any():
+    if text == "":
         return None
-    return frame.loc[mask].iloc[0]
+    if column == FilesColumns.TTS_LANGUAGE.value:
+        return text
+    if column == FilesColumns.QUEUE_SIZE.value:
+        try:
+            number = float(text)
+        except (TypeError, ValueError):
+            return None
+        if not number.is_integer():
+            return None
+        return int(number)
+    return text.strip().lower() in _TRUE_TOKENS
+
+
+def _override_texts(learning_set) -> dict[str, str]:
+    def flag(value: bool | None) -> str:
+        if value is None:
+            return ""
+        return _bool_text(value)
+
+    queue = learning_set.queue_size
+    language = learning_set.tts_language
+    return {
+        FilesColumns.TTS_LANGUAGE.value: "" if language is None else str(language),
+        FilesColumns.TTS_AUTO_SPEAK.value: flag(learning_set.tts_auto_speak),
+        FilesColumns.SPEAKERS_WORD_FORMATIONS.value: flag(learning_set.speakers_word_formations),
+        FilesColumns.SPEAKERS_WORD.value: flag(learning_set.speakers_word),
+        FilesColumns.SPEAKERS_DEFINITION.value: flag(learning_set.speakers_definition),
+        FilesColumns.RETRY_UNTIL_CORRECT.value: flag(learning_set.retry_until_correct),
+        FilesColumns.QUEUE_SIZE.value: "" if queue is None else str(int(queue)),
+    }
+
+
+def _prune_tts_after_language_change() -> None:
+    from learning_app.tts.service import garbage_collect_tts_cache
+
+    garbage_collect_tts_cache()
 
 
 def _cell_text(value: object) -> str:

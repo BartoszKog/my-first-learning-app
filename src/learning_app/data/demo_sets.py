@@ -1,7 +1,7 @@
 """Bundled demo learning sets: registry, reserved names, and install helpers.
 
-Demo CSV templates live under the app assets directory. Installation copies them
-into ``csv_files/`` with fixed basenames and registers catalog rows. Those
+Demo CSV templates live under the app assets directory. Installation reads
+them, clears statistics, and registers the sets in the local database. The
 basenames stay reserved so create/import cannot claim them.
 """
 
@@ -11,10 +11,15 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import pandas as pd
-
-from learning_app.data.app_data import add_new_file, get_file_names, save_set, set_file_exists
-from learning_app.data.constants import StatsColumns
+from learning_app.data.app_data import (
+    add_new_file,
+    get_file_names,
+    read_set_csv,
+    save_set,
+    set_file_exists,
+    stringify_content_columns,
+)
+from learning_app.data.constants import CHECKS_COLUMN, StatsColumns
 
 DEMO_SETS: list[dict[str, str]] = [
     {
@@ -68,7 +73,7 @@ def is_set_name_reserved(file_name: str) -> bool:
 
 
 def is_demo_already_installed(file_name: str, existing_basenames: list[str] | None = None) -> bool:
-    """Return whether a demo basename is already in the catalog or on disk."""
+    """Return whether a demo basename is already stored."""
     basename = os.path.basename(file_name)
     names = existing_basenames if existing_basenames is not None else get_file_names()
     if basename in names:
@@ -77,7 +82,7 @@ def is_demo_already_installed(file_name: str, existing_basenames: list[str] | No
 
 
 def is_set_name_taken(file_name: str, existing_basenames: list[str] | None = None) -> bool:
-    """Return whether a set basename is reserved, catalogued, or present on disk.
+    """Return whether a set basename is reserved or already stored.
 
     Used when allocating names for create/import so reserved demo basenames
     cannot be claimed. Demo installation uses ``is_demo_already_installed``
@@ -92,8 +97,8 @@ def is_set_name_taken(file_name: str, existing_basenames: list[str] | None = Non
 def allocate_unique_set_basename(preferred_basename: str) -> str:
     """Return a free ``*_words.csv`` / ``*_definitions.csv`` basename.
 
-    Reserved demo names, catalog entries, and on-disk files are treated as
-    occupied. When ``preferred_basename`` is taken, appends ``1``, ``2``, …
+    Reserved demo names and stored sets are treated as occupied. When
+    ``preferred_basename`` is taken, appends ``1``, ``2``, …
     before the kind suffix.
     """
     if preferred_basename is None:
@@ -120,20 +125,21 @@ def allocate_unique_set_basename(preferred_basename: str) -> str:
         i += 1
 
 
-def _reset_statistics(df: pd.DataFrame) -> pd.DataFrame:
+def _reset_statistics(df):
     df = df.copy()
     df[StatsColumns.CORRECT_ANSWERS.value] = 0
     df[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] = False
     df[StatsColumns.GOOD_ANSWER.value] = False
     df[StatsColumns.WORD_TO_LEARN.value] = False
+    df[CHECKS_COLUMN] = 0
     return df
 
 
 def install_demo_sets() -> DemoInstallResult:
-    """Copy missing demo templates into storage and register them in the catalog.
+    """Read missing demo templates and register them in the database.
 
-    Skips a demo when its fixed basename is already in the catalog or on disk.
-    Always resets learning statistics on newly installed copies.
+    Skips a demo when its fixed basename is already stored. Always resets
+    learning statistics, including ``checks``, on newly installed copies.
     """
     existing = list(get_file_names())
     result = DemoInstallResult()
@@ -150,7 +156,7 @@ def install_demo_sets() -> DemoInstallResult:
         if not asset_path.is_file():
             raise FileNotFoundError(f"Demo asset not found: {asset_path}")
 
-        df = pd.read_csv(asset_path, index_col=0)
+        df = stringify_content_columns(read_set_csv(asset_path, index_col=0))
         df = _reset_statistics(df)
         save_set(df, file_name)
         add_new_file(file_name, title, demo["subtitle"])

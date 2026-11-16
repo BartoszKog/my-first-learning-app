@@ -1,12 +1,10 @@
 import asyncio
-import os
 import threading
 
 import flet as ft
 
-from learning_app.data.app_data import delate_set, get_file_names_and_titles
+from learning_app.data.app_data import get_file_names_and_titles
 from learning_app.data.constants import FilesColumns, SetSortMode
-from learning_app.data.file_path_manager import FilePathManager
 from learning_app.ui.components.content_tile import ContentTile
 from learning_app.ui.layout_host import control_is_on_page
 from learning_app.ui.layout_metrics import LayoutMetrics, LayoutMetricsStore
@@ -303,86 +301,10 @@ class TilesContainer(ft.Container):
     def has_content_tiles(self):
         return len(self.__tile_controls()) > 0
 
-    @staticmethod
-    def __file_exist(file_name):
-        file_path = FilePathManager.get_csv_path(file_name)
-        try:
-            with open(file_path):
-                return True
-        except FileNotFoundError:
-            return False
-
     def __validate_and_get_files(self, page=None, *, show_alerts=True):
-        from learning_app.data.csv_processor import CSVProcessor
-        files_validation = CSVProcessor.validate_files_csv()
-
-        if not files_validation["is_valid"] and files_validation["errors"]:
-            error_message = "The configuration file files.csv has issues that need to be fixed:\n\n"
-
-            if files_validation["errors"]:
-                error_message += "Errors:\n"
-                for error in files_validation["errors"]:
-                    error_message += f"- {error}\n"
-
-            if files_validation["warnings"]:
-                error_message += "\nWarnings:\n"
-                for warning in files_validation["warnings"]:
-                    error_message += f"- {warning}\n"
-
-            error_message += "\nWould you like to attempt automatic repair? This may remove some invalid entries."
-
-            if page is not None and show_alerts:
-                AppSession.disable_all_navigation_controls()
-                self.set_sort_controls_enabled(False)
-
-                create_alert_dialog(
-                    page=page,
-                    title="Configuration File Issues",
-                    content=error_message,
-                    close_button_text="No",
-                    action_button_text="Yes, repair",
-                    action_function=lambda e: self.__repair_files_and_reload(e),
-                )
-            return []
-
-        files_and_titles = get_file_names_and_titles(self.sort_mode)
-
-        files_to_remove = [
-            entry[FilesColumns.FILE_NAME.value]
-            for entry in files_and_titles
-            if not self.__file_exist(entry[FilesColumns.FILE_NAME.value])
-        ]
-
-        if files_to_remove:
-            if page is not None and show_alerts:
-                names = [os.path.basename(name) for name in files_to_remove]
-                if len(names) == 1:
-                    content = (
-                        f"The set file {names[0]} was not found.\n"
-                        "It has been removed from the list."
-                    )
-                else:
-                    listed = "\n".join(f"• {name}" for name in names)
-                    content = (
-                        "These set files were not found and have been removed "
-                        f"from the list:\n\n{listed}"
-                    )
-                create_alert_dialog(
-                    page=page,
-                    title="File not found",
-                    content=content,
-                    close_button_text="OK",
-                )
-            from learning_app.ui.router import remove_views_for_set_file
-
-            for file_name in files_to_remove:
-                delate_set(file_name, file_not_exist=True)
-                if page is not None:
-                    remove_views_for_set_file(page, file_name)
-
-            files_and_titles = get_file_names_and_titles(self.sort_mode)
-
-        return files_and_titles
+        """Return stored sets. The catalog is the database, not ``files.csv``."""
+        del page, show_alerts
+        return get_file_names_and_titles(self.sort_mode)
 
     def __repair_files_and_reload(self, e):
         from learning_app.data.csv_processor import CSVProcessor

@@ -28,7 +28,7 @@ To clone the repo and run the app or docs locally, see
 
     ---
 
-    How routing, screens, layout, chrome, CSV storage, and startup wiring fit together.
+    How routing, screens, layout, chrome, the SQLite store, and startup wiring fit together.
 
     [Read architecture →](architecture/index.md)
 
@@ -62,7 +62,7 @@ To clone the repo and run the app or docs locally, see
     ---
 
     Generated signatures and contracts for routing, layout, chrome, state, and
-    CSV data.
+    the local store.
 
     [Browse API →](reference/index.md)
 
@@ -107,11 +107,13 @@ src/
     utils/
       greetings.py          # AppBar greeting text
     data/
-      file_path_manager.py  # storage roots, csv_files, tts_cache paths
-      app_data.py           # catalog CRUD, load/save, AppData session
-      set_settings.py       # per-set learning and TTS overrides on files.csv
-      constants.py          # CSV column enums, MAX_ROWS, import messages
-      csv_processor.py      # import validation and specialized saves
+      file_path_manager.py  # storage roots, learning.sqlite, csv_files, tts_cache
+      models.py             # SQLite tables: set, card, visit, migrated CSV
+      repository.py         # engine, CRUD, visits, startup CSV copy
+      app_data.py           # public catalog API, load/save, AppData session
+      set_settings.py       # per-set learning and TTS overrides on the set row
+      constants.py          # column enums, checks, card_id, MAX_ROWS, import messages
+      csv_processor.py      # import validation and save into the database
       demo_sets.py          # bundled demo registry, reserved names, install
     tts/                    # pronunciation cache, gTTS provider, GC
     ui/

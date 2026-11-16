@@ -8,10 +8,11 @@ from learning_app.data.app_data import (
     get_set_learn_progress,
     record_set_use,
     set_default_progress,
+    set_file_exists,
     update_set_metadata,
 )
 from learning_app.data.constants import TITLE_MAX_LENGTH
-from learning_app.data.file_path_manager import FilePathManager
+from learning_app.data.repository import export_set_csv_bytes
 from learning_app.ui.layout_metrics import LayoutMetricsStore
 from learning_app.ui.navigation import push_view
 from learning_app.ui.page_functions import create_alert_dialog
@@ -142,18 +143,6 @@ class ContentTile(ft.Card):
 
             title_field.error = None
 
-            from learning_app.data.csv_processor import CSVProcessor
-
-            if not CSVProcessor.validate_files_csv()["is_valid"]:
-                e.page.pop_dialog()
-                create_alert_dialog(
-                    page=e.page,
-                    title="Error",
-                    content="files.csv has been changed. \nPlease restore it to its original state.",
-                    close_button_text="OK",
-                )
-                return
-
             title = title_field.value.strip().capitalize()
             subtitle = (subtitle_field.value or "").strip().capitalize()
             update_set_metadata(self.file_name, title, subtitle)
@@ -188,16 +177,6 @@ class ContentTile(ft.Card):
         )
 
     def delete_item(self, e, file_not_exist=False):
-        from learning_app.data.csv_processor import CSVProcessor
-        if not CSVProcessor.validate_files_csv()["is_valid"]:
-            create_alert_dialog(
-                page=e.page,
-                title="Error",
-                content="files.csv has been changed. \nPlease restore it to its original state.",
-                close_button_text="OK",
-            )
-            return
-
         delate_set(self.file_name, file_not_exist)
         from learning_app.ui.router import remove_views_for_set_file
 
@@ -223,45 +202,9 @@ class ContentTile(ft.Card):
             self.parent_container.refresh_content()
         e.page.update()
 
-    def __validate_file_before_opening(self, e):
-        from learning_app.data.csv_processor import CSVProcessor
-
+    def open_set(self, e):
         if not self.__file_exist():
             self.file_not_found_dialog(e)
-            return False
-
-        validation_result = CSVProcessor.validate_file(self.file_name)
-
-        if not validation_result["is_valid"] or len(validation_result["warnings"]) > 0 or not validation_result["has_statistics"]:
-            error_message = "The file has been modified externally and cannot be opened correctly in the application.\n\n"
-
-            if validation_result["errors"]:
-                error_message += "Errors:\n"
-                for error in validation_result["errors"]:
-                    error_message += f"- {error}\n"
-
-            if validation_result["warnings"]:
-                error_message += "\nWarnings:\n"
-                for warning in validation_result["warnings"]:
-                    error_message += f"- {warning}\n"
-
-            if not validation_result["has_statistics"]:
-                error_message += "\nStatistics columns missing. This file cannot be used for learning without progress tracking.\n"
-
-            error_message += "\nPlease fix the issues in the file before opening it."
-
-            create_alert_dialog(
-                page=e.page,
-                title="File validation error",
-                content=error_message,
-                close_button_text="OK",
-            )
-            return False
-
-        return True
-
-    def open_set(self, e):
-        if not self.__validate_file_before_opening(e):
             return
 
         record_set_use(self.file_name)
@@ -278,13 +221,7 @@ class ContentTile(ft.Card):
         self.delete_item(e, file_not_exist=True)
 
     def __file_exist(self):
-        file_path = FilePathManager.get_csv_path(self.file_name)
-        try:
-            with open(file_path, "r"):
-                pass
-        except FileNotFoundError:
-            return False
-        return True
+        return set_file_exists(self.file_name)
 
     # methods involved with logic of searching
     def contains_pattern(self, pattern: str):
@@ -367,9 +304,7 @@ class ContentTile(ft.Card):
             file_name += ".csv"
 
         try:
-            src_file_path = FilePathManager.get_csv_path(self.file_name)
-            with open(src_file_path, "rb") as fsrc:
-                src_bytes = fsrc.read()
+            src_bytes = export_set_csv_bytes(self.file_name)
 
             destination_path = await picker.save_file(
                 dialog_title="Choose export location",

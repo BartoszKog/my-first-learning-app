@@ -45,10 +45,10 @@ menu actions such as reset progress (`set_default_progress`), delete
 (`delate_set`), and export through `AppSession.get_export_csv_picker()` with
 `save_file(..., src_bytes=...)`. In export mode the tile is oriented toward
 picking a set to save out rather than full Home management. Export copies the
-set CSV only; per-set catalog overrides stay in `files.csv`.
+set CSV only (built from the database, including `checks`). Per-set overrides stay on the set row.
 
 ```text
-files.csv → TilesContainer → ContentTile → learn / edit / set settings / delete / export
+learning.sqlite → TilesContainer → ContentTile → learn / edit / set settings / delete / export
 ```
 
 ## Learn fields
@@ -68,15 +68,15 @@ calling `good_answer_at_current_row` / `bad_answer_at_current_row` on the
 **first** Check of a card, and resetting progress when all words are learned.
 
 When the set's effective **Retype until correct** is on, a wrong Check stays
-on the same card (`Try again`) until the answer is typed correctly. An empty
-catalog cell uses `LearnPreferences`. Extra attempts do not call the answer
+on the same card (`Try again`) until the answer is typed correctly. A `NULL`
+override uses `LearnPreferences`. Extra attempts do not call the answer
 helpers. On word-formation retries, `WordFields.prepare_retry` keeps green
 fields filled and only resets missed forms.
 
 `WordDefinitionField` adds a speaker button to the right of Check. It stays
 disabled until Check reveals the word, then `AppSession.speak` plays the
 **word** column (not the definition) in the set's effective language. An
-empty `tts_language` cell uses `TtsPreferences`. Optional auto-speak after
+`NULL` `tts_language` uses `TtsPreferences`. Optional auto-speak after
 Check uses the set's effective flag and does not show error snackbars.
 Repeating the same cached file skips the load wait so the speaker can replay
 immediately. During a definitions session, **Ctrl+S** triggers the same
@@ -140,8 +140,8 @@ as the search close button, without popping the shell route.
 | Which route hosts which body | `route_registry` / screen map |
 | Shared Home/export tile instance | `BodyRegistry` |
 | Practice queue and stats | `AppData` |
-| Learn-session retry and queue size | Effective set value in `files.csv`; empty cell uses `LearnPreferences`. Check and `draw_index_group` read it |
-| TTS language, auto-speak, word-list speakers | Effective set value; empty cell uses `TtsPreferences` |
+| Learn-session retry and queue size | Effective set value on the set row; `NULL` uses `LearnPreferences`. Check and `draw_index_group` read it |
+| TTS language, auto-speak, word-list speakers | Effective set value; `NULL` uses `TtsPreferences` |
 | Tile list / learn loop / edit cards | `ui/components/` |
 | Screen chrome and navigation | Shell chrome + navigation helpers |
 

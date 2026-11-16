@@ -1,8 +1,10 @@
 """Catalog CRUD, set load/save helpers, and in-memory learning sessions.
 
-Module-level functions manage ``files.csv`` and set CSVs on disk through
-``FilePathManager``. ``AppData`` loads one set for a learn session, draws
-practice groups from statistics columns, and persists answers with ``save_set``.
+Module-level functions address sets by their ``*_words.csv`` /
+``*_definitions.csv`` basename. The rows live in SQLite through the
+repository. ``AppData`` still holds one set as a DataFrame for the learn
+session, draws practice groups from the statistics columns, and writes a
+graded card back by its id.
 """
 
 import os
@@ -11,7 +13,15 @@ from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
-from learning_app.data.constants import FilesColumns, PartsOfSpeech, SetSortMode, StatsColumns, WordDefinitions
+from learning_app.data.constants import (
+    CARD_ID_COLUMN,
+    CHECKS_COLUMN,
+    FilesColumns,
+    PartsOfSpeech,
+    SetSortMode,
+    StatsColumns,
+    WordDefinitions,
+)
 from learning_app.data.file_path_manager import FilePathManager
 
 _SET_OVERRIDE_COLUMNS = [
@@ -48,10 +58,6 @@ def read_catalog_csv(path: str) -> pd.DataFrame:
         keep_default_na=False,
         na_values=[""],
     )
-
-
-def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
 def ensure_files_catalog_columns(df: pd.DataFrame | None = None, *, persist: bool = True) -> pd.DataFrame:
@@ -240,7 +246,7 @@ def stringify_content_columns(df: pd.DataFrame) -> pd.DataFrame:
     UIs then treat those cells as empty or call ``len``/``split`` on numbers.
     Statistics columns are left unchanged; missing content stays NA.
     """
-    stats = {col.value for col in StatsColumns}
+    stats = {col.value for col in StatsColumns} | {CHECKS_COLUMN, CARD_ID_COLUMN}
     for col in df.columns:
         if col in stats:
             continue
@@ -249,17 +255,18 @@ def stringify_content_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def save_set(data: pd.DataFrame, file_name: str, *, prune_tts: bool = False) -> None:
-    """Write a set DataFrame to the CSV directory, keeping the index column.
+    """Replace a set's cards in the local database.
 
     Args:
-        data: Set table to persist.
-        file_name: Set basename or path resolved by ``FilePathManager``.
+        data: Set table to persist. Row order becomes ``position``.
+        file_name: Set basename (``*_words.csv`` or ``*_definitions.csv``).
         prune_tts: When ``True``, drop cached MP3s for phrases that no longer
             appear in any set. Use after editing or importing content, not
             after progress-only saves.
     """
-    full_path = FilePathManager.get_csv_path(file_name)
-    data.to_csv(full_path, index=True)
+    from learning_app.data.repository import save_set_frame
+
+    save_set_frame(data, file_name)
     if prune_tts:
         from learning_app.tts.service import garbage_collect_tts_cache
 
@@ -267,30 +274,35 @@ def save_set(data: pd.DataFrame, file_name: str, *, prune_tts: bool = False) -> 
 
 
 def load_set(file_name: str) -> pd.DataFrame:
-    """Load a set CSV with the first column as the DataFrame index.
+    """Load a set from the local database, ordered by ``position``.
 
-    Content columns are coerced to strings so numeric-looking cells (``123``)
-    stay text. Words that look like pandas NA sentinels (``nan``, ``None``,
-    ``NA``) stay as written. Missing content stays NA; statistics columns
-    keep inferred numeric/bool dtypes.
+    Content columns are strings. Empty content stays missing so the learn UI
+    can skip unused parts of speech. ``checks`` and ``card_id`` travel with
+    the frame. Statistics columns keep numeric and bool values.
 
     Args:
-        file_name: Set basename or path resolved by ``FilePathManager``.
+        file_name: Set basename or path.
 
     Returns:
         Loaded set table.
+
+    Raises:
+        FileNotFoundError: No set is stored under that name.
     """
-    full_path = FilePathManager.get_csv_path(file_name)
-    return stringify_content_columns(read_set_csv(full_path, index_col=0))
+    from learning_app.data.repository import load_set_frame
+
+    return load_set_frame(file_name)
 
 
 def set_file_exists(file_name: str) -> bool:
-    """Return whether the set CSV exists on disk.
+    """Return whether a set with this basename is stored.
 
     Args:
-        file_name: Set basename or path resolved by ``FilePathManager``.
+        file_name: Set basename or path.
     """
-    return os.path.exists(FilePathManager.get_csv_path(file_name))
+    from learning_app.data.repository import set_exists
+
+    return set_exists(file_name)
 
 
 def sanitize_file_name(file_name: str, kind: str) -> str:
@@ -312,10 +324,10 @@ def sanitize_file_name(file_name: str, kind: str) -> str:
 
 
 def get_file_names_and_titles(sort_mode: SetSortMode = SetSortMode.LAST_USED) -> list[dict]:
-    """Return catalog entries with absolute CSV paths, titles, and metadata.
+    """Return stored sets with titles and metadata.
 
-    Creates an empty ``files.csv`` when the catalog is missing and migrates
-    older catalogs that lack creation/usage columns.
+    The first database open also copies sets that are still only in
+    ``files.csv``. ``use_count`` is the migrated balance plus later visits.
 
     Args:
         sort_mode: Ordering applied before returning entries.
@@ -323,51 +335,22 @@ def get_file_names_and_titles(sort_mode: SetSortMode = SetSortMode.LAST_USED) ->
     Returns:
         List of dicts with ``file_name``, ``title``, ``subtitle``,
         ``created_at``, ``last_used``, and ``use_count`` keys.
-        ``file_name`` values are absolute paths.
+        ``file_name`` values are basenames such as ``Animals_words.csv``.
     """
-    files_data_path = FilePathManager.get_files_data_path()
+    from learning_app.data.repository import list_catalog
 
-    if not os.path.exists(files_data_path):
-        generate_empty_files_data()
-
-    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
-    df_files[FilesColumns.SUBTITLE.value] = df_files[FilesColumns.SUBTITLE.value].apply(
-        lambda x: "" if pd.isna(x) else x
-    )
-
-    result = []
-    for _, row in df_files.iterrows():
-        entry = {
-            FilesColumns.FILE_NAME.value: FilePathManager.get_csv_path(row[FilesColumns.FILE_NAME.value]),
-            FilesColumns.TITLE.value: row[FilesColumns.TITLE.value],
-            FilesColumns.SUBTITLE.value: row[FilesColumns.SUBTITLE.value],
-            FilesColumns.CREATED_AT.value: (
-                "" if pd.isna(row[FilesColumns.CREATED_AT.value]) else str(row[FilesColumns.CREATED_AT.value])
-            ),
-            FilesColumns.LAST_USED.value: (
-                "" if pd.isna(row[FilesColumns.LAST_USED.value]) else str(row[FilesColumns.LAST_USED.value])
-            ),
-            FilesColumns.USE_COUNT.value: int(row[FilesColumns.USE_COUNT.value] or 0),
-        }
-        result.append(entry)
-    return sort_catalog_entries(result, sort_mode)
+    return sort_catalog_entries(list_catalog(), sort_mode)
 
 
 def get_file_names() -> list:
-    """Return basenames listed in ``files.csv``.
-
-    Creates an empty catalog when missing.
+    """Return basenames of stored sets.
 
     Returns:
-        List of set file basenames.
+        List of set basenames.
     """
-    files_data_path = FilePathManager.get_files_data_path()
+    from learning_app.data.repository import list_basenames
 
-    if not os.path.exists(files_data_path):
-        generate_empty_files_data()
-
-    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
-    return df_files[FilesColumns.FILE_NAME.value].tolist()
+    return list_basenames()
 
 
 def generate_empty_files_data() -> None:
@@ -381,20 +364,14 @@ def generate_empty_files_data() -> None:
 def set_default_progress(file_name: str) -> None:
     """Reset learning statistics on an existing set without removing content.
 
-    Args:
-        file_name: Set basename or path to reload and save.
-    """
-    data = load_set(file_name)
-    default_values = {
-        StatsColumns.CORRECT_ANSWERS.value: 0,
-        StatsColumns.GOOD_ANSWER.value: False,
-        StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: False,
-        StatsColumns.WORD_TO_LEARN.value: False,
-    }
-    for col in default_values.keys():
-        data[col] = default_values[col]
+    Card ``checks`` return to 0. Visit rows are left as they are.
 
-    save_set(data, file_name)
+    Args:
+        file_name: Set basename or path.
+    """
+    from learning_app.data.repository import reset_card_progress
+
+    reset_card_progress(file_name)
 
 
 def get_set_learn_progress(file_name: str) -> tuple[int, int]:
@@ -444,22 +421,19 @@ def get_set_learn_progress(file_name: str) -> tuple[int, int]:
 
 
 def delate_set(file_name: str, file_not_exist: bool = False) -> None:
-    """Remove a set from the catalog and optionally delete its CSV file.
+    """Remove a set, its cards, and its visits.
+
+    The migration marker for a CSV that was copied in at startup stays, so
+    the file is not imported again. A leftover CSV is deleted unless
+    ``file_not_exist`` is set.
 
     Args:
-        file_name: Set basename or path whose basename is matched in the
-            catalog.
-        file_not_exist: When ``True``, only the catalog row is removed and the
-            CSV file is left untouched even if present.
+        file_name: Set basename or path.
+        file_not_exist: When ``True``, a CSV still on disk is left in place.
     """
-    files_data_path = FilePathManager.get_files_data_path()
+    from learning_app.data.repository import delete_set
 
-    if not os.path.exists(files_data_path):
-        generate_empty_files_data()
-
-    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
-    df_files = df_files[df_files[FilesColumns.FILE_NAME.value] != os.path.basename(file_name)]
-    df_files.to_csv(files_data_path, index=False)
+    delete_set(file_name)
 
     full_path = FilePathManager.get_csv_path(file_name)
     if not file_not_exist and os.path.exists(full_path):
@@ -471,83 +445,46 @@ def delate_set(file_name: str, file_not_exist: bool = False) -> None:
 
 
 def add_new_file(file_name: str, title: str, subtitle: str = "") -> None:
-    """Append a row to ``files.csv`` for an existing set file.
+    """Register a set. Overrides stay unset so the set inherits app settings.
+
+    When the basename already exists, only the title and subtitle change.
 
     Args:
         file_name: Set basename or path; only the basename is stored.
         title: Display title for tiles.
         subtitle: Optional secondary text.
     """
-    files_data_path = FilePathManager.get_files_data_path()
+    from learning_app.data.repository import add_set
 
-    if not os.path.exists(files_data_path):
-        generate_empty_files_data()
-
-    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
-    new_row = {
-        FilesColumns.FILE_NAME.value: os.path.basename(file_name),
-        FilesColumns.TITLE.value: title,
-        FilesColumns.SUBTITLE.value: subtitle,
-        FilesColumns.CREATED_AT.value: _utc_now_iso(),
-        FilesColumns.LAST_USED.value: "",
-        FilesColumns.USE_COUNT.value: 0,
-    }
-    for column in _SET_OVERRIDE_COLUMNS:
-        new_row[column] = ""
-    df_files = pd.concat([df_files, pd.DataFrame([new_row])], ignore_index=True)
-    df_files.to_csv(files_data_path, index=False)
+    add_set(file_name, title, subtitle)
 
 
 def update_set_metadata(file_name: str, title: str, subtitle: str = "") -> None:
-    """Update display title and subtitle for a catalog entry in ``files.csv``.
-
-    Does not rename the set file; only the tile metadata changes.
+    """Update the display title and subtitle of a stored set.
 
     Args:
-        file_name: Set basename or path whose basename is matched in the catalog.
+        file_name: Set basename or path.
         title: New display title.
         subtitle: New secondary text (may be empty).
     """
-    files_data_path = FilePathManager.get_files_data_path()
+    from learning_app.data.repository import update_metadata
 
-    if not os.path.exists(files_data_path):
-        return
-
-    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
-    basename = os.path.basename(file_name)
-    mask = df_files[FilesColumns.FILE_NAME.value] == basename
-    if not mask.any():
-        return
-
-    df_files.loc[mask, FilesColumns.TITLE.value] = title
-    df_files.loc[mask, FilesColumns.SUBTITLE.value] = subtitle
-    df_files.to_csv(files_data_path, index=False)
+    update_metadata(file_name, title, subtitle)
 
 
 def record_set_use(file_name: str) -> None:
-    """Increment use count and set last-used time for a catalog entry.
+    """Mark a set as opened from its tile.
 
-    Called when the user opens a set's learn screen.
+    Sets ``last_used`` and appends one visit row. ``use_count`` stays at the
+    balance copied from the old catalog; the tile total adds the visit rows
+    on top of that balance.
 
     Args:
-        file_name: Set basename or path whose basename is matched in the catalog.
+        file_name: Set basename or path.
     """
-    files_data_path = FilePathManager.get_files_data_path()
+    from learning_app.data.repository import open_visit
 
-    if not os.path.exists(files_data_path):
-        return
-
-    df_files = ensure_files_catalog_columns(read_catalog_csv(files_data_path))
-    basename = os.path.basename(file_name)
-    mask = df_files[FilesColumns.FILE_NAME.value] == basename
-    if not mask.any():
-        return
-
-    df_files.loc[mask, FilesColumns.LAST_USED.value] = _utc_now_iso()
-    df_files.loc[mask, FilesColumns.USE_COUNT.value] = (
-        pd.to_numeric(df_files.loc[mask, FilesColumns.USE_COUNT.value], errors="coerce").fillna(0).astype(int) + 1
-    )
-    df_files.to_csv(files_data_path, index=False)
+    open_visit(file_name)
 
 
 def create_empty_set(kind: str) -> pd.DataFrame:
@@ -573,6 +510,7 @@ def create_empty_set(kind: str) -> pd.DataFrame:
         StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: bool,
         StatsColumns.GOOD_ANSWER.value: bool,
         StatsColumns.WORD_TO_LEARN.value: bool,
+        CHECKS_COLUMN: int,
     }
 
     column_types_definitions = {
@@ -582,6 +520,7 @@ def create_empty_set(kind: str) -> pd.DataFrame:
         StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: bool,
         StatsColumns.GOOD_ANSWER.value: bool,
         StatsColumns.WORD_TO_LEARN.value: bool,
+        CHECKS_COLUMN: int,
     }
 
     if kind == "words":
@@ -595,6 +534,7 @@ def create_empty_set(kind: str) -> pd.DataFrame:
             StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: [],
             StatsColumns.GOOD_ANSWER.value: [],
             StatsColumns.WORD_TO_LEARN.value: [],
+            CHECKS_COLUMN: [],
         }).astype(column_types_words)
         return df
 
@@ -606,6 +546,7 @@ def create_empty_set(kind: str) -> pd.DataFrame:
             StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: [],
             StatsColumns.GOOD_ANSWER.value: [],
             StatsColumns.WORD_TO_LEARN.value: [],
+            CHECKS_COLUMN: [],
         }).astype(column_types_definitions)
         return df
 
@@ -654,6 +595,7 @@ class AppData:
             StatsColumns.GOOD_ANSWER.value,
             StatsColumns.GOOD_ANSWERS_IN_A_ROW.value,
             StatsColumns.WORD_TO_LEARN.value,
+            CHECKS_COLUMN,
         ]
 
         if self.kind not in ["words", "definitions"]:
@@ -755,9 +697,16 @@ class AppData:
         self.current_word_index = self.__get_next_index()
         self.current_word_row = self.words.loc[self.current_word_index]
 
+    def _hidden_columns(self) -> set[str]:
+        return set(self.stats_columns) | {CARD_ID_COLUMN}
+
     def get_current_row(self) -> pd.Series:
-        """Return the current content row without statistics columns."""
-        return self.current_word_row.dropna().drop(self.stats_columns)
+        """Return the current content row without statistics or the card id."""
+        row = self.current_word_row.dropna()
+        hidden = [column for column in self._hidden_columns() if column in row.index]
+        if not hidden:
+            return row
+        return row.drop(labels=hidden)
 
     def get_current_words_list(self) -> list:
         """Return the current content row values as a list."""
@@ -765,10 +714,11 @@ class AppData:
 
     def colnames_in_WordFields(self) -> list:
         """Return content column names for the current row (no stats)."""
-        return [col for col in self.current_word_row.index if col not in self.stats_columns]
+        hidden = self._hidden_columns()
+        return [col for col in self.current_word_row.index if col not in hidden]
 
     def good_answer_at_current_row(self) -> None:
-        """Record a correct answer, update statistics flags, and save the set."""
+        """Record a correct answer, update statistics flags, and save the card."""
         self.words.at[self.current_word_index, StatsColumns.CORRECT_ANSWERS.value] += 1
 
         special_case = self.words.at[self.current_word_index, StatsColumns.GOOD_ANSWER.value] and \
@@ -791,14 +741,36 @@ class AppData:
             self.words.at[self.current_word_index, StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] = True
             self.words.at[self.current_word_index, StatsColumns.WORD_TO_LEARN.value] = False
 
-        save_set(self.words, self.file_name)
+        self._increment_checks()
+        self._persist_current_card(correct=True)
 
     def bad_answer_at_current_row(self) -> None:
-        """Record an incorrect answer, mark the row to learn, and save the set."""
+        """Record an incorrect answer, mark the row to learn, and save the card."""
         self.words.at[self.current_word_index, StatsColumns.GOOD_ANSWER.value] = False
         self.words.at[self.current_word_index, StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] = False
         self.words.at[self.current_word_index, StatsColumns.WORD_TO_LEARN.value] = True
-        save_set(self.words, self.file_name)
+        self._increment_checks()
+        self._persist_current_card(correct=False)
+
+    def _increment_checks(self) -> None:
+        index = self.current_word_index
+        if CHECKS_COLUMN not in self.words.columns:
+            self.words[CHECKS_COLUMN] = 0
+        current = self.words.at[index, CHECKS_COLUMN]
+        if pd.isna(current):
+            current = 0
+        self.words.at[index, CHECKS_COLUMN] = int(current) + 1
+
+    def _persist_current_card(self, *, correct: bool) -> None:
+        from learning_app.data.repository import current_visit_id, save_card_answer
+
+        card_id = self.words.at[self.current_word_index, CARD_ID_COLUMN]
+        save_card_answer(
+            str(card_id),
+            self.words.loc[self.current_word_index],
+            correct=correct,
+            visit_id=current_visit_id(self.file_name),
+        )
 
     def it_is_not_last_index_of_group(self) -> bool:
         """Return whether the current group still has unread indexes."""
@@ -840,7 +812,7 @@ class AppData:
             return False
 
     def refresh(self) -> None:
-        """Reload the set CSV from disk into ``words``."""
+        """Reload the set from the database into ``words``."""
         self.words = load_set(self.file_name)
 
     @classmethod
@@ -866,7 +838,12 @@ class AppData:
         if self.kind != "words":
             raise Exception("This method is only for the 'words' kind.")
 
-        return self.current_word_row[self.current_word_row.isnull()].index.tolist()
+        hidden = self._hidden_columns()
+        return [
+            name
+            for name in self.current_word_row[self.current_word_row.isnull()].index.tolist()
+            if name not in hidden
+        ]
 
     @staticmethod
     def create_data_file_words(file_name: str, title: str, subtitle: str = "") -> None:

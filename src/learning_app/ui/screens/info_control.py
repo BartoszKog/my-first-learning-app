@@ -42,17 +42,18 @@ For example:
 - **0/0/1**: The word was not answered correctly in the last attempt, has not been answered correctly in a row, and is marked as requiring learning.
 - **1/0/0**: The word was answered correctly in the last attempt, has not been answered correctly in a row, and is not marked as requiring learning.
 
-### CSV Column Names
+### Progress Columns
 
-These attributes are stored in CSV files with the following column names:
+The app stores each set in a local database. Import and export use these column names:
 - `correct_answers`: number of correct answers (integer)
 - `good_answers_in_a_row`: whether there were several consecutive correct answers (boolean)
 - `good_answer`: whether the last answer was correct (boolean)
 - `word_to_learn`: whether the word requires learning (boolean)
+- `checks`: how many times the card was graded (integer, optional on import)
 
 ## Import File Formats
 
-The application supports two types of CSV files:
+Import and export use two CSV shapes:
 
 ### 1. `_words.csv` Files
 These files contain words categorized by parts of speech:
@@ -76,6 +77,7 @@ Both file types can include statistics columns, which were previously mentioned 
 - `good_answers_in_a_row` (boolean)
 - `good_answer` (boolean)
 - `word_to_learn` (boolean)
+- `checks` (integer, optional; when it is missing and you keep statistics, it is copied from `correct_answers`)
 
 ### Sample CSV File
 ```csv

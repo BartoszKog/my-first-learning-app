@@ -32,6 +32,23 @@ from learning_app.ui.components.word_fields import WordFields
 from learning_app.utils.greetings import Greetings
 
 
+def _sync_open_learning_visits(page: ft.Page) -> None:
+    """Drop visit ids whose learn screen is no longer on the stack."""
+    import os
+
+    from learning_app.data.repository import retain_open_visits
+
+    names: set[str] = set()
+    for view in page.views or []:
+        route = view.route or ""
+        if route_path(route) != SET_LEARN_ROUTE:
+            continue
+        file_param = route_params(route).get("file")
+        if file_param:
+            names.add(os.path.basename(str(file_param)))
+    retain_open_visits(names)
+
+
 def is_current_route(page: ft.Page, route: str) -> bool:
     """Return whether the page's current route path matches a path.
 
@@ -362,6 +379,7 @@ async def reset_to_route(page: ft.Page, full_route: str):
     _update_drawer_selection(resolved_route)
     _detach_shared_chrome_from_views(page)
     page.views[:] = [view]
+    _sync_open_learning_visits(page)
     await page.push_route(resolved_route)
     AppTheme.apply_to_page(page)
     if fell_back and route_params(requested_route).get("file"):
@@ -397,6 +415,7 @@ async def reanchor_active_deep_view_on_home(page: ft.Page, edit_route: str) -> N
         return
 
     page.views[:] = [home, edit]
+    _sync_open_learning_visits(page)
     _sync_chrome_for_route(resolved_edit, page)
     await page.push_route(resolved_edit)
     AppTheme.apply_to_page(page)
@@ -439,6 +458,7 @@ async def push_route_view(page: ft.Page, full_route: str):
         _update_drawer_selection(resolved_route)
         _detach_shared_chrome_from_views(page)
         page.views[:] = [view]
+        _sync_open_learning_visits(page)
         await page.push_route(resolved_route)
         AppTheme.apply_to_page(page)
         if route_params(full_route).get("file"):
@@ -502,6 +522,7 @@ def remove_views_for_set_file(page: ft.Page, file_name: str) -> None:
         return
 
     page.views[:] = kept
+    _sync_open_learning_visits(page)
     top_route = kept[-1].route or HOME_ROUTE
     page.run_task(_resync_after_view_prune, page, top_route)
 
@@ -579,6 +600,7 @@ def handle_route_change(e: ft.RouteChangeEvent):
     existing_index = _index_of_route_in_views(page, full_route)
     if existing_index is not None:
         del page.views[existing_index + 1 :]
+        _sync_open_learning_visits(page)
         _restore_active_view_state(page, full_route)
         AppTheme.apply_to_page(page)
         page.update()
@@ -630,6 +652,7 @@ async def handle_view_pop(e: ft.ViewPopEvent):
         return
 
     _drop_popped_view(page, e)
+    _sync_open_learning_visits(page)
 
     if not page.views:
         await initialize_routes(page)

@@ -18,10 +18,10 @@ flowchart TD
 scoped exception for sharing Home and Import/Export tile bodies with
 in-place search. It is not a general state store.
 
-Learning-set content and progress do **not** belong in `AppSession`,
-preferences, or `BodyRegistry`. They live as CSV files under application
-storage and are accessed through `data/` helpers (and `AppData` during a learn
-session). See [Data and storage](../architecture/data-and-storage.md).
+Learning-set content, progress, visits, and per-set overrides do **not**
+belong in `AppSession`, preferences, or `BodyRegistry`. They live in the local
+SQLite file and are accessed through `data/` helpers (and `AppData` during a
+learn session). See [Data and storage](../architecture/data-and-storage.md).
 
 ## Local screen state
 
@@ -147,10 +147,10 @@ Theme **mode** and **content background** are preference-backed and owned at
 runtime by `AppTheme` in `ui/app_theme.py`. The Settings screen
 (`SettingsControl` / `BackgroundShadeSlider` in
 `ui/screens/settings_control.py`) is the UI that edits them. The same screen
-also hosts **Defaults** / **Restore defaults** (resets the preference keys documented on that page and does not modify learning sets, their per-set overrides, demo install, or CSV progress), **Text to speech** (language, auto-speak, and word-list speakers; see
+also hosts **Defaults** / **Restore defaults** (resets the preference keys documented on that page and does not modify learning sets, their per-set overrides, demo install, or card progress), **Text to speech** (language, auto-speak, and word-list speakers; see
 [Text to speech](#text-to-speech)), **Learning** (retry until correct; see
 [Learning](#learning)), and **Demo sets** (install bundled samples
-via `install_demo_sets()`; that path writes CSVs and `files.csv`, not
+via `install_demo_sets()`; that path writes the database, not
 preferences — see
 [Demo sets](../architecture/data-and-storage.md#demo-sets)). Startup
 restores theme before the first route so Home does not flash the wrong look;
@@ -207,7 +207,7 @@ intentionally design a second prefs surface for them.
 TTS **language**, **auto-speak on definitions Check**, and **word-list
 speakers** have app defaults owned at runtime by `TtsPreferences` in
 `ui/tts_preferences.py`. Settings is the UI that edits those defaults. A set
-can store its own values in `files.csv`; an empty cell keeps using the app
+can store its own values on the set row; `NULL` keeps using the app
 default. See
 [Per-set settings](../architecture/data-and-storage.md#per-set-settings).
 Under Text to speech, **Word list speakers** separates word-formation switches
@@ -250,8 +250,8 @@ auto-speak on, word-formation and word speakers on, definition speakers off).
 The **retype until correct** switch and the two practice-queue size sliders
 are the app defaults, owned at runtime by `LearnPreferences` in
 `ui/learn_preferences.py`. Settings is the UI that edits those defaults. A
-set can store `retry_until_correct` and `queue_size` on its catalog row; an
-empty cell keeps the app default.
+set can store `retry_until_correct` and `queue_size` on its row; `NULL`
+keeps the app default.
 `BaseWordField` reads the set's effective retry flag during Check: a wrong
 first answer still writes statistics once, then extra attempts stay on the
 same card and do not call `good_answer_at_current_row` /
@@ -290,10 +290,10 @@ preferences, route parameters, form state, or general domain data. See
 
 ## Where set data fits
 
-Catalog rows, set CSVs, and learning statistics belong on disk via
-`data/file_path_manager.py` and `data/app_data.py`. Per-set learning and
-speech overrides are cells on the catalog row (`data/set_settings.py`), not
-preference keys. Resetting progress uses `set_default_progress`; deleting a
+Sets, cards, visits, and learning statistics belong in `learning.sqlite`,
+reached through `data/app_data.py` and `data/repository.py`. Per-set learning
+and speech overrides are nullable columns on the set (`data/set_settings.py`),
+not preference keys. Resetting progress uses `set_default_progress`; deleting a
 set uses `delate_set`. During a learn session, queue and answer transitions
 live on `AppData` — not in `AppSession`. Retry and queue size for that
 session are the set's effective values.
@@ -310,6 +310,8 @@ For generated contracts, see the
 [Set settings API](../reference/set_settings.md),
 [Body registry API](../reference/body_registry.md),
 [File path manager API](../reference/file_path_manager.md),
+[Models API](../reference/models.md),
+[Repository API](../reference/repository.md),
 [App data API](../reference/app_data.md),
 [Constants API](../reference/constants.md), and
 [CSV processor API](../reference/csv_processor.md).

@@ -153,7 +153,12 @@ def test_draw_index_group_uses_set_queue_size(isolated_csv_dir, restore_preferen
 
 
 def test_set_settings_checkbox_clears_columns(isolated_csv_dir, restore_preferences):
-    from learning_app.ui.screens.set_settings_menu import SetSettingsMenu
+    from learning_app.ui.screens.set_settings_menu import (
+        _ACTIVE_BORDER_COLOR,
+        _DISABLED_BORDER_COLOR,
+        _DROPDOWN_BORDER_COLOR,
+        SetSettingsMenu,
+    )
 
     generate_empty_files_data()
     add_new_file("alpha_words.csv", "Alpha")
@@ -179,6 +184,10 @@ def test_set_settings_checkbox_clears_columns(isolated_csv_dir, restore_preferen
     assert words_screen.queue_slider.slider.min == 3
     assert words_screen.queue_slider.slider.max == 10
     assert words_screen.queue_slider.slider.disabled is True
+    assert words_screen.source_card.border.top.color == _ACTIVE_BORDER_COLOR
+    assert words_screen.tts_card.border.top.color == _DISABLED_BORDER_COLOR
+    assert words_screen.learning_card.border.top.color == _DISABLED_BORDER_COLOR
+    assert words_screen.language_dropdown.border.side.color == _DROPDOWN_BORDER_COLOR
 
     words_screen.use_app_settings_switch.value = False
     words_screen.on_use_app_settings_change(
@@ -193,6 +202,9 @@ def test_set_settings_checkbox_clears_columns(isolated_csv_dir, restore_preferen
     assert stored[FilesColumns.SPEAKERS_WORD.value] == ""
     assert stored[FilesColumns.SPEAKERS_DEFINITION.value] == ""
     assert words_screen.language_dropdown.disabled is False
+    assert words_screen.tts_card.border.top.color == _ACTIVE_BORDER_COLOR
+    assert words_screen.learning_card.border.top.color == _ACTIVE_BORDER_COLOR
+    assert words_screen.language_dropdown.border.side.color == _DROPDOWN_BORDER_COLOR
 
     words_screen.language_dropdown.value = "pl"
     words_screen.on_language_select(SimpleNamespace(control=words_screen.language_dropdown))
@@ -206,6 +218,8 @@ def test_set_settings_checkbox_clears_columns(isolated_csv_dir, restore_preferen
     assert all(value == "" for value in cleared.values())
     assert words_screen.language_dropdown.disabled is True
     assert words_screen.language_dropdown.value == "de"
+    assert words_screen.language_dropdown.border.side.color == _DROPDOWN_BORDER_COLOR
+    assert words_screen.tts_card.border.top.color == _DISABLED_BORDER_COLOR
     assert words_screen.queue_slider.slider.disabled is True
 
     definitions = SetSettingsMenu("beta_definitions.csv", width=300)

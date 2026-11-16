@@ -19,7 +19,11 @@ from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.screens.settings_control import PracticeQueueSlider
 from learning_app.ui.tts_preferences import TTS_LANGUAGES, TtsPreferences
 
-_FORM_BORDER_COLOR = ft.Colors.BLUE_GREY_700
+# Teal from the ColorScheme seeded at startup (light and dark).
+_ACTIVE_BORDER_COLOR = ft.Colors.PRIMARY
+# Same teal, faded the way Material marks disabled content.
+_DISABLED_BORDER_COLOR = ft.Colors.with_opacity(0.38, ft.Colors.PRIMARY)
+_DROPDOWN_BORDER_COLOR = ft.Colors.BLUE_GREY_700
 _MUTED_LABEL = ft.Colors.BLUE_GREY_400
 _SWITCH_LABEL = ft.TextStyle(size=16)
 _CARD_PADDING = 12
@@ -31,7 +35,8 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
     The "Use app settings" switch is on while every override cell for this
     set's kind is empty. Turning it off copies the current app values into
     those cells. Turning it on clears them. Other controls save immediately
-    and are disabled while the set follows the app.
+    and are disabled while the set follows the app. Borders on those
+    sections fade to the same teal at lower opacity while they are disabled.
 
     Layout: top bar with back ``IconButton``, set title, and kind chip;
     settings grouped into bordered Source / Text to speech / Learning cards.
@@ -126,7 +131,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             ],
             width=inner,
             border=ft.OutlineInputBorder(
-                side=ft.BorderSide(color=_FORM_BORDER_COLOR),
+                side=ft.BorderSide(color=_DROPDOWN_BORDER_COLOR),
             ),
             disabled=use_app,
             on_select=self.on_language_select,
@@ -222,6 +227,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             ],
             width,
             inner,
+            disabled=use_app,
         )
         self.learning_card = self._section_card(
             [
@@ -231,7 +237,9 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             ],
             width,
             inner,
+            disabled=use_app,
         )
+        self._apply_setting_borders(use_app)
 
         self.controls = [
             self.top_bar,
@@ -253,16 +261,29 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         return ft.Text(text, size=18, weight=ft.FontWeight.BOLD, width=width)
 
     @staticmethod
+    def _border_color(disabled: bool):
+        return _DISABLED_BORDER_COLOR if disabled else _ACTIVE_BORDER_COLOR
+
+    @staticmethod
     def _section_card(
-        children: list[ft.Control], form_width: float, inner_width: float
+        children: list[ft.Control],
+        form_width: float,
+        inner_width: float,
+        disabled: bool = False,
     ) -> ft.Container:
         return ft.Container(
             content=ft.Column(children, spacing=12, width=inner_width),
             padding=_CARD_PADDING,
-            border=ft.Border.all(1.5, _FORM_BORDER_COLOR),
+            border=ft.Border.all(1.5, SetSettingsMenu._border_color(disabled)),
             border_radius=8,
             width=form_width,
         )
+
+    def _apply_setting_borders(self, use_app: bool) -> None:
+        """Fade borders on sections whose controls follow the app."""
+        color = self._border_color(use_app)
+        self.tts_card.border = ft.Border.all(1.5, color)
+        self.learning_card.border = ft.Border.all(1.5, color)
 
     def _switch(self, label: str, value: bool, disabled: bool, on_change) -> ft.Switch:
         return ft.Switch(
@@ -386,6 +407,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         self.queue_slider.slider.value = settings.queue_size
         self.queue_slider.slider.disabled = use_app
         self.queue_slider.label.value = self.queue_slider._format_label(settings.queue_size)
+        self._apply_setting_borders(use_app)
         self.update_if_mounted()
 
     @staticmethod

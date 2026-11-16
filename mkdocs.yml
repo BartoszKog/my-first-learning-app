@@ -143,6 +143,8 @@ nav:
           - Learn preferences: reference/learn_preferences.md
       - Data & learning:
           - File path manager: reference/file_path_manager.md
+          - Models: reference/models.md
+          - Repository: reference/repository.md
           - App data: reference/app_data.md
           - Set settings: reference/set_settings.md
           - Constants: reference/constants.md

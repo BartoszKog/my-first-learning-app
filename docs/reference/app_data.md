@@ -2,7 +2,8 @@
 
 Source: `data/app_data.py`
 
-Catalog helpers, load/save for set CSVs (content cells kept as text), empty-set
+Public catalog helpers, load/save against the local database (content cells
+kept as text, with `checks` and `card_id` on the frame), empty-set
 construction, Home-tile progress (`get_set_learn_progress`), and the
 in-memory `AppData` learning session. Storage layout is in
 [Data and storage](../architecture/data-and-storage.md). Queue rules and

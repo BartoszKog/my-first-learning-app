@@ -349,17 +349,6 @@ class ImportExportControl(RoutableScreenMixin, ft.Container):
             self.__layout_after_adding_set()
 
     def __on_add_set_click(self, e):
-        is_valid_files_csv = CSVProcessor.validate_files_csv()["is_valid"]
-        if not is_valid_files_csv:
-            AppSession.disable_all_navigation_controls()
-
-            create_alert_dialog(
-                self.page,
-                title="Error",
-                content="Files.csv has been changed.\nPlease, restart the app.",
-                close_button_text="OK",
-            )
-
         if AppSession.is_navigation_disabled():
             return
 

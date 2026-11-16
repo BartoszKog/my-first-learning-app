@@ -4,10 +4,16 @@ version = "1.0.8"
 description = "Word learning application built with Flet"
 requires-python = ">=3.12, <3.14"
 dependencies = [
-    "flet>=1.1.0",
-    "flet-audio>=1.1.0",
+    "flet>=1.1.2",
+    "flet-audio>=1.1.2",
     "gTTS>=2.5.0",
     "pandas==3.0.3",
+    # Pinned to wheels published for Flet mobile builds. Newer pydantic
+    # asks for a pydantic-core wheel that pypi.flet.dev does not ship.
+    "sqlmodel==0.0.48",
+    "SQLAlchemy==2.0.50",
+    "greenlet==3.5.1",
+    "pydantic==2.14.3",
 ]
 
 [build-system]

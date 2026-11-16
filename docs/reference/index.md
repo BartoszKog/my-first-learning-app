@@ -1,7 +1,7 @@
 # API Reference
 
 The API reference documents generated signatures and contracts for the UI
-routing layer and the CSV data layer. Read
+routing layer and the local data layer. Read
 [Architecture](../architecture/index.md) and the
 [Guides](../guides/adding-a-screen.md) first; use this tab while implementing
 to confirm types, parameters, and return values.
@@ -43,12 +43,14 @@ to confirm types, parameters, and return values.
 
 | Module | Source | Purpose | Use when | Related docs |
 | --- | --- | --- | --- | --- |
-| [File path manager](file_path_manager.md) | `data/file_path_manager.py` | Storage roots, `csv_files/`, and `tts_cache/` path helpers. | Resolving where catalogs, set CSVs, and TTS files live. | [Data and storage](../architecture/data-and-storage.md) |
-| [App data](app_data.md) | `data/app_data.py` | Catalog CRUD, load/save, empty sets, `AppData`. | Creating, listing, or learning a set on disk. | [Data and storage](../architecture/data-and-storage.md), [Learning algorithm](../concepts/learning-algorithm.md) |
-| [Set settings](set_settings.md) | `data/set_settings.py` | Per-set learning and TTS overrides on `files.csv`. | Reading or storing one set's language, speakers, retry, or queue size. | [Per-set settings](../architecture/data-and-storage.md#per-set-settings) |
-| [Constants](constants.md) | `data/constants.py` | Column enums, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
-| [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate, repair catalog, import save helpers. | Importing a set or checking `files.csv`. | [Import and export](../guides/import-export.md) |
-| [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into storage. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
+| [File path manager](file_path_manager.md) | `data/file_path_manager.py` | Storage roots, `learning.sqlite`, `csv_files/`, and `tts_cache/`. | Resolving where the database, leftover CSVs, and TTS files live. | [Data and storage](../architecture/data-and-storage.md) |
+| [Models](models.md) | `data/models.py` | `LearningSet`, `Card`, `SetOpened`, `MigratedCsvFile`. | Reading the SQLite table shape. | [Data and storage](../architecture/data-and-storage.md) |
+| [Repository](repository.md) | `data/repository.py` | Engine, CRUD, visits, export bytes, startup CSV copy. | Tracing a write that `app_data` delegates. | [Data and storage](../architecture/data-and-storage.md) |
+| [App data](app_data.md) | `data/app_data.py` | Public catalog API, load/save, empty sets, `AppData`. | Creating, listing, or learning a set. | [Data and storage](../architecture/data-and-storage.md), [Learning algorithm](../concepts/learning-algorithm.md) |
+| [Set settings](set_settings.md) | `data/set_settings.py` | Per-set learning and TTS overrides on the set row. | Reading or storing one set's language, speakers, retry, or queue size. | [Per-set settings](../architecture/data-and-storage.md#per-set-settings) |
+| [Constants](constants.md) | `data/constants.py` | Column enums, `checks`, `card_id`, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
+| [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate an import and save it into the database. | Importing a set. Leftover `files.csv` repair stays here too. | [Import and export](../guides/import-export.md) |
+| [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into the database. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
 | [TTS](tts.md) | `tts/` | Providers, MP3 cache, live phrases, and `TtsService`. | Synthesizing audio, swapping providers, or pruning the cache. | [Data and storage](../architecture/data-and-storage.md#tts-cache), [App session](app_session.md) |
 
 ## Suggested order for new contributors
@@ -59,8 +61,8 @@ to confirm types, parameters, and return values.
 4. [In-place search](inplace_search.md) — when tracing search UI without a route.
 5. [Routable screens](routable_screen.md), [Layout metrics](layout_metrics.md), and [Layout host](layout_host.md) — responsive behavior.
 6. [Chrome configuration](chrome_config.md) and [App chrome](app_chrome.md) — declarative Shell chrome vs live control registry ([App drawer](app_drawer.md) when changing drawer navigation).
-7. [File path manager](file_path_manager.md), [Constants](constants.md), [App data](app_data.md), and [Set settings](set_settings.md) — where sets live on disk and how one set overrides app defaults; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`.
-8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — import/catalog repair and bundled sample install.
+7. [File path manager](file_path_manager.md), [Models](models.md), [App data](app_data.md), and [Set settings](set_settings.md) — where sets live and how one set overrides app defaults; read [Learning algorithm](../concepts/learning-algorithm.md) with `AppData`. [Repository](repository.md) is the layer underneath.
+8. [CSV processor](csv_processor.md) and [Demo sets](demo_sets.md) — CSV import and bundled sample install.
 9. [TTS](tts.md) — pronunciation cache and providers; [TTS preferences](tts_preferences.md) for the app language and auto-speak, [Set settings](set_settings.md) when a set stores its own.
 10. [Preferences](preferences.md), [App theme](app_theme.md), and [Learn preferences](learn_preferences.md) — durable settings, content background, and learn-queue retry.
 11. [Router](router.md) — only when you change startup wiring or trace a route event.

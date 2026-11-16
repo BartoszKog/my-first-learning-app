@@ -1,9 +1,9 @@
-"""Resolve Flet storage directories and paths under ``csv_files/``.
+"""Resolve Flet storage directories, the SQLite file, and ``csv_files/``.
 
-``FilePathManager`` is initialized once at application startup so catalog and
-set CSVs share a single directory root. TTS audio cache lives beside that
-catalog under ``tts_cache/``. Prefer these helpers over hard-coded absolute
-paths.
+``FilePathManager`` is initialized once at application startup. The database
+file sits beside ``csv_files/``, not inside it, so a catalog scan cannot treat
+it as a learning set. TTS audio cache lives under ``tts_cache/``. Prefer these
+helpers over hard-coded absolute paths.
 """
 
 import os
@@ -79,6 +79,21 @@ class FilePathManager:
         """Return the directory that holds set CSVs and ``files.csv``."""
         cls.initialize()
         return cls._csv_dir
+
+    @classmethod
+    def get_db_path(cls) -> str:
+        """Return the SQLite file path beside ``csv_files/``, not inside it.
+
+        When ``FLET_APP_STORAGE_DATA`` is set, the file is
+        ``<data>/learning.sqlite`` and the CSVs are ``<data>/csv_files/``.
+        """
+        cls.initialize()
+        if cls._data_dir:
+            return os.path.join(cls._data_dir, "learning.sqlite")
+        parent = os.path.dirname(cls._csv_dir)
+        if not parent:
+            parent = cls._csv_dir
+        return os.path.join(parent, "learning.sqlite")
 
     @classmethod
     def get_tts_cache_dir(cls) -> str:

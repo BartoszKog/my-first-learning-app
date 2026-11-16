@@ -9,8 +9,9 @@ screen construction, chrome, wrappers, and resize behavior separate.
 [Routing and screens](routing-and-screens.md) — routing flow, Shell versus
 Deep, and the route → class map.
 
-Learning-set content and progress live outside the routing layer as CSV files
-under application storage. See [Data and storage](data-and-storage.md).
+Learning-set content, progress, visits, and per-set overrides live outside
+the routing layer in a local SQLite file. CSV is the import, export, and
+demo format. See [Data and storage](data-and-storage.md).
 
 How `app.py` wires storage, session, chrome, theme, TTS and learn
 preferences, and the first Home route is described in
@@ -28,12 +29,14 @@ preferences, and the first Home route is described in
 
 | Module | Responsibility |
 | --- | --- |
-| `data/file_path_manager.py` | Resolves storage directories, CSV paths, and the TTS cache root. |
-| `data/app_data.py` | Set catalog CRUD, load/save, and in-memory learning session state. |
-| `data/set_settings.py` | Per-set learning and TTS overrides on the catalog row. |
-| `data/constants.py` | CSV column enums, row cap, and import error/warning messages. |
-| `data/csv_processor.py` | Import validation, repair, and save paths for CSV sets. |
-| `data/demo_sets.py` | Bundled demo templates, reserved basenames, and install into storage. |
+| `data/file_path_manager.py` | Resolves storage directories, the SQLite file, CSV paths, and the TTS cache root. |
+| `data/models.py` | SQLite tables: set, card, visit, and migrated CSV basename. |
+| `data/repository.py` | Engine, sessions, catalog CRUD, visits, and the startup CSV copy. |
+| `data/app_data.py` | Public catalog and load/save API, plus in-memory learning session state. |
+| `data/set_settings.py` | Per-set learning and TTS overrides on the set row. |
+| `data/constants.py` | CSV column enums, `checks` / `card_id` names, row cap, and import messages. |
+| `data/csv_processor.py` | Import validation and save into the database; leftover `files.csv` repair. |
+| `data/demo_sets.py` | Bundled demo templates, reserved basenames, and install into the database. |
 | `tts/` | Cached pronunciations, gTTS provider, and garbage collection. |
 
 See [Data and storage](data-and-storage.md) for how these modules fit together.

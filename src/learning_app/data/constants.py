@@ -26,12 +26,24 @@ class WordDefinitions(Enum):
 
 
 class StatsColumns(Enum):
-    """Per-row learning statistics stored on every set CSV."""
+    """Per-row learning statistics stored on every set.
+
+    ``checks`` is a statistics column too, but it is not a member of this
+    enum. Import still accepts files that only have the four columns below
+    (older CSV and the demo templates). ``CHECKS_COLUMN`` is the name.
+    """
 
     CORRECT_ANSWERS = "correct_answers"
     GOOD_ANSWERS_IN_A_ROW = "good_answers_in_a_row"
     GOOD_ANSWER = "good_answer"
     WORD_TO_LEARN = "word_to_learn"
+
+
+CHECKS_COLUMN = "checks"
+"""How many times a card was graded. Bad answers are ``checks - correct_answers``."""
+
+CARD_ID_COLUMN = "card_id"
+"""DataFrame column that carries ``Card.id``. It is not part of a set CSV."""
 
 
 class FilesColumns(Enum):
@@ -74,7 +86,7 @@ class Warnings(Enum):
     INSUFFICIENT_NON_EMPTY_VALUES = "Some rows have insufficient non-empty values in typical columns."
 
 
-MAX_ROWS = 40
+MAX_ROWS = 80
 """Maximum number of content rows allowed in one learning set."""
 
 TITLE_MAX_LENGTH = 20

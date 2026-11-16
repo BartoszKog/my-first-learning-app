@@ -415,6 +415,7 @@ async def reanchor_active_deep_view_on_home(page: ft.Page, edit_route: str) -> N
         return
 
     page.views[:] = [home, edit]
+    _sync_open_learning_visits(page)
     _sync_chrome_for_route(resolved_edit, page)
     await page.push_route(resolved_edit)
     AppTheme.apply_to_page(page)
@@ -457,6 +458,7 @@ async def push_route_view(page: ft.Page, full_route: str):
         _update_drawer_selection(resolved_route)
         _detach_shared_chrome_from_views(page)
         page.views[:] = [view]
+        _sync_open_learning_visits(page)
         await page.push_route(resolved_route)
         AppTheme.apply_to_page(page)
         if route_params(full_route).get("file"):

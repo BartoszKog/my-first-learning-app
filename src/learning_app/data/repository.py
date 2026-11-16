@@ -706,58 +706,70 @@ def _read_set_for_migration(basename: str, set_path: str):
 def _import_catalog_row(engine, catalog_row, frame, basename, kind, db_override_from_text, override_cell_text) -> None:
     from learning_app.data.constants import FilesColumns as Columns
 
-    created = _parse_datetime(catalog_row.get(Columns.CREATED_AT.value)) or _utc_now()
-    learning_set = LearningSet(
-        kind=kind,
-        title=_catalog_title(catalog_row, basename),
-        subtitle=_catalog_subtitle(catalog_row),
-        created_at=created,
-        last_used=_parse_datetime(catalog_row.get(Columns.LAST_USED.value)),
-        use_count=_as_int(catalog_row.get(Columns.USE_COUNT.value), 0),
-        source_file_name=basename,
-        tts_language=db_override_from_text(
-            Columns.TTS_LANGUAGE.value,
-            override_cell_text(catalog_row.get(Columns.TTS_LANGUAGE.value)),
-            kind,
-        ),
-        tts_auto_speak=db_override_from_text(
-            Columns.TTS_AUTO_SPEAK.value,
-            override_cell_text(catalog_row.get(Columns.TTS_AUTO_SPEAK.value)),
-            kind,
-        ),
-        speakers_word_formations=db_override_from_text(
-            Columns.SPEAKERS_WORD_FORMATIONS.value,
-            override_cell_text(catalog_row.get(Columns.SPEAKERS_WORD_FORMATIONS.value)),
-            kind,
-        ),
-        speakers_word=db_override_from_text(
-            Columns.SPEAKERS_WORD.value,
-            override_cell_text(catalog_row.get(Columns.SPEAKERS_WORD.value)),
-            kind,
-        ),
-        speakers_definition=db_override_from_text(
-            Columns.SPEAKERS_DEFINITION.value,
-            override_cell_text(catalog_row.get(Columns.SPEAKERS_DEFINITION.value)),
-            kind,
-        ),
-        retry_until_correct=db_override_from_text(
-            Columns.RETRY_UNTIL_CORRECT.value,
-            override_cell_text(catalog_row.get(Columns.RETRY_UNTIL_CORRECT.value)),
-            kind,
-        ),
-        queue_size=db_override_from_text(
-            Columns.QUEUE_SIZE.value,
-            override_cell_text(catalog_row.get(Columns.QUEUE_SIZE.value)),
-            kind,
-        ),
-    )
     with Session(engine) as session:
         if session.get(MigratedCsvFile, basename) is not None:
             return
+        # A set created in the app has no migration marker. Mark the CSV done
+        # and keep the live row; inserting again would hit the unique name.
+        if _set_by_name(session, basename) is not None:
+            session.add(MigratedCsvFile(file_name=basename))
+            session.commit()
+            return
+
+        created = _parse_datetime(catalog_row.get(Columns.CREATED_AT.value)) or _utc_now()
+        learning_set = LearningSet(
+            kind=kind,
+            title=_catalog_title(catalog_row, basename),
+            subtitle=_catalog_subtitle(catalog_row),
+            created_at=created,
+            last_used=_parse_datetime(catalog_row.get(Columns.LAST_USED.value)),
+            use_count=_as_int(catalog_row.get(Columns.USE_COUNT.value), 0),
+            source_file_name=basename,
+            tts_language=db_override_from_text(
+                Columns.TTS_LANGUAGE.value,
+                override_cell_text(catalog_row.get(Columns.TTS_LANGUAGE.value)),
+                kind,
+            ),
+            tts_auto_speak=db_override_from_text(
+                Columns.TTS_AUTO_SPEAK.value,
+                override_cell_text(catalog_row.get(Columns.TTS_AUTO_SPEAK.value)),
+                kind,
+            ),
+            speakers_word_formations=db_override_from_text(
+                Columns.SPEAKERS_WORD_FORMATIONS.value,
+                override_cell_text(catalog_row.get(Columns.SPEAKERS_WORD_FORMATIONS.value)),
+                kind,
+            ),
+            speakers_word=db_override_from_text(
+                Columns.SPEAKERS_WORD.value,
+                override_cell_text(catalog_row.get(Columns.SPEAKERS_WORD.value)),
+                kind,
+            ),
+            speakers_definition=db_override_from_text(
+                Columns.SPEAKERS_DEFINITION.value,
+                override_cell_text(catalog_row.get(Columns.SPEAKERS_DEFINITION.value)),
+                kind,
+            ),
+            retry_until_correct=db_override_from_text(
+                Columns.RETRY_UNTIL_CORRECT.value,
+                override_cell_text(catalog_row.get(Columns.RETRY_UNTIL_CORRECT.value)),
+                kind,
+            ),
+            queue_size=db_override_from_text(
+                Columns.QUEUE_SIZE.value,
+                override_cell_text(catalog_row.get(Columns.QUEUE_SIZE.value)),
+                kind,
+            ),
+        )
         session.add(learning_set)
         session.flush()
         for position, (_, row) in enumerate(frame.iterrows()):
-            correct = _as_int(row.get(StatsColumns.CORRECT_ANSWERS.value) if StatsColumns.CORRECT_ANSWERS.value in row.index else 0, 0)
+            correct = _as_int(
+                row.get(StatsColumns.CORRECT_ANSWERS.value)
+                if StatsColumns.CORRECT_ANSWERS.value in row.index
+                else 0,
+                0,
+            )
             card = Card(
                 set_id=learning_set.id,
                 position=position,
@@ -776,12 +788,22 @@ def _import_catalog_row(engine, catalog_row, frame, basename, kind, db_override_
                     row.get(StatsColumns.WORD_TO_LEARN.value) if StatsColumns.WORD_TO_LEARN.value in row.index else False,
                     False,
                 ),
-                checks=correct,
+                checks=_migrated_checks(row, correct),
             )
             _apply_content(card, row, kind)
             session.add(card)
         session.add(MigratedCsvFile(file_name=basename))
         session.commit()
+
+
+def _migrated_checks(row: pd.Series, correct: int) -> int:
+    """Keep a CSV ``checks`` column; otherwise copy ``correct_answers``.
+
+    Same rule as ``CSVProcessor.__ensure_checks_column`` when statistics are kept.
+    """
+    if CHECKS_COLUMN in row.index:
+        return _as_int(row.get(CHECKS_COLUMN), 0)
+    return correct
 
 
 def _catalog_title(catalog_row: pd.Series, basename: str) -> str:

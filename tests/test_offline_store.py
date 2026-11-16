@@ -16,7 +16,7 @@ from learning_app.data.app_data import (
     save_set,
     set_default_progress,
 )
-from learning_app.data.constants import FilesColumns, PartsOfSpeech, StatsColumns
+from learning_app.data.constants import CHECKS_COLUMN, FilesColumns, PartsOfSpeech, StatsColumns
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.data.models import Card
 from learning_app.data.repository import (
@@ -181,6 +181,58 @@ def test_startup_migration_is_idempotent_and_skips_deleted_sets(isolated_csv_dir
     assert count_sets() == 0
     assert count_migrated("animals_words.csv") is True
     assert get_file_names_and_titles() == []
+
+
+def test_startup_migration_keeps_existing_set_when_csv_is_still_listed(isolated_csv_dir: Path):
+    save_set(pd.DataFrame([_words_row(verb="live")]), "animals_words.csv")
+    add_new_file("animals_words.csv", "Live title")
+    original_id = cards_for("animals_words.csv")[0].id
+    assert count_migrated("animals_words.csv") is False
+
+    (isolated_csv_dir / "files.csv").write_text(
+        "file_name,title,subtitle,created_at,last_used,use_count,"
+        "tts_language,tts_auto_speak,speakers_word_formations,speakers_word,"
+        "speakers_definition,retry_until_correct,queue_size\n"
+        "animals_words.csv,From CSV,,2020-01-01T00:00:00+00:00,,9,"
+        "pl,true,,x,x,false,6\n",
+        encoding="utf-8",
+    )
+    pd.DataFrame(
+        [_words_row(**{PartsOfSpeech.VERB.value: "from csv", StatsColumns.CORRECT_ANSWERS.value: 9})]
+    ).to_csv(isolated_csv_dir / "animals_words.csv", index=True)
+
+    _remigrate()
+    assert count_sets() == 1
+    stored = get_learning_set("animals_words.csv")
+    assert stored is not None
+    assert stored.title == "Live title"
+    card = cards_for("animals_words.csv")[0]
+    assert card.id == original_id
+    assert card.verb == "live"
+    assert card.correct_answers == 0
+    assert count_migrated("animals_words.csv") is True
+
+    _remigrate()
+    assert count_sets() == 1
+    assert cards_for("animals_words.csv")[0].id == original_id
+
+
+def test_startup_migration_keeps_a_separate_checks_column(isolated_csv_dir: Path):
+    (isolated_csv_dir / "files.csv").write_text(
+        "file_name,title,subtitle,created_at,last_used,use_count,"
+        "tts_language,tts_auto_speak,speakers_word_formations,speakers_word,"
+        "speakers_definition,retry_until_correct,queue_size\n"
+        "animals_words.csv,Animals,,2020-01-01T00:00:00+00:00,,1,,,,,,,\n",
+        encoding="utf-8",
+    )
+    frame = pd.DataFrame([_words_row(**{StatsColumns.CORRECT_ANSWERS.value: 3})])
+    frame[CHECKS_COLUMN] = 5
+    frame.to_csv(isolated_csv_dir / "animals_words.csv", index=True)
+
+    ensure_db()
+    card = cards_for("animals_words.csv")[0]
+    assert card.correct_answers == 3
+    assert card.checks == 5
 
 
 def test_good_and_bad_answers_share_one_visit(isolated_csv_dir: Path):

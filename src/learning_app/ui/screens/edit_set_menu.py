@@ -1,8 +1,20 @@
 import flet as ft
 import pandas as pd
 
-from learning_app.data.app_data import create_empty_set, get_kind_of_file_and_validate, load_set, save_set
-from learning_app.data.constants import CHECKS_COLUMN, MAX_ROWS, PartsOfSpeech, StatsColumns, WordDefinitions
+from learning_app.data.app_data import (
+    create_empty_set,
+    get_kind_of_file_and_validate,
+    load_set,
+    save_set,
+)
+from learning_app.data.constants import (
+    CHECKS_COLUMN,
+    EXAMPLE_SENTENCE_COLUMN,
+    MAX_ROWS,
+    PartsOfSpeech,
+    StatsColumns,
+    WordDefinitions,
+)
 from learning_app.ui.components.edit_cards import EditCardDefinitions, EditCardWords
 from learning_app.ui.keyboard_shortcuts import (
     pop_ctrl_b_action,
@@ -167,13 +179,14 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
         self.lv.controls.append(self.addButton)
         self.update()
 
-    def __is_valid(self):
+    def __validation_messages(self):
+        messages = []
         for control in self.lv.controls:
             if isinstance(control, (EditCardWords, EditCardDefinitions)):
-                if not control.is_valid():
-                    return False
-
-        return True
+                message = control.invalid_message()
+                if message and message not in messages:
+                    messages.append(message)
+        return messages
 
     def __no_cards(self, e):
         if len(self.lv.controls) == 1:
@@ -196,11 +209,12 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
         if self.__no_cards(e):
             return False
 
-        if not self.__is_valid():
+        messages = self.__validation_messages()
+        if messages:
             create_alert_dialog(
                 page=e.page,
                 title="Invalid Data",
-                content="Some cards have less than two text fields filled.",
+                content="\n".join(messages),
                 close_button_text="OK",
             )
             return False
@@ -241,6 +255,7 @@ class EditSetMenu(RoutableScreenMixin, ft.Column):
             words_columns.extend([
                 WordDefinitions.WORD.value,
                 WordDefinitions.DEFINITION.value,
+                EXAMPLE_SENTENCE_COLUMN,
             ])
 
         all_columns = words_columns + [

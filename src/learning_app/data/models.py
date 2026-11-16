@@ -68,6 +68,8 @@ class Card(SQLModel, table=True):
     adverb: str = ""
     definition: str = ""
     word: str = ""
+    # Optional example on a definition card. Empty on word-formation cards.
+    example_sentence: str = ""
 
     correct_answers: int = 0
     good_answer: bool = False

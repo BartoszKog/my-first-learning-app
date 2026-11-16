@@ -25,10 +25,15 @@ from sqlmodel import Session, SQLModel, func, select
 from learning_app.data.constants import (
     CARD_ID_COLUMN,
     CHECKS_COLUMN,
+    EXAMPLE_SENTENCE_COLUMN,
     FilesColumns,
     PartsOfSpeech,
     StatsColumns,
     WordDefinitions,
+)
+from learning_app.data.example_sentence import (
+    example_sentence_error,
+    normalize_example_sentence,
 )
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.data.models import (
@@ -47,6 +52,7 @@ _open_visits: dict[str, str] = {}
 _WORD_FIELDS = [member.value for member in PartsOfSpeech]
 _DEFINITION_FIELDS = [member.value for member in WordDefinitions]
 _CONTENT_FIELDS = _WORD_FIELDS + _DEFINITION_FIELDS
+_EXAMPLE_FIELDS = [EXAMPLE_SENTENCE_COLUMN]
 _STAT_FIELDS = [member.value for member in StatsColumns]
 
 
@@ -84,6 +90,7 @@ def ensure_db() -> None:
     if _ready_path == path:
         return
     SQLModel.metadata.create_all(engine)
+    _ensure_example_sentence_column(engine)
     _migrate_csv_files(engine)
     _ready_path = path
 
@@ -490,6 +497,7 @@ def _detach_card(card: Card) -> Card:
         adverb=card.adverb,
         definition=card.definition,
         word=card.word,
+        example_sentence=card.example_sentence,
         correct_answers=card.correct_answers,
         good_answer=card.good_answer,
         good_answers_in_a_row=card.good_answers_in_a_row,
@@ -499,7 +507,7 @@ def _detach_card(card: Card) -> Card:
 
 
 def _cards_to_frame(kind: str, cards: list[Card]) -> pd.DataFrame:
-    content = _WORD_FIELDS if kind == "words" else _DEFINITION_FIELDS
+    content = _WORD_FIELDS if kind == "words" else _DEFINITION_FIELDS + _EXAMPLE_FIELDS
     rows = []
     for card in cards:
         row: dict[str, object] = {}
@@ -580,6 +588,33 @@ def _apply_content(card: Card, row: pd.Series, kind: str) -> None:
             setattr(card, column, _content_text(row[column]))
         else:
             setattr(card, column, "")
+    if kind == "definitions" and EXAMPLE_SENTENCE_COLUMN in row.index:
+        card.example_sentence = _example_sentence_text(row[EXAMPLE_SENTENCE_COLUMN])
+    else:
+        card.example_sentence = ""
+
+
+def _example_sentence_text(value: object) -> str:
+    text = _content_text(value).strip()
+    if text == "" or example_sentence_error(text):
+        return text
+    return normalize_example_sentence(text)
+
+
+def _ensure_example_sentence_column(engine: Engine) -> None:
+    """Add ``example_sentence`` when the card table predates that column.
+
+    ``create_all`` creates missing tables and does not alter an existing
+    ``card`` table. A database from before this column gets one ``ALTER``.
+    """
+    with engine.begin() as connection:
+        rows = connection.exec_driver_sql("PRAGMA table_info(card)").fetchall()
+        names = {row[1] for row in rows}
+        if not names or EXAMPLE_SENTENCE_COLUMN in names:
+            return
+        connection.exec_driver_sql(
+            "ALTER TABLE card ADD COLUMN example_sentence TEXT NOT NULL DEFAULT ''"
+        )
 
 
 def _apply_progress(card: Card, row: pd.Series, previous: Card | None = None) -> None:

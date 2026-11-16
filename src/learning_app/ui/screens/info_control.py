@@ -67,6 +67,7 @@ These files contain words categorized by parts of speech:
 These files contain definitions and their corresponding words:
 - `definition`: definition
 - `word`: corresponding word
+- `example_sentence` (optional): an example with each answer inside braces, such as `Please {{turn}} the lights {{off}}.` Use `{{keep/keeps}}` when one gap accepts more than one form. Leave the cell empty when the card has no example. One sentence can contain up to four gaps.
 
 ### File Size Limitation
 Each learning set cannot contain more than {MAX_ROWS} items. Files with more rows than this limit cannot be imported, and you cannot create sets larger than this value.

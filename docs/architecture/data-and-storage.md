@@ -115,7 +115,7 @@ and edit UIs still skip them.
 | Column | Role |
 | --- | --- |
 | `position` | Row order. Unique together with `set_id` |
-| content | `verb`, `person`, `thing`, `adjective`, `adverb`, `definition`, `word` |
+| content | `verb`, `person`, `thing`, `adjective`, `adverb`, `definition`, `word`. Definition cards also have optional `example_sentence` |
 | `correct_answers`, `good_answer`, `good_answers_in_a_row`, `word_to_learn` | The four queue statistics. Unchanged by this store |
 | `checks` | How many times the card was graded. Bad answers are `checks - correct_answers`. The queue and the progress bar do not read it |
 
@@ -233,7 +233,12 @@ Content columns (`PartsOfSpeech`): `verb`, `person`, `thing`, `adjective`,
 
 ### Definitions
 
-Content columns (`WordDefinitions`): `definition`, `word`.
+Content columns (`WordDefinitions`): `definition`, `word`. Optional
+`example_sentence` holds an example whose answers sit inside braces
+(`Please {turn} the lights {off}.`). A blank cell means the card has no example.
+Import accepts a definitions file that omits the column. A non-empty cell
+must contain one to four non-nested gaps, with some sentence text outside
+the braces. `/` inside one gap is another accepted form of that same gap.
 
 ### Statistics
 

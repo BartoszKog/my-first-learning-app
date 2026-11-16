@@ -42,6 +42,9 @@ class StatsColumns(Enum):
 CHECKS_COLUMN = "checks"
 """How many times a card was graded. Bad answers are ``checks - correct_answers``."""
 
+EXAMPLE_SENTENCE_COLUMN = "example_sentence"
+"""Optional definition example. Answers sit inside braces: ``I {keep} him {in line}.``."""
+
 CARD_ID_COLUMN = "card_id"
 """DataFrame column that carries ``Card.id``. It is not part of a set CSV."""
 
@@ -105,3 +108,4 @@ class Errors(Enum):
     EMPTY_VALUES_IN_DEFINITIONS = "All rows have empty values in typical columns for definitions file."
     INSUFFICIENT_NON_EMPTY_VALUES_IN_WORDS = "All rows have insufficient non-empty values in typical columns for words file."
     NO_MATCHING_COLUMN_PATTERN = "File does not match any expected column patterns."
+    INVALID_EXAMPLE_SENTENCE = "Example sentence has invalid gaps."

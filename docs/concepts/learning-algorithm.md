@@ -158,7 +158,8 @@ example shows nothing.
 | `after_check` (default) | hidden | full sentence, answers highlighted |
 | `hint` | sentence with each gap as `_____` | full sentence, answers highlighted |
 
-A filled gap shows its first `/` form. Try again keeps the filled sentence.
+A filled gap shows its first `/` form. Try again restores the blank gaps
+(`_____`) for both `hint` and `after_check`. The next Check fills them again.
 
 In `hint` mode a Check is also correct when the typed text is every gap in
 order, separated by spaces, commas, or semicolons. For

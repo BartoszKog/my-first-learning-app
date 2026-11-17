@@ -37,8 +37,9 @@ class WordDefinitionField(BaseWordField):
     Shows the definition prompt and a single answer field, with progress and
     the optional ``WordListMenu`` when ``session`` is ``False``. A card's
     example sentence follows the set's ``example_mode``: hidden, shown after
-    Check, or shown with blank gaps before Check. In ``"hint"`` mode the gap
-    texts typed in order also count as a correct answer.
+    Check, or shown with blank gaps before Check. Try again restores those
+    blank gaps for ``"hint"`` and ``"after_check"``. In ``"hint"`` mode the
+    gap texts typed in order also count as a correct answer.
     """
 
     def __init__(self, file_name, page=None, width=300, session=False):
@@ -138,6 +139,7 @@ class WordDefinitionField(BaseWordField):
     def prepare_retry(self):
         self.word.reset()
         self._set_speak_unlocked(False)
+        self._show_example(filled=False, blanks=True)
 
     def _load_example(self):
         row = self.words.get_current_row()
@@ -146,10 +148,12 @@ class WordDefinitionField(BaseWordField):
         self._example = "" if example_sentence_error(text) else text
         self._example_mode = effective_set_settings(self.file_name).example_mode
 
-    def _show_example(self, filled: bool):
-        shown = self._example != "" and (
-            self._example_mode == "hint" or (filled and self._example_mode == "after_check")
+    def _show_example(self, filled: bool, *, blanks: bool = False):
+        show_blanks = not filled and (
+            self._example_mode == "hint" or (blanks and self._example_mode == "after_check")
         )
+        show_filled = filled and self._example_mode in {"hint", "after_check"}
+        shown = self._example != "" and (show_blanks or show_filled)
         self.exampleText.visible = shown
         if not shown:
             self.exampleText.spans = []

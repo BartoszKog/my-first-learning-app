@@ -104,15 +104,23 @@ def test_off_never_shows_example(isolated_csv_dir, restore_flags, silent_flet_up
     assert screen.exampleText.visible is False
 
 
-def test_retry_keeps_the_filled_sentence(
-    isolated_csv_dir, restore_flags, silent_flet_updates
+@pytest.mark.parametrize("mode", ["hint", "after_check"])
+def test_retry_restores_blank_gaps(
+    isolated_csv_dir, restore_flags, silent_flet_updates, mode
 ):
-    screen = _start("hint")
+    screen = _start(mode)
     _check(screen, "nope")
     assert screen._get_check_button_text() == "Try again"
+    assert _shown_text(screen) == "I keep him in line."
+
     screen.on_check_click(SimpleNamespace())
 
     assert screen._get_check_button_text() == "Check"
+    assert screen.exampleText.visible is True
+    assert _shown_text(screen) == "I _____ him _____."
+
+    _check(screen, "keep SB in line")
+    assert screen._get_check_button_text() == "Next"
     assert _shown_text(screen) == "I keep him in line."
 
 

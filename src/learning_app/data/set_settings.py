@@ -26,6 +26,7 @@ _ALL_OVERRIDE_COLUMNS = (
     FilesColumns.SPEAKERS_DEFINITION.value,
     FilesColumns.RETRY_UNTIL_CORRECT.value,
     FilesColumns.QUEUE_SIZE.value,
+    FilesColumns.EXAMPLE_MODE.value,
 )
 
 _WORDS_COLUMNS = (
@@ -42,6 +43,7 @@ _DEFINITIONS_COLUMNS = (
     FilesColumns.SPEAKERS_DEFINITION.value,
     FilesColumns.RETRY_UNTIL_CORRECT.value,
     FilesColumns.QUEUE_SIZE.value,
+    FilesColumns.EXAMPLE_MODE.value,
 )
 
 _TRUE_TOKENS = {"true", "1", "on", "yes"}
@@ -60,6 +62,8 @@ class EffectiveSetSettings:
         speakers_definition: Speaker button on a definition card's definition.
         retry_until_correct: Require a correct retype before the queue advances.
         queue_size: Maximum items drawn into the next practice round.
+        example_mode: ``"off"``, ``"after_check"``, or ``"hint"`` for a
+            definition card's example sentence.
         uses_app_defaults: Every override column for this kind is empty.
     """
 
@@ -71,6 +75,7 @@ class EffectiveSetSettings:
     speakers_definition: bool
     retry_until_correct: bool
     queue_size: int
+    example_mode: str
     uses_app_defaults: bool
 
 
@@ -140,7 +145,14 @@ def effective_set_settings(file_name: str) -> EffectiveSetSettings:
             TtsPreferences.speakers_definition,
         )
         speakers_word_formations = TtsPreferences.speakers_word_formations
+        example_cell = cells[FilesColumns.EXAMPLE_MODE.value]
+        example_mode = (
+            LearnPreferences.parse_example_mode(example_cell)
+            if example_cell
+            else LearnPreferences.example_mode
+        )
     else:
+        example_mode = LearnPreferences.example_mode
         queue_default = LearnPreferences.word_formations_queue_size
         auto_speak = TtsPreferences.auto_speak_definitions
         speakers_word = TtsPreferences.speakers_word
@@ -167,6 +179,7 @@ def effective_set_settings(file_name: str) -> EffectiveSetSettings:
             LearnPreferences.retry_until_correct,
         ),
         queue_size=queue_size,
+        example_mode=example_mode,
         uses_app_defaults=all(cells[column] == "" for column in applicable),
     )
 
@@ -249,6 +262,7 @@ def _global_values(kind: str) -> dict[str, str]:
                 LearnPreferences.retry_until_correct
             ),
             FilesColumns.QUEUE_SIZE.value: str(queue),
+            FilesColumns.EXAMPLE_MODE.value: LearnPreferences.example_mode,
         }
     return {
         FilesColumns.TTS_LANGUAGE.value: TtsPreferences.language,
@@ -300,6 +314,11 @@ def db_override_from_text(column: str, text: str, kind: str):
         return None
     if column == FilesColumns.TTS_LANGUAGE.value:
         return text
+    if column == FilesColumns.EXAMPLE_MODE.value:
+        from learning_app.ui.learn_preferences import LearnPreferences
+
+        mode = text.strip().lower()
+        return mode if mode in LearnPreferences.EXAMPLE_MODES else None
     if column == FilesColumns.QUEUE_SIZE.value:
         try:
             number = float(text)
@@ -319,6 +338,7 @@ def _override_texts(learning_set) -> dict[str, str]:
 
     queue = learning_set.queue_size
     language = learning_set.tts_language
+    example_mode = learning_set.example_mode
     return {
         FilesColumns.TTS_LANGUAGE.value: "" if language is None else str(language),
         FilesColumns.TTS_AUTO_SPEAK.value: flag(learning_set.tts_auto_speak),
@@ -327,6 +347,7 @@ def _override_texts(learning_set) -> dict[str, str]:
         FilesColumns.SPEAKERS_DEFINITION.value: flag(learning_set.speakers_definition),
         FilesColumns.RETRY_UNTIL_CORRECT.value: flag(learning_set.retry_until_correct),
         FilesColumns.QUEUE_SIZE.value: "" if queue is None else str(int(queue)),
+        FilesColumns.EXAMPLE_MODE.value: "" if example_mode is None else str(example_mode),
     }
 
 

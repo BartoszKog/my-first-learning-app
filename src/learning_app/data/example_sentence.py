@@ -7,7 +7,9 @@ same gap, matching the slash convention on ``word``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from itertools import product
 
 MAX_GAPS = 4
 """Most gaps one example sentence may contain."""
@@ -126,6 +128,53 @@ def accepted_forms(gap_text: str) -> list[str]:
         Accepted forms in the stored order.
     """
     return [part.strip() for part in gap_text.split("/") if part.strip()]
+
+
+def display_form(gap_text: str) -> str:
+    """Return the form shown when a gap is filled in.
+
+    Args:
+        gap_text: Trimmed interior of one gap.
+
+    Returns:
+        The first accepted form, or ``gap_text`` when it has none.
+    """
+    forms = accepted_forms(gap_text)
+    return forms[0] if forms else gap_text
+
+
+def matches_gap_answers(typed: str, text: str) -> bool:
+    """Return whether ``typed`` fills every gap of ``text`` in order.
+
+    Gaps may be separated by spaces, commas, or semicolons. Case is ignored.
+    Each gap accepts any of its ``/`` forms. ``I {keep} him {in line}.``
+    accepts ``keep in line`` and ``keep, in line``.
+
+    Args:
+        typed: The learner's answer.
+        text: Example sentence.
+
+    Returns:
+        ``False`` for a blank or invalid sentence.
+    """
+    try:
+        gaps = gap_answers(text)
+    except ExampleSentenceError:
+        return False
+    if not gaps:
+        return False
+    answer = _loose_answer(typed)
+    if answer == "":
+        return False
+    form_lists = [accepted_forms(gap) for gap in gaps]
+    return any(
+        _loose_answer(" ".join(combination)) == answer
+        for combination in product(*form_lists)
+    )
+
+
+def _loose_answer(text: str) -> str:
+    return " ".join(re.split(r"[\s,;]+", text.strip().lower())).strip()
 
 
 def _checked_pieces(text: str) -> list[ExamplePiece]:

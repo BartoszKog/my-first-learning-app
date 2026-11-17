@@ -35,7 +35,9 @@ def restore_preferences():
     retry = LearnPreferences.retry_until_correct
     words_queue = LearnPreferences.word_formations_queue_size
     definitions_queue = LearnPreferences.definitions_queue_size
+    example_mode = LearnPreferences.example_mode
     yield
+    LearnPreferences.example_mode = example_mode
     TtsPreferences.language = language
     TtsPreferences.auto_speak_definitions = auto_speak
     TtsPreferences.speakers_word_formations = formations
@@ -231,3 +233,38 @@ def test_set_settings_checkbox_clears_columns(isolated_csv_dir, restore_preferen
     assert definitions.queue_slider.slider.min == 4
     assert definitions.queue_slider.slider.max == 15
     assert "Set settings" in definitions.heading.value
+
+
+def test_example_mode_is_a_definitions_override(isolated_csv_dir, restore_preferences):
+    from learning_app.ui.screens.set_settings_menu import SetSettingsMenu
+
+    generate_empty_files_data()
+    add_new_file("alpha_words.csv", "Alpha")
+    add_new_file("beta_definitions.csv", "Beta")
+    LearnPreferences.example_mode = "after_check"
+
+    assert effective_set_settings("beta_definitions.csv").example_mode == "after_check"
+    assert SetSettingsMenu("alpha_words.csv", width=300).example_mode_dropdown is None
+
+    screen = SetSettingsMenu("beta_definitions.csv", width=300)
+    assert screen.example_mode_dropdown.value == "after_check"
+    assert screen.example_mode_dropdown.disabled is True
+
+    screen.use_app_settings_switch.value = False
+    screen.on_use_app_settings_change(SimpleNamespace(control=screen.use_app_settings_switch))
+    assert read_override_cells("beta_definitions.csv")[FilesColumns.EXAMPLE_MODE.value] == (
+        "after_check"
+    )
+    assert screen.example_mode_dropdown.disabled is False
+
+    screen.example_mode_dropdown.value = "hint"
+    screen.on_example_mode_select(SimpleNamespace(control=screen.example_mode_dropdown))
+    LearnPreferences.example_mode = "off"
+    assert effective_set_settings("beta_definitions.csv").example_mode == "hint"
+
+    set_override_value("beta_definitions.csv", FilesColumns.EXAMPLE_MODE.value, "bogus")
+    assert read_override_cells("beta_definitions.csv")[FilesColumns.EXAMPLE_MODE.value] == ""
+
+    enable_set_overrides("alpha_words.csv")
+    set_override_value("alpha_words.csv", FilesColumns.EXAMPLE_MODE.value, "hint")
+    assert read_override_cells("alpha_words.csv")[FilesColumns.EXAMPLE_MODE.value] == ""

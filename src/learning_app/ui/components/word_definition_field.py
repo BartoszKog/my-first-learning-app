@@ -1,9 +1,17 @@
 import flet as ft
+import pandas as pd
 
-from learning_app.data.constants import WordDefinitions
+from learning_app.data.constants import EXAMPLE_SENTENCE_COLUMN, WordDefinitions
+from learning_app.data.example_sentence import (
+    display_form,
+    example_sentence_error,
+    matches_gap_answers,
+    preview_parts,
+)
 from learning_app.data.set_settings import effective_set_settings
 from learning_app.tts import TtsError, TtsNetworkError
 from learning_app.ui.app_session import AppSession
+from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.components.base_word_field import BaseWordField
 from learning_app.ui.components.controls import ProgressBar, WordField
 from learning_app.ui.keyboard_shortcuts import pop_ctrl_s_action, push_ctrl_s_action
@@ -17,12 +25,20 @@ from learning_app.ui.layout_metrics import (
 from learning_app.ui.layout_tokens import LEARN_DEFINITION_CHECK_BUTTON_SCALE
 from learning_app.ui.screens.word_list_menu import WordListMenu
 
+# Fixed width so a blank gap does not reveal the answer's length.
+_GAP_PLACEHOLDER = "_____"
+_GAP_COLOR_DARK = ft.Colors.TEAL_200
+_GAP_COLOR_LIGHT = ft.Colors.BLUE_ACCENT_700
+
 
 class WordDefinitionField(BaseWordField):
     """Learn UI for a ``*_definitions.csv`` set (definition → word).
 
     Shows the definition prompt and a single answer field, with progress and
-    the optional ``WordListMenu`` when ``session`` is ``False``.
+    the optional ``WordListMenu`` when ``session`` is ``False``. A card's
+    example sentence follows the set's ``example_mode``: hidden, shown after
+    Check, or shown with blank gaps before Check. In ``"hint"`` mode the gap
+    texts typed in order also count as a correct answer.
     """
 
     def __init__(self, file_name, page=None, width=300, session=False):
@@ -37,6 +53,15 @@ class WordDefinitionField(BaseWordField):
             theme_style=ft.TextThemeStyle.TITLE_LARGE,
             text_align=ft.TextAlign.CENTER,
         )
+        self.exampleText = ft.Text(
+            size=16,
+            italic=True,
+            text_align=ft.TextAlign.CENTER,
+            width=field_width,
+            visible=False,
+        )
+        self._example = ""
+        self._example_mode = "off"
         self.word = WordField(label="", width=field_width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
@@ -66,6 +91,7 @@ class WordDefinitionField(BaseWordField):
         self.active_controls = [
             self.pb,
             self.definitionLabel,
+            self.exampleText,
             self.word,
             self.check_row,
         ]
@@ -79,6 +105,7 @@ class WordDefinitionField(BaseWordField):
         self._form_width = metrics.form_width
         field_width = learn_definition_field_width(metrics.form_width, self._get_page())
         self.word.width = field_width
+        self.exampleText.width = field_width
         self.pb.width = field_width
         if self.menu_control in self.controls:
             self.menu_control.apply_layout(metrics)
@@ -87,7 +114,9 @@ class WordDefinitionField(BaseWordField):
 
     def compare_all_words(self):
         good_word = self.words.get_current_row()[WordDefinitions.WORD.value]
-        if self.word.contain_word(good_word):
+        typed = self.word.get_value() or ""
+        gaps_filled = self._example_mode == "hint" and matches_gap_answers(typed, self._example)
+        if self.word.contain_word(good_word) or gaps_filled:
             self.word.indicate_good_answer(good_word)
             return True
         else:
@@ -98,6 +127,8 @@ class WordDefinitionField(BaseWordField):
         if self.words.it_is_not_last_index_of_group():
             self.words.draw_new_row()
             self.definitionLabel.value = self.words.get_current_row()[WordDefinitions.DEFINITION.value]
+            self._load_example()
+            self._show_example(filled=False)
             self.word.reset()
         else:
             self.menu()
@@ -107,6 +138,33 @@ class WordDefinitionField(BaseWordField):
     def prepare_retry(self):
         self.word.reset()
         self._set_speak_unlocked(False)
+
+    def _load_example(self):
+        row = self.words.get_current_row()
+        value = row[EXAMPLE_SENTENCE_COLUMN] if EXAMPLE_SENTENCE_COLUMN in row.index else None
+        text = "" if value is None or pd.isna(value) else str(value).strip()
+        self._example = "" if example_sentence_error(text) else text
+        self._example_mode = effective_set_settings(self.file_name).example_mode
+
+    def _show_example(self, filled: bool):
+        shown = self._example != "" and (
+            self._example_mode == "hint" or (filled and self._example_mode == "after_check")
+        )
+        self.exampleText.visible = shown
+        if not shown:
+            self.exampleText.spans = []
+            return
+        color = _GAP_COLOR_DARK if AppTheme.is_dark_mode() else _GAP_COLOR_LIGHT
+        gap_style = ft.TextStyle(weight=ft.FontWeight.BOLD, color=color)
+        spans = []
+        for piece in preview_parts(self._example):
+            if piece.is_gap:
+                text = display_form(piece.text) if filled else _GAP_PLACEHOLDER
+                spans.append(ft.TextSpan(text=text, style=gap_style if filled else None))
+            elif piece.text:
+                spans.append(ft.TextSpan(text=piece.text))
+        self.exampleText.value = ""
+        self.exampleText.spans = spans
 
     def focus_first_empty_input(self):
         if self.word.is_awaiting_input():
@@ -138,6 +196,8 @@ class WordDefinitionField(BaseWordField):
         super().on_check_click(e)
         revealed = self._answer_is_revealed()
         self._set_speak_unlocked(revealed)
+        if revealed:
+            self._show_example(filled=True)
         if control_is_on_page(self):
             self.update()
         if revealed and effective_set_settings(self.file_name).auto_speak:

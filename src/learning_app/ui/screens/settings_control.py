@@ -9,7 +9,7 @@ from learning_app.ui.layout_metrics import LayoutMetrics
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.page_functions import create_alert_dialog
 from learning_app.ui.preferences import get_shared_preferences
-from learning_app.ui.learn_preferences import LearnPreferences
+from learning_app.ui.learn_preferences import EXAMPLE_MODE_OPTIONS, LearnPreferences
 from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.tts_preferences import DEFAULT_LANGUAGE, TTS_LANGUAGES, TtsPreferences
 
@@ -263,6 +263,7 @@ class _SettingsSnapshot:
     retry_until_correct: bool
     word_formations_queue_size: int
     definitions_queue_size: int
+    example_mode: str
 
 
 def _capture_settings() -> _SettingsSnapshot:
@@ -281,6 +282,7 @@ def _capture_settings() -> _SettingsSnapshot:
         retry_until_correct=bool(LearnPreferences.retry_until_correct),
         word_formations_queue_size=int(LearnPreferences.word_formations_queue_size),
         definitions_queue_size=int(LearnPreferences.definitions_queue_size),
+        example_mode=LearnPreferences.example_mode,
     )
 
 
@@ -301,6 +303,7 @@ def _default_settings() -> _SettingsSnapshot:
         retry_until_correct=LearnPreferences.RETRY_UNTIL_CORRECT_DEFAULT,
         word_formations_queue_size=LearnPreferences.WORD_FORMATIONS_QUEUE_DEFAULT,
         definitions_queue_size=LearnPreferences.DEFINITIONS_QUEUE_DEFAULT,
+        example_mode=LearnPreferences.EXAMPLE_MODE_DEFAULT,
     )
 
 
@@ -565,6 +568,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             weight=ft.FontWeight.BOLD,
             width=self._content_width,
         )
+        self.retry_heading = self._subsection_heading("Retyping")
         self.retry_until_correct_switch = ft.Switch(
             label=" Retype until correct",
             label_text_style=ft.TextStyle(size=16),
@@ -583,13 +587,32 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             size=14,
             width=self._content_width,
         )
-        self.queue_size_divider = DashedDivider(self._content_width)
-        self.queue_size_heading = ft.Text(
-            "Queue size",
-            size=16,
-            weight=ft.FontWeight.BOLD,
+        self.example_mode_divider = DashedDivider(self._content_width)
+        self.example_mode_heading = self._subsection_heading("Example sentences")
+        self.example_mode_dropdown = ft.Dropdown(
+            label="When to show",
+            value=LearnPreferences.example_mode,
+            options=[
+                ft.DropdownOption(key=mode, text=label)
+                for mode, label in EXAMPLE_MODE_OPTIONS
+            ],
+            width=self._content_width,
+            border=ft.OutlineInputBorder(
+                side=ft.BorderSide(color=_FORM_BORDER_COLOR),
+            ),
+            on_select=self.on_example_mode_select,
+        )
+        self.example_mode_description = ft.Text(
+            "When a definition card shows its example. Definition sets only. "
+            "After Check shows the full sentence once you answer. Hint shows "
+            "it with blank gaps before you answer, and typing the gap words in "
+            "order also counts as correct. A set can change this from its menu "
+            "(Set settings).",
+            size=14,
             width=self._content_width,
         )
+        self.queue_size_divider = DashedDivider(self._content_width)
+        self.queue_size_heading = self._subsection_heading("Queue size")
         self.queue_size_description = ft.Text(
             "How many items are drawn into the next practice round. Word "
             "formations and definitions have separate defaults here. A set "
@@ -660,8 +683,13 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.learning_section = ft.Column(
             controls=[
                 self.learning_heading,
+                self.retry_heading,
                 self.retry_until_correct_row,
                 self.retry_until_correct_description,
+                self.example_mode_divider,
+                self.example_mode_heading,
+                self.example_mode_description,
+                self.example_mode_dropdown,
                 self.queue_size_divider,
                 self.queue_size_heading,
                 self.queue_size_description,
@@ -699,6 +727,14 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.demo_section,
             ft.Container(height=32),
         ]
+
+    def _subsection_heading(self, text: str) -> ft.Text:
+        return ft.Text(
+            text,
+            size=16,
+            weight=ft.FontWeight.BOLD,
+            width=self._content_width,
+        )
 
     def _section_divider(self) -> ft.Container:
         return ft.Container(
@@ -749,6 +785,10 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.learning_heading,
             self.demo_description,
             self.retry_until_correct_description,
+            self.retry_heading,
+            self.example_mode_heading,
+            self.example_mode_dropdown,
+            self.example_mode_description,
             self.queue_size_heading,
             self.queue_size_description,
             self.tts_speakers_heading,
@@ -784,6 +824,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.tts_speakers_formations_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_definitions_preview.apply_layout(metrics.settings_width)
         self.tts_speakers_divider.apply_layout(metrics.settings_width)
+        self.example_mode_divider.apply_layout(metrics.settings_width)
         self.queue_size_divider.apply_layout(metrics.settings_width)
 
         self.update_if_mounted()
@@ -852,6 +893,14 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         if page is not None:
             page.run_task(LearnPreferences.save_retry_until_correct, enabled)
 
+    def on_example_mode_select(self, e):
+        mode = LearnPreferences.parse_example_mode(e.control.value)
+        LearnPreferences.example_mode = mode
+        e.control.value = mode
+        page = self._get_page()
+        if page is not None:
+            page.run_task(LearnPreferences.save_example_mode, mode)
+
     def on_word_formations_queue_size_change(self, size: int):
         size = int(size)
         LearnPreferences.word_formations_queue_size = size
@@ -916,6 +965,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         await TtsPreferences.save_speakers_word(snapshot.speakers_word)
         await TtsPreferences.save_speakers_definition(snapshot.speakers_definition)
         await LearnPreferences.save_retry_until_correct(snapshot.retry_until_correct)
+        await LearnPreferences.save_example_mode(snapshot.example_mode)
         await LearnPreferences.save_word_formations_queue_size(
             snapshot.word_formations_queue_size
         )
@@ -971,6 +1021,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         self.tts_speakers_word_switch.value = TtsPreferences.speakers_word
         self.tts_speakers_definition_switch.value = TtsPreferences.speakers_definition
         self.retry_until_correct_switch.value = LearnPreferences.retry_until_correct
+        self.example_mode_dropdown.value = LearnPreferences.example_mode
         words = self.word_formations_queue_slider
         words.slider.value = LearnPreferences.word_formations_queue_size
         words.label.value = words._format_label(

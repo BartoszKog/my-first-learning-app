@@ -117,6 +117,53 @@ def test_ensure_db_adds_example_sentence_to_an_existing_card_table(isolated_csv_
     assert names.count(EXAMPLE_SENTENCE_COLUMN) == 1
 
 
+def test_ensure_db_adds_example_mode_to_an_existing_set_table(isolated_csv_dir: Path):
+    db_path = FilePathManager.get_db_path()
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE learning_set (
+                id TEXT PRIMARY KEY,
+                kind TEXT NOT NULL,
+                title TEXT NOT NULL,
+                subtitle TEXT NOT NULL DEFAULT '',
+                created_at DATETIME NOT NULL,
+                last_used DATETIME,
+                use_count INTEGER NOT NULL DEFAULT 0,
+                source_file_name TEXT UNIQUE,
+                tts_language TEXT,
+                tts_auto_speak BOOLEAN,
+                speakers_word_formations BOOLEAN,
+                speakers_word BOOLEAN,
+                speakers_definition BOOLEAN,
+                retry_until_correct BOOLEAN,
+                queue_size INTEGER
+            )
+            """
+        )
+
+    ensure_db()
+    with get_engine().connect() as connection:
+        names = [
+            row[1] for row in connection.exec_driver_sql("PRAGMA table_info(learning_set)")
+        ]
+    assert names.count("example_mode") == 1
+
+
+def test_demo_definition_sets_have_valid_examples():
+    from learning_app.data.demo_sets import DEMO_SETS, resolve_demo_asset_path
+    from learning_app.data.example_sentence import example_sentence_error
+
+    for demo in DEMO_SETS:
+        if not demo["file_name"].endswith("_definitions.csv"):
+            continue
+        frame = pd.read_csv(resolve_demo_asset_path(demo["asset_relative"]), index_col=0)
+        examples = frame[EXAMPLE_SENTENCE_COLUMN]
+        assert examples.notna().all()
+        for example in examples:
+            assert example_sentence_error(example) is None, example
+
+
 def _write_definitions(csv_dir: Path, name: str, body: str) -> Path:
     path = csv_dir / name
     path.write_text(body, encoding="utf-8", newline="\n")

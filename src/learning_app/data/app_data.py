@@ -33,6 +33,7 @@ _SET_OVERRIDE_COLUMNS = [
     FilesColumns.SPEAKERS_DEFINITION.value,
     FilesColumns.RETRY_UNTIL_CORRECT.value,
     FilesColumns.QUEUE_SIZE.value,
+    FilesColumns.EXAMPLE_MODE.value,
 ]
 
 _CATALOG_COLUMN_ORDER = [

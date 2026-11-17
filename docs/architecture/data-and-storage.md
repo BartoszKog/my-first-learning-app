@@ -96,7 +96,7 @@ erDiagram
 | `last_used` | Last open of the learn screen. `NULL` means never |
 | `use_count` | Balance copied from the old catalog. Opening the learn screen does **not** increment this column |
 | `source_file_name` | Basename (`Animals_words.csv`). Unique. This is how routes, tiles, and helpers find the row. `NULL` only if a row is created with no name |
-| seven override columns | See [Per-set settings](#per-set-settings). `NULL` inherits the app setting |
+| eight override columns | See [Per-set settings](#per-set-settings). `NULL` inherits the app setting |
 
 The tile **use count** is `use_count` plus the number of `set_opened` rows.
 `record_set_use()` sets `last_used` and inserts one visit. It does not add 1
@@ -156,7 +156,7 @@ set therefore does not come back from a leftover CSV on the next start.
 
 ## Per-set settings {#per-set-settings}
 
-Seven nullable columns on `learning_set` store one set's learning and speech
+Eight nullable columns on `learning_set` store one set's learning and speech
 choices. `NULL` inherits the matching app setting. A stored value is that
 set's own choice, including `false`. Columns that belong to the other set kind
 stay `NULL` and are ignored. `uses_app_defaults` is derived, not stored.
@@ -170,11 +170,12 @@ stay `NULL` and are ignored. `uses_app_defaults` is derived, not stored.
 | `speakers_definition` | `definitions` | `TtsPreferences.speakers_definition` |
 | `retry_until_correct` | both kinds | `LearnPreferences.retry_until_correct` |
 | `queue_size` | both kinds | the queue size for that kind on `LearnPreferences` |
+| `example_mode` | `definitions` | `LearnPreferences.example_mode` |
 
 `data/set_settings.py` (`effective_set_settings`) fills the blanks.
 `read_override_cells` still returns `""` for `NULL` and `"true"` / `"false"` /
 text / an integer as text, so callers keep the old cell-shaped API.
-`add_new_file` and demo install leave all seven columns `NULL`. Home **Set
+`add_new_file` and demo install leave all eight columns `NULL`. Home **Set
 settings** and the learn-menu settings button open `/set/settings`, where
 **Use app settings** writes the current app values or clears the columns
 again. `set_default_progress` does not touch them. Settings **Restore
@@ -185,7 +186,9 @@ definitions 4–15, default 10). Text that is not a whole number falls back to
 the app size. An unknown language code becomes English on read. Bool text is
 `true`, `1`, `on`, or `yes` for on; any other non-empty text is off. The
 database stores the bool and the integer, not those strings. A language is
-stored as written. Changing the language, enabling overrides, or clearing them
+stored as written. `example_mode` is `off`, `after_check`, or `hint`; other
+text is stored as `NULL`. A database created before this column gets it from
+one `ALTER TABLE` in `ensure_db`. Changing the language, enabling overrides, or clearing them
 runs TTS garbage collection. A Check does not.
 
 See the [Set settings API](../reference/set_settings.md).
@@ -328,7 +331,8 @@ override columns and no `checks` column). They are not copied into
 `csv_files/`. Settings calls `install_demo_sets()` in `data/demo_sets.py`,
 which reads each missing template, resets statistics (`checks` becomes 0),
 and registers a database row with a **fixed** basename (for example
-`DemoWordFormation_words.csv`) and seven `NULL` overrides.
+`DemoWordFormation_words.csv`) and eight `NULL` overrides. Every card in the
+two definitions demos has an example sentence.
 
 ```mermaid
 flowchart LR

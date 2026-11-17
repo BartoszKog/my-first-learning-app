@@ -13,7 +13,7 @@ from learning_app.data.set_settings import (
 )
 from learning_app.ui.keyboard_shortcuts import pop_ctrl_b_action, push_ctrl_b_action
 from learning_app.ui.layout_metrics import LayoutMetrics
-from learning_app.ui.learn_preferences import LearnPreferences
+from learning_app.ui.learn_preferences import EXAMPLE_MODE_OPTIONS, LearnPreferences
 from learning_app.ui.navigation import go_back
 from learning_app.ui.routable_screen import RoutableScreenMixin
 from learning_app.ui.screens.settings_control import PracticeQueueSlider
@@ -186,6 +186,26 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         )
         self.retry_row = self._switch_row(self.retry_switch)
 
+        self.example_mode_dropdown = None
+        if self.kind == "definitions":
+            self.example_mode_dropdown = ft.Dropdown(
+                label="Example sentences",
+                value=settings.example_mode,
+                options=[
+                    ft.DropdownOption(key=mode, text=label)
+                    for mode, label in EXAMPLE_MODE_OPTIONS
+                ],
+                width=inner,
+                border=ft.OutlineInputBorder(
+                    side=ft.BorderSide(color=_DROPDOWN_BORDER_COLOR),
+                ),
+                disabled=use_app,
+                on_select=self.on_example_mode_select,
+            )
+        learning_rows: list[ft.Control] = [self.retry_row]
+        if self.example_mode_dropdown is not None:
+            learning_rows.append(self.example_mode_dropdown)
+
         if self.kind == "words":
             minimum = LearnPreferences.WORD_FORMATIONS_QUEUE_MIN
             maximum = LearnPreferences.WORD_FORMATIONS_QUEUE_MAX
@@ -232,7 +252,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         self.learning_card = self._section_card(
             [
                 self.learning_heading,
-                self.retry_row,
+                *learning_rows,
                 self.queue_slider,
             ],
             width,
@@ -321,6 +341,8 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             *self.option_rows,
         ):
             control.width = inner
+        if self.example_mode_dropdown is not None:
+            self.example_mode_dropdown.width = inner
         self.queue_slider.apply_layout(inner)
         self.update_if_mounted()
 
@@ -371,6 +393,14 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
     def on_retry_change(self, e):
         self._save_bool(FilesColumns.RETRY_UNTIL_CORRECT.value, e.control.value)
 
+    def on_example_mode_select(self, e):
+        if self.use_app_settings_switch.value:
+            return
+        mode = LearnPreferences.parse_example_mode(e.control.value)
+        e.control.value = mode
+        set_override_value(self.file_name, FilesColumns.EXAMPLE_MODE.value, mode)
+        self.update_if_mounted()
+
     def on_queue_change(self, size: int):
         if self.use_app_settings_switch.value:
             return
@@ -404,6 +434,9 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
             use_app,
         )
         self._set_switch(self.retry_switch, settings.retry_until_correct, use_app)
+        if self.example_mode_dropdown is not None:
+            self.example_mode_dropdown.value = settings.example_mode
+            self.example_mode_dropdown.disabled = use_app
         self.queue_slider.slider.value = settings.queue_size
         self.queue_slider.slider.disabled = use_app
         self.queue_slider.label.value = self.queue_slider._format_label(settings.queue_size)

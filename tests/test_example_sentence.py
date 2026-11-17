@@ -5,8 +5,10 @@ import pytest
 from learning_app.data.example_sentence import (
     accepted_forms,
     cloze_sentence,
+    display_form,
     example_sentence_error,
     gap_answers,
+    matches_gap_answers,
     normalize_example_sentence,
     preview_parts,
 )
@@ -74,3 +76,36 @@ def test_four_gaps_are_allowed():
     sentence = "{One} and {two} and {three} and {four} left."
     assert example_sentence_error(sentence) is None
     assert gap_answers(sentence) == ["One", "two", "three", "four"]
+
+
+def test_display_form_is_the_first_accepted_form():
+    assert display_form("keep/keeps") == "keep"
+    assert display_form("in line") == "in line"
+
+
+@pytest.mark.parametrize(
+    "typed",
+    ["keep in line", "Keep  In Line", "keep, in line", "keep in; line", " keep ,in line "],
+)
+def test_gap_answers_in_order_are_accepted(typed):
+    assert matches_gap_answers(typed, "I {keep} him {in line}.")
+
+
+@pytest.mark.parametrize(
+    "typed",
+    ["in line keep", "keep", "keep him in line", "keep in him line", "", "   "],
+)
+def test_other_answers_do_not_match_the_gaps(typed):
+    assert not matches_gap_answers(typed, "I {keep} him {in line}.")
+
+
+def test_each_gap_accepts_its_slash_forms():
+    sentence = "She {keep/keeps} him {in line}."
+    assert matches_gap_answers("keeps in line", sentence)
+    assert matches_gap_answers("keep in line", sentence)
+    assert not matches_gap_answers("keep/keeps in line", sentence)
+
+
+def test_blank_or_broken_sentence_matches_nothing():
+    assert not matches_gap_answers("keep", "")
+    assert not matches_gap_answers("keep", "I {keep him.")

@@ -247,11 +247,12 @@ auto-speak on, word-formation and word speakers on, definition speakers off).
 
 ## Learning {#learning}
 
-The **retype until correct** switch and the two practice-queue size sliders
-are the app defaults, owned at runtime by `LearnPreferences` in
-`ui/learn_preferences.py`. Settings is the UI that edits those defaults. A
-set can store `retry_until_correct` and `queue_size` on its row; `NULL`
-keeps the app default.
+The **retype until correct** switch, the **Example sentences** dropdown, and
+the two practice-queue size sliders are the app defaults, owned at runtime by
+`LearnPreferences` in `ui/learn_preferences.py`. Settings is the UI that edits
+those defaults. A set can store `retry_until_correct` and `queue_size` on its
+row, and a definitions set can also store `example_mode`; `NULL` keeps the
+app default.
 `BaseWordField` reads the set's effective retry flag during Check: a wrong
 first answer still writes statistics once, then extra attempts stay on the
 same card and do not call `good_answer_at_current_row` /
@@ -266,9 +267,11 @@ queue size for the next group. Queue rules remain on `AppData` — see
 | `learn_retry_until_correct` | `"true"` or `"false"`; stay on a card until Check is correct |
 | `learn_word_formations_queue_size` | integer string; max practice-queue size for word formations (3–10, default 5) |
 | `learn_definitions_queue_size` | integer string; max practice-queue size for definitions (4–15, default 10) |
+| `learn_example_mode` | `"off"`, `"after_check"` (default), or `"hint"`; when a definition card shows its example sentence |
 
 Missing keys are seeded in `LearnPreferences.load_from_preferences()` (retry
-on, word formations 5, definitions 10). A queue size that cannot be read as
+on, word formations 5, definitions 10, examples after Check). An unknown
+example mode becomes `after_check`. A queue size that cannot be read as
 an integer becomes that default. A stored integer outside the range is
 clamped to the minimum or maximum.
 

@@ -1,6 +1,6 @@
 """SQLite tables for the local learning-set store.
 
-The shape is the v1 schema: four tables, UUID text keys, seven nullable
+The shape is the v1 schema: four tables, UUID text keys, eight nullable
 overrides on the set, and ``checks`` on both the card and the visit. There is
 no user and no API model. A later server can reuse these tables.
 """
@@ -42,6 +42,8 @@ class LearningSet(SQLModel, table=True):
     speakers_definition: bool | None = None
     retry_until_correct: bool | None = None
     queue_size: int | None = None
+    # ``"off"``, ``"after_check"``, or ``"hint"``. Definitions sets only.
+    example_mode: str | None = None
 
 
 class Card(SQLModel, table=True):

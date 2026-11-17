@@ -91,6 +91,7 @@ def ensure_db() -> None:
         return
     SQLModel.metadata.create_all(engine)
     _ensure_example_sentence_column(engine)
+    _ensure_example_mode_column(engine)
     _migrate_csv_files(engine)
     _ready_path = path
 
@@ -617,6 +618,16 @@ def _ensure_example_sentence_column(engine: Engine) -> None:
         )
 
 
+def _ensure_example_mode_column(engine: Engine) -> None:
+    """Add the nullable ``example_mode`` override to an older ``learning_set`` table."""
+    with engine.begin() as connection:
+        rows = connection.exec_driver_sql("PRAGMA table_info(learning_set)").fetchall()
+        names = {row[1] for row in rows}
+        if not names or FilesColumns.EXAMPLE_MODE.value in names:
+            return
+        connection.exec_driver_sql("ALTER TABLE learning_set ADD COLUMN example_mode TEXT")
+
+
 def _apply_progress(card: Card, row: pd.Series, previous: Card | None = None) -> None:
     card.correct_answers = _as_int(row.get(StatsColumns.CORRECT_ANSWERS.value), 0)
     card.good_answer = _as_bool(row.get(StatsColumns.GOOD_ANSWER.value), False)
@@ -687,6 +698,7 @@ def _clear_override_columns(learning_set: LearningSet) -> None:
     learning_set.speakers_definition = None
     learning_set.retry_until_correct = None
     learning_set.queue_size = None
+    learning_set.example_mode = None
 
 
 def _migrate_csv_files(engine: Engine) -> None:
@@ -793,6 +805,11 @@ def _import_catalog_row(engine, catalog_row, frame, basename, kind, db_override_
             queue_size=db_override_from_text(
                 Columns.QUEUE_SIZE.value,
                 override_cell_text(catalog_row.get(Columns.QUEUE_SIZE.value)),
+                kind,
+            ),
+            example_mode=db_override_from_text(
+                Columns.EXAMPLE_MODE.value,
+                override_cell_text(catalog_row.get(Columns.EXAMPLE_MODE.value)),
                 kind,
             ),
         )

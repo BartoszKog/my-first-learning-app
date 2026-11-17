@@ -8,6 +8,7 @@ import pytest
 from learning_app.ui.app_theme import AppTheme
 from learning_app.ui.learn_preferences import (
     DEFINITIONS_QUEUE_SIZE_KEY,
+    EXAMPLE_MODE_KEY,
     RETRY_UNTIL_CORRECT_KEY,
     WORD_FORMATIONS_QUEUE_SIZE_KEY,
     LearnPreferences,
@@ -58,6 +59,7 @@ def restore_settings_preferences():
     retry = LearnPreferences.retry_until_correct
     words_queue = LearnPreferences.word_formations_queue_size
     definitions_queue = LearnPreferences.definitions_queue_size
+    example_mode = LearnPreferences.example_mode
     yield
     AppTheme.theme_mode = theme_mode
     AppTheme.dark_theme_slider_value = dark_slider
@@ -72,6 +74,7 @@ def restore_settings_preferences():
     LearnPreferences.retry_until_correct = retry
     LearnPreferences.word_formations_queue_size = words_queue
     LearnPreferences.definitions_queue_size = definitions_queue
+    LearnPreferences.example_mode = example_mode
 
 
 def _patch_storage(monkeypatch) -> MemoryPreferences:
@@ -113,6 +116,7 @@ def _apply_saved_defaults() -> None:
         LearnPreferences.WORD_FORMATIONS_QUEUE_DEFAULT
     )
     LearnPreferences.definitions_queue_size = LearnPreferences.DEFINITIONS_QUEUE_DEFAULT
+    LearnPreferences.example_mode = LearnPreferences.EXAMPLE_MODE_DEFAULT
 
 
 def _apply_custom_settings() -> None:
@@ -129,6 +133,7 @@ def _apply_custom_settings() -> None:
     LearnPreferences.retry_until_correct = False
     LearnPreferences.word_formations_queue_size = 8
     LearnPreferences.definitions_queue_size = 14
+    LearnPreferences.example_mode = "hint"
 
 
 def _page(theme_mode):
@@ -259,6 +264,8 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.tts_speakers_word_switch.value is True
     assert screen.tts_speakers_definition_switch.value is False
     assert screen.retry_until_correct_switch.value is True
+    assert LearnPreferences.example_mode == "after_check"
+    assert screen.example_mode_dropdown.value == "after_check"
     assert screen.word_formations_queue_slider.slider.value == 5
     assert screen.word_formations_queue_slider.label.value == "Word formations: 5"
     assert screen.definitions_queue_slider.slider.value == 10
@@ -283,6 +290,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
         RETRY_UNTIL_CORRECT_KEY: "true",
         WORD_FORMATIONS_QUEUE_SIZE_KEY: "5",
         DEFINITIONS_QUEUE_SIZE_KEY: "10",
+        EXAMPLE_MODE_KEY: "after_check",
     }
 
     assert len(page.dialogs) == 1
@@ -321,6 +329,8 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.tts_speakers_word_switch.value is False
     assert screen.tts_speakers_definition_switch.value is True
     assert screen.retry_until_correct_switch.value is False
+    assert LearnPreferences.example_mode == "hint"
+    assert screen.example_mode_dropdown.value == "hint"
     assert screen.word_formations_queue_slider.slider.value == 8
     assert screen.word_formations_queue_slider.label.value == "Word formations: 8"
     assert screen.definitions_queue_slider.slider.value == 14
@@ -344,6 +354,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
         RETRY_UNTIL_CORRECT_KEY: "false",
         WORD_FORMATIONS_QUEUE_SIZE_KEY: "8",
         DEFINITIONS_QUEUE_SIZE_KEY: "14",
+        EXAMPLE_MODE_KEY: "hint",
     }
     assert demo_calls == []
 

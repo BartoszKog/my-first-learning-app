@@ -146,6 +146,26 @@ store its own value from `/set/settings` — see
 [Learning](../guides/state-and-persistence.md#learning) and
 [Per-set settings](../architecture/data-and-storage.md#per-set-settings).
 
+## Example sentences {#example-sentences}
+
+`WordDefinitionField` reads the card's `example_sentence` and the set's
+effective `example_mode` when the card is drawn. A card without a valid
+example shows nothing.
+
+| Mode | Before Check | After Check |
+| --- | --- | --- |
+| `off` | hidden | hidden |
+| `after_check` (default) | hidden | full sentence, answers highlighted |
+| `hint` | sentence with each gap as `_____` | full sentence, answers highlighted |
+
+A filled gap shows its first `/` form. Try again keeps the filled sentence.
+
+In `hint` mode a Check is also correct when the typed text is every gap in
+order, separated by spaces, commas, or semicolons. For
+`I {keep} him {in line}.` that is `keep in line` or `keep, in line`. Each gap
+accepts any of its `/` forms. The field then shows the card's `word`, and the
+statistics are the same as for typing the word.
+
 ## Progress helpers
 
 | Method | Use |
@@ -174,6 +194,7 @@ Learn UI uses `are_all_words_learned()` before starting a session and may offer
 | Queue and answer rules | `AppData` |
 | Retry-until-correct flag | Effective set value; `NULL` uses `LearnPreferences` |
 | Practice-queue size | Effective set `queue_size`; `NULL` uses `LearnPreferences`; `draw_index_group` reads it |
+| Example sentence mode | Effective set `example_mode`; `NULL` uses `LearnPreferences`; `WordDefinitionField` reads it |
 | Open visit counters | `set_opened`, updated with the graded card while `/set/learn` is on the stack |
 | Presenting fields / buttons | `ui/components/` learn controls and `WordListMenu` |
 | Transient UI chrome lock | `AppSession` — never learning statistics |

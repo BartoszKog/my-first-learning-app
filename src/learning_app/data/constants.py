@@ -65,6 +65,7 @@ class FilesColumns(Enum):
     SPEAKERS_DEFINITION = "speakers_definition"
     RETRY_UNTIL_CORRECT = "retry_until_correct"
     QUEUE_SIZE = "queue_size"
+    EXAMPLE_MODE = "example_mode"
 
 
 class SetSortMode(Enum):

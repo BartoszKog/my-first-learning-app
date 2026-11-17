@@ -52,6 +52,7 @@ This application was designed with effective vocabulary and definition learning 
 - ✅ Track your progress
 - ✅ Intelligently schedule repetitions
 - ✅ Export data and statistics
+- ✅ Definition cards can include an example sentence
 
 ## 📱 Application Interface
 
@@ -117,6 +118,7 @@ Contain definitions and their corresponding words:
 
 - `definition`: definition
 - `word`: corresponding word
+- `example_sentence` (optional): an example with each answer inside braces, such as `Please {turn} the lights {off}.` A gap can be one word or a phrase, as in `{on purpose}`. Use another pair when sentence words sit between the answers, as in `I {keep} him {in line}.` Use `{keep/keeps}` when one gap accepts more than one form. Leave the cell empty when the card has no example. One sentence can contain up to four gaps.
 
 ### Statistics Columns (Optional)
 
@@ -129,9 +131,9 @@ Contain definitions and their corresponding words:
 ### Sample CSV File
 
 ```csv
-,definition,word
-0,"1 number",one
-1,"2 number",two
+,definition,word,example_sentence
+0,"1 number",one,She has {one} brother.
+1,"2 number",two,
 ```
 
 ## 💡 Tips
@@ -142,6 +144,7 @@ Contain definitions and their corresponding words:
 - Words marked as "learned" will appear less frequently
 - The app automatically prioritizes words you find challenging
 - For definitions with multiple correct answers or word forms, you can use the slash symbol (/) to separate them. For example: "go/goes/went". During a learning session, entering any one of these words will be marked as correct.
+- By default a definition example appears after Check. Hint shows it earlier, with one `_____` per pair of braces, and typing the gap texts in order also counts as correct while those blanks are on screen. Turn this off, or switch to Hint, in Settings or in that set's settings.
 
 ## 🔧 Technologies
 

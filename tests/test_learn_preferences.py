@@ -13,10 +13,17 @@ def restore_learn_preferences():
     retry = LearnPreferences.retry_until_correct
     words_queue = LearnPreferences.word_formations_queue_size
     definitions_queue = LearnPreferences.definitions_queue_size
+    example_mode = LearnPreferences.example_mode
     yield
+    LearnPreferences.example_mode = example_mode
     LearnPreferences.retry_until_correct = retry
     LearnPreferences.word_formations_queue_size = words_queue
     LearnPreferences.definitions_queue_size = definitions_queue
+
+
+def _position(controls, control) -> int:
+    """Index by identity; Flet controls with equal fields compare equal."""
+    return next(i for i, item in enumerate(controls) if item is control)
 
 
 def test_learn_preferences_default_retry_on():
@@ -54,6 +61,43 @@ def test_parse_queue_sizes_default_and_clamp():
     assert LearnPreferences.parse_definitions_queue_size("16") == 15
     assert LearnPreferences.parse_definitions_queue_size(4) == 4
     assert LearnPreferences.parse_definitions_queue_size(15) == 15
+
+
+def test_parse_example_mode_defaults_to_after_check():
+    assert LearnPreferences.EXAMPLE_MODE_DEFAULT == "after_check"
+    assert LearnPreferences.parse_example_mode(None) == "after_check"
+    assert LearnPreferences.parse_example_mode("nope") == "after_check"
+    assert LearnPreferences.parse_example_mode(" Hint ") == "hint"
+    assert LearnPreferences.parse_example_mode("off") == "off"
+
+
+def test_settings_example_mode_dropdown_updates_runtime_flag(restore_learn_preferences):
+    from learning_app.ui.screens.settings_control import SettingsControl
+
+    LearnPreferences.example_mode = "after_check"
+    calls = []
+    page = SimpleNamespace(run_task=lambda *args, **kwargs: calls.append(args))
+    screen = SettingsControl(page)
+    assert screen.example_mode_dropdown.value == "after_check"
+    controls = screen.learning_section.controls
+    assert screen.retry_heading.value == "Retyping"
+    assert screen.example_mode_heading.value == "Example sentences"
+    assert _position(controls, screen.learning_heading) + 1 == _position(
+        controls, screen.retry_heading
+    )
+    assert (
+        _position(controls, screen.retry_until_correct_description)
+        < _position(controls, screen.example_mode_divider)
+        < _position(controls, screen.example_mode_heading)
+        < _position(controls, screen.example_mode_dropdown)
+        < _position(controls, screen.queue_size_divider)
+    )
+
+    screen.example_mode_dropdown.value = "hint"
+    screen.on_example_mode_select(SimpleNamespace(control=screen.example_mode_dropdown))
+
+    assert LearnPreferences.example_mode == "hint"
+    assert calls == [(LearnPreferences.save_example_mode, "hint")]
 
 
 def test_settings_includes_learning_section(restore_learn_preferences):
@@ -104,21 +148,19 @@ def test_settings_includes_queue_size_sliders(restore_learn_preferences):
         "(Set settings). The round already started keeps its length."
     )
     assert screen.queue_size_description.size == 14
-    assert learning_controls.index(
-        screen.retry_until_correct_description
-    ) < learning_controls.index(screen.queue_size_divider)
+    assert _position(learning_controls, screen.retry_until_correct_description) < _position(
+        learning_controls, screen.queue_size_divider
+    )
     assert isinstance(screen.queue_size_divider, DashedDivider)
+    assert _position(learning_controls, screen.queue_size_divider) + 1 == _position(
+        learning_controls, screen.queue_size_heading
+    )
     assert (
-        learning_controls.index(screen.queue_size_divider) + 1
-        == learning_controls.index(screen.queue_size_heading)
+        _position(learning_controls, screen.queue_size_heading)
+        < _position(learning_controls, screen.queue_size_description)
+        < _position(learning_controls, words)
+        < _position(learning_controls, definitions)
     )
-    assert learning_controls.index(screen.queue_size_heading) < learning_controls.index(
-        screen.queue_size_description
-    )
-    assert learning_controls.index(
-        screen.queue_size_description
-    ) < learning_controls.index(words)
-    assert learning_controls.index(words) < learning_controls.index(definitions)
     assert words.slider.width == screen._content_width
     assert definitions.slider.width == screen._content_width
     assert screen.queue_size_heading.width == screen._content_width

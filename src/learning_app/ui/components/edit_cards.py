@@ -3,7 +3,16 @@ import asyncio
 import flet as ft
 
 from learning_app.data.app_data import _stringify_content_cell
-from learning_app.data.constants import PartsOfSpeech, WordDefinitions
+from learning_app.data.constants import (
+    EXAMPLE_SENTENCE_COLUMN,
+    PartsOfSpeech,
+    WordDefinitions,
+)
+from learning_app.data.example_sentence import (
+    example_sentence_error,
+    normalize_example_sentence,
+    preview_parts,
+)
 from learning_app.ui.app_theme import AppTheme
 
 
@@ -80,7 +89,12 @@ class EditCardBase(ft.Card):
             if self.index is not None:
                 lv_parent.deleted_indexes.append(self.index)
 
-        self.delete_button = ft.Button(content="Delete", on_click=on_delete_click, icon=ft.Icons.DELETE)
+        self.delete_button = ft.Button(
+            content="Delete",
+            tooltip="Delete",
+            on_click=on_delete_click,
+            icon=ft.Icons.DELETE,
+        )
         self.action_buttons = ft.Row(
             controls=[self.delete_button],
             alignment=ft.MainAxisAlignment.CENTER,
@@ -129,6 +143,11 @@ class EditCardBase(ft.Card):
     def is_valid(self):
         return self.__two_fields_filled()
 
+    def invalid_message(self):
+        if self.is_valid():
+            return None
+        return "Some cards have less than two text fields filled."
+
     def get_values(self):
         return {label: field.value.strip() for label, field in self.dict_word_fields.items()}
 
@@ -154,7 +173,7 @@ class EditCardWords(EditCardBase):
 
 
 class EditCardDefinitions(EditCardBase):
-    """Edit card with word and multiline definition fields."""
+    """Edit card with word, definition, and an optional example sentence."""
 
     def __init__(self, lv_parent: ft.ListView, width: int = 250, words_row=None):
         fields = {
@@ -170,9 +189,88 @@ class EditCardDefinitions(EditCardBase):
 
         self.swap_button = ft.IconButton(
             icon=ft.Icons.SWAP_VERT,
+            tooltip="Swap word and definition",
             on_click=self._on_swap_click,
         )
+        self.example_button = ft.IconButton(
+            icon=ft.Icons.EDIT_NOTE,
+            tooltip="Add example",
+            on_click=self._on_example_click,
+        )
         self.action_buttons.controls.insert(0, self.swap_button)
+        self.action_buttons.controls.insert(1, self.example_button)
+
+        field_width = self.dict_word_fields[WordDefinitions.WORD.value].width
+        self.example_help = ft.Text(
+            "Use 1 to 4 {} and put a word or phrase inside.",
+            width=field_width,
+            text_align=ft.TextAlign.CENTER,
+            size=12,
+        )
+        self.example_field = ft.TextField(
+            label="Example",
+            hint_text="e.g. {Turn} it {off}.",
+            width=field_width,
+            multiline=True,
+            min_lines=1,
+            max_lines=4,
+            shift_enter=True,
+            on_change=self._on_example_change,
+        )
+        self.example_preview = ft.Text(
+            width=field_width,
+            text_align=ft.TextAlign.CENTER,
+            visible=False,
+        )
+        self.example_section = ft.Column(
+            controls=[self.example_help, self.example_field, self.example_preview],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            visible=False,
+        )
+        content_column = self.content
+        button_index = content_column.controls.index(self.action_buttons)
+        content_column.controls.insert(button_index, self.example_section)
+
+        stored_example = self._stored_example(words_row)
+        if stored_example.strip():
+            self.example_field.value = stored_example
+            self._set_example_open(True)
+        self.validate_fields()
+
+    def validate_fields(self, e=None):
+        super().validate_fields(e)
+        if not hasattr(self, "example_field"):
+            return
+        self._style_example_field()
+        self._refresh_preview()
+        self._apply_example_validation()
+        if e:
+            e.page.update()
+
+    def is_valid(self):
+        if not super().is_valid():
+            return False
+        return example_sentence_error(self.example_field.value or "") is None
+
+    def invalid_message(self):
+        if not super().is_valid():
+            return "Some cards have less than two text fields filled."
+        message = example_sentence_error(self.example_field.value or "")
+        if message:
+            return f"Example: {message}"
+        return None
+
+    def get_values(self):
+        values = super().get_values()
+        text = self.example_field.value or ""
+        if not self.example_section.visible or text.strip() == "":
+            values[EXAMPLE_SENTENCE_COLUMN] = ""
+            return values
+        if example_sentence_error(text):
+            values[EXAMPLE_SENTENCE_COLUMN] = text.strip()
+            return values
+        values[EXAMPLE_SENTENCE_COLUMN] = normalize_example_sentence(text)
+        return values
 
     def swap_word_and_definition(self):
         word_field = self.dict_word_fields[WordDefinitions.WORD.value]
@@ -186,3 +284,71 @@ class EditCardDefinitions(EditCardBase):
     def _on_swap_click(self, e):
         self.swap_word_and_definition()
         e.page.update()
+
+    def _on_example_click(self, e):
+        if self.example_section.visible:
+            self.example_field.value = ""
+            self._set_example_open(False)
+            self.edited = True
+            self.validate_fields(e)
+            return
+        self._set_example_open(True)
+        self._refresh_preview()
+        e.page.update()
+
+    def _on_example_change(self, e):
+        self.validate_fields(e)
+
+    def _set_example_open(self, open_section: bool):
+        self.example_section.visible = open_section
+        if open_section:
+            self.example_button.icon = ft.Icons.CLOSE
+            self.example_button.tooltip = "Remove example"
+        else:
+            self.example_button.icon = ft.Icons.EDIT_NOTE
+            self.example_button.tooltip = "Add example"
+
+    def _stored_example(self, words_row) -> str:
+        if words_row is None or EXAMPLE_SENTENCE_COLUMN not in words_row.index:
+            return ""
+        text = _stringify_content_cell(words_row[EXAMPLE_SENTENCE_COLUMN])
+        if not isinstance(text, str):
+            return ""
+        return text
+
+    def _gap_style(self, color):
+        return ft.TextStyle(weight=ft.FontWeight.BOLD, color=color)
+
+    def _gap_color(self):
+        if AppTheme.is_dark_mode():
+            return self.font_text_field_color_dark_theme
+        return self.font_text_field_color_light_theme
+
+    def _style_example_field(self):
+        if (self.example_field.value or "").strip():
+            self.example_field.color = self._gap_color()
+
+    def _refresh_preview(self):
+        text = self.example_field.value or ""
+        pieces = preview_parts(text)
+        if not pieces:
+            self.example_preview.value = ""
+            self.example_preview.spans = []
+            self.example_preview.visible = False
+            return
+        self.example_preview.visible = True
+        if example_sentence_error(text):
+            self.example_preview.value = text
+            self.example_preview.spans = []
+            return
+        self.example_preview.value = ""
+        color = self._gap_color()
+        self.example_preview.spans = [
+            ft.TextSpan(text=piece.text, style=self._gap_style(color) if piece.is_gap else None)
+            for piece in pieces
+            if piece.text
+        ]
+
+    def _apply_example_validation(self):
+        message = example_sentence_error(self.example_field.value or "")
+        self.example_field.error = message

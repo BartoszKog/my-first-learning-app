@@ -13,18 +13,26 @@ import warnings as py_warnings
 
 import pandas as pd
 
-from learning_app.data.app_data import add_new_file, read_catalog_csv, read_set_csv, save_set, stringify_content_columns
+from learning_app.data.app_data import (
+    add_new_file,
+    read_catalog_csv,
+    read_set_csv,
+    save_set,
+    stringify_content_columns,
+)
 from learning_app.data.constants import (
     CHECKS_COLUMN,
+    EXAMPLE_SENTENCE_COLUMN,
+    MAX_ROWS,
     Errors,
     FilesColumns,
-    MAX_ROWS,
     PartsOfSpeech,
     StatsColumns,
     Warnings,
     WordDefinitions,
 )
 from learning_app.data.demo_sets import allocate_unique_set_basename
+from learning_app.data.example_sentence import example_sentence_error
 from learning_app.data.file_path_manager import FilePathManager
 
 _SET_SUFFIXES = ("_words.csv", "_definitions.csv")
@@ -33,6 +41,17 @@ _REQUIRED_CATALOG_COLUMNS = (
     FilesColumns.TITLE.value,
     FilesColumns.SUBTITLE.value,
 )
+
+
+def _example_cell_is_empty(value: object) -> bool:
+    if value is None:
+        return True
+    try:
+        if pd.isna(value):
+            return True
+    except (TypeError, ValueError):
+        pass
+    return str(value).strip() == ""
 
 
 def _title_from_set_basename(file_name: str) -> str:
@@ -239,6 +258,8 @@ class CSVProcessor:
             return df[cols_to_keep]
         elif data_type == "definitions":
             cols_to_keep = [col.value for col in WordDefinitions if col.value in df.columns]
+            if EXAMPLE_SENTENCE_COLUMN in df.columns:
+                cols_to_keep.append(EXAMPLE_SENTENCE_COLUMN)
             return df[cols_to_keep]
         else:
             raise ValueError(f"data_type {data_type} is not implemented")
@@ -442,9 +463,10 @@ class CSVProcessor:
             if not expected_columns.issubset(df_columns):
                 errors.append(error_message.value)
                 return False
-            unnecessary_columns = (
-                set(df_columns) - expected_columns - {col.value for col in StatsColumns} - {CHECKS_COLUMN}
-            )
+            allowed_extra = {col.value for col in StatsColumns} | {CHECKS_COLUMN}
+            if data_type == "definitions":
+                allowed_extra.add(EXAMPLE_SENTENCE_COLUMN)
+            unnecessary_columns = set(df_columns) - expected_columns - allowed_extra
             if unnecessary_columns:
                 warnings.append(Warnings.UNNECESSARY_COLUMNS.value)
                 requires_specific_actions = True
@@ -561,6 +583,18 @@ class CSVProcessor:
                     Errors.MISSING_COLUMNS_DEFINITIONS.value if data_type == "definitions" else
                     Errors.MISSING_COLUMNS_WORDS.value
                 )
+
+        if is_valid and data_type == "definitions" and EXAMPLE_SENTENCE_COLUMN in df.columns:
+            for index, value in df[EXAMPLE_SENTENCE_COLUMN].items():
+                if _example_cell_is_empty(value):
+                    continue
+                message = example_sentence_error(str(value))
+                if message:
+                    errors.append(
+                        f"{Errors.INVALID_EXAMPLE_SENTENCE.value} Row {index}: {message}"
+                    )
+                    is_valid = False
+                    break
 
         # Check for empty values in statistics columns
         if is_valid and has_statistics:

@@ -14,6 +14,9 @@ body and fails if it is missing.
 ### Added
 - Local SQLite store (`learning.sqlite`) for sets, cards, per-set overrides, and a visit log opened from the learn screen; graded Checks update that card and the open visit
 - One-time startup copy of existing `files.csv` sets into the database, without importing the same file again or bringing a deleted set back
+- Optional example sentence on definition cards. One `{}` is one gap and can hold a word or a phrase (`{on purpose}`); another pair is for sentence words between the answers (`I {keep} him {in line}.`). A sentence can hold up to four gaps, and `/` inside a gap is another accepted form
+- Definition learn mode shows that example after Check (default), as one `_____` per gap before Check (Hint), or not at all (Off). Typing the gap texts in order counts as correct while the blanks are on screen. The word list shows the filled sentence and can speak it
+- Example field on the definition edit card, with a preview that highlights the gaps
 
 ### Changed
 - CSV is the import, export, and demo-template format. Home, create, edit, learn, reset, and delete read and write the database
@@ -21,6 +24,8 @@ body and fails if it is missing.
 - Document the SQLite store, visit log, `checks`, and the CSV migration
 - Raise the per-set card limit from 40 to 80 for import, create, and edit
 - Changed theme seed to teal and changed some buttons to filled ones
+- Group adjacent words into one gap in the demo definition examples
+- Document example sentences in the developer docs, README, and in-app Info, including a sample `example_sentence` column
 
 ## [1.0.8] - 2026-11-05
 

@@ -146,6 +146,37 @@ store its own value from `/set/settings` — see
 [Learning](../guides/state-and-persistence.md#learning) and
 [Per-set settings](../architecture/data-and-storage.md#per-set-settings).
 
+## Example sentences {#example-sentences}
+
+`WordDefinitionField` reads the card's `example_sentence` and the set's
+effective `example_mode` when the card is drawn. A card without a valid
+example shows nothing.
+
+| Mode | Before Check | After Check |
+| --- | --- | --- |
+| `off` | hidden | hidden |
+| `after_check` (default) | hidden | full sentence, answers highlighted |
+| `hint` | sentence with each gap as `_____` | full sentence, answers highlighted |
+
+Each pair is one blank `_____`, so `{precious time}` is a single blank.
+
+A filled gap shows its first `/` form. Try again restores the blank gaps
+(`_____`) for both `hint` and `after_check`. The next Check fills them again.
+
+A Check is also correct when the blank gaps are on screen and the typed text
+is every gap in order, separated by spaces, commas, or semicolons. That is
+before Check in `hint`, and on the retype in `after_check` when
+`retry_until_correct` is on. The first Check in `after_check` still requires
+the word, because the gaps stay hidden until Try again. For
+`I {keep} him {in line}.` the gap answer is `keep in line` or `keep, in line`.
+Each gap accepts any of its `/` forms. The field then shows the card's `word`.
+A correct first Check records the same statistics as typing the word. A
+correct retype does not write statistics again.
+
+The word list shows that filled sentence on a definition card whenever the
+card has an example. Its speaker is on by default and can be turned off in
+Settings or in that set's settings.
+
 ## Progress helpers
 
 | Method | Use |
@@ -174,6 +205,7 @@ Learn UI uses `are_all_words_learned()` before starting a session and may offer
 | Queue and answer rules | `AppData` |
 | Retry-until-correct flag | Effective set value; `NULL` uses `LearnPreferences` |
 | Practice-queue size | Effective set `queue_size`; `NULL` uses `LearnPreferences`; `draw_index_group` reads it |
+| Example sentence mode | Effective set `example_mode`; `NULL` uses `LearnPreferences`; `WordDefinitionField` reads it |
 | Open visit counters | `set_opened`, updated with the graded card while `/set/learn` is on the stack |
 | Presenting fields / buttons | `ui/components/` learn controls and `WordListMenu` |
 | Transient UI chrome lock | `AppSession` — never learning statistics |

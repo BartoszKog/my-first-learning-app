@@ -85,7 +85,9 @@ pronunciation as the speaker button (only while the word is revealed).
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
 the learn menu list; it is a screen helper, not under `components/`. Its
 settings button opens `/set/settings` for this set. Speaker buttons on the
-list follow the set's effective speaker flags.
+list follow the set's effective speaker flags. A definition card also shows
+its example with the gaps filled when the card has one. The example speaker
+follows `speakers_example` and reads that filled sentence.
 
 **Ctrl+Enter** activates the primary action on these screens: **Start** on the
 word list, and **Check** / **Try again** / **Next** during a learn session.
@@ -116,6 +118,10 @@ before save. While mounted it registers **Ctrl+B** for **Back** and **Ctrl+S**
 for **Save** (same paths as those buttons, including the unsaved-changes
 dialog on back); the buttons show shortcut tooltips. Prefer extending
 `EditCardBase` over copying field layout into a new screen.
+
+`EditCardDefinitions` adds an example field. The help text asks for 1 to 4
+`{}` with a word or phrase inside. The preview highlights each gap. A blank
+field means the card has no example.
 
 ## Search control
 

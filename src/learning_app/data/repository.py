@@ -25,10 +25,15 @@ from sqlmodel import Session, SQLModel, func, select
 from learning_app.data.constants import (
     CARD_ID_COLUMN,
     CHECKS_COLUMN,
+    EXAMPLE_SENTENCE_COLUMN,
     FilesColumns,
     PartsOfSpeech,
     StatsColumns,
     WordDefinitions,
+)
+from learning_app.data.example_sentence import (
+    example_sentence_error,
+    normalize_example_sentence,
 )
 from learning_app.data.file_path_manager import FilePathManager
 from learning_app.data.models import (
@@ -47,6 +52,7 @@ _open_visits: dict[str, str] = {}
 _WORD_FIELDS = [member.value for member in PartsOfSpeech]
 _DEFINITION_FIELDS = [member.value for member in WordDefinitions]
 _CONTENT_FIELDS = _WORD_FIELDS + _DEFINITION_FIELDS
+_EXAMPLE_FIELDS = [EXAMPLE_SENTENCE_COLUMN]
 _STAT_FIELDS = [member.value for member in StatsColumns]
 
 
@@ -84,6 +90,9 @@ def ensure_db() -> None:
     if _ready_path == path:
         return
     SQLModel.metadata.create_all(engine)
+    _ensure_example_sentence_column(engine)
+    _ensure_example_mode_column(engine)
+    _ensure_speakers_example_column(engine)
     _migrate_csv_files(engine)
     _ready_path = path
 
@@ -490,6 +499,7 @@ def _detach_card(card: Card) -> Card:
         adverb=card.adverb,
         definition=card.definition,
         word=card.word,
+        example_sentence=card.example_sentence,
         correct_answers=card.correct_answers,
         good_answer=card.good_answer,
         good_answers_in_a_row=card.good_answers_in_a_row,
@@ -499,7 +509,7 @@ def _detach_card(card: Card) -> Card:
 
 
 def _cards_to_frame(kind: str, cards: list[Card]) -> pd.DataFrame:
-    content = _WORD_FIELDS if kind == "words" else _DEFINITION_FIELDS
+    content = _WORD_FIELDS if kind == "words" else _DEFINITION_FIELDS + _EXAMPLE_FIELDS
     rows = []
     for card in cards:
         row: dict[str, object] = {}
@@ -580,6 +590,55 @@ def _apply_content(card: Card, row: pd.Series, kind: str) -> None:
             setattr(card, column, _content_text(row[column]))
         else:
             setattr(card, column, "")
+    if kind == "definitions" and EXAMPLE_SENTENCE_COLUMN in row.index:
+        card.example_sentence = _example_sentence_text(row[EXAMPLE_SENTENCE_COLUMN])
+    else:
+        card.example_sentence = ""
+
+
+def _example_sentence_text(value: object) -> str:
+    text = _content_text(value).strip()
+    if text == "" or example_sentence_error(text):
+        return text
+    return normalize_example_sentence(text)
+
+
+def _ensure_example_sentence_column(engine: Engine) -> None:
+    """Add ``example_sentence`` when the card table predates that column.
+
+    ``create_all`` creates missing tables and does not alter an existing
+    ``card`` table. A database from before this column gets one ``ALTER``.
+    """
+    with engine.begin() as connection:
+        rows = connection.exec_driver_sql("PRAGMA table_info(card)").fetchall()
+        names = {row[1] for row in rows}
+        if not names or EXAMPLE_SENTENCE_COLUMN in names:
+            return
+        connection.exec_driver_sql(
+            "ALTER TABLE card ADD COLUMN example_sentence TEXT NOT NULL DEFAULT ''"
+        )
+
+
+def _ensure_speakers_example_column(engine: Engine) -> None:
+    """Add the nullable ``speakers_example`` override to an older set table."""
+    with engine.begin() as connection:
+        rows = connection.exec_driver_sql("PRAGMA table_info(learning_set)").fetchall()
+        names = {row[1] for row in rows}
+        if not names or FilesColumns.SPEAKERS_EXAMPLE.value in names:
+            return
+        connection.exec_driver_sql(
+            "ALTER TABLE learning_set ADD COLUMN speakers_example BOOLEAN"
+        )
+
+
+def _ensure_example_mode_column(engine: Engine) -> None:
+    """Add the nullable ``example_mode`` override to an older ``learning_set`` table."""
+    with engine.begin() as connection:
+        rows = connection.exec_driver_sql("PRAGMA table_info(learning_set)").fetchall()
+        names = {row[1] for row in rows}
+        if not names or FilesColumns.EXAMPLE_MODE.value in names:
+            return
+        connection.exec_driver_sql("ALTER TABLE learning_set ADD COLUMN example_mode TEXT")
 
 
 def _apply_progress(card: Card, row: pd.Series, previous: Card | None = None) -> None:
@@ -650,8 +709,10 @@ def _clear_override_columns(learning_set: LearningSet) -> None:
     learning_set.speakers_word_formations = None
     learning_set.speakers_word = None
     learning_set.speakers_definition = None
+    learning_set.speakers_example = None
     learning_set.retry_until_correct = None
     learning_set.queue_size = None
+    learning_set.example_mode = None
 
 
 def _migrate_csv_files(engine: Engine) -> None:
@@ -750,6 +811,11 @@ def _import_catalog_row(engine, catalog_row, frame, basename, kind, db_override_
                 override_cell_text(catalog_row.get(Columns.SPEAKERS_DEFINITION.value)),
                 kind,
             ),
+            speakers_example=db_override_from_text(
+                Columns.SPEAKERS_EXAMPLE.value,
+                override_cell_text(catalog_row.get(Columns.SPEAKERS_EXAMPLE.value)),
+                kind,
+            ),
             retry_until_correct=db_override_from_text(
                 Columns.RETRY_UNTIL_CORRECT.value,
                 override_cell_text(catalog_row.get(Columns.RETRY_UNTIL_CORRECT.value)),
@@ -758,6 +824,11 @@ def _import_catalog_row(engine, catalog_row, frame, basename, kind, db_override_
             queue_size=db_override_from_text(
                 Columns.QUEUE_SIZE.value,
                 override_cell_text(catalog_row.get(Columns.QUEUE_SIZE.value)),
+                kind,
+            ),
+            example_mode=db_override_from_text(
+                Columns.EXAMPLE_MODE.value,
+                override_cell_text(catalog_row.get(Columns.EXAMPLE_MODE.value)),
                 kind,
             ),
         )

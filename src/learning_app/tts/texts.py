@@ -1,6 +1,7 @@
 """Normalize phrases and collect live set texts for TTS cache GC."""
 
 from learning_app.data.constants import PartsOfSpeech, WordDefinitions
+from learning_app.data.example_sentence import filled_sentence
 
 _CONTENT_COLUMNS = {member.value for member in PartsOfSpeech} | {
     member.value for member in WordDefinitions
@@ -71,4 +72,8 @@ def collect_speakable_texts() -> set[tuple[str, str]]:
                     continue
                 for phrase in speakable_phrases(str(value)):
                     texts.add((phrase, language))
+            example = filled_sentence(getattr(card, "example_sentence", "") or "")
+            normalized = normalize_text(example)
+            if normalized:
+                texts.add((normalized, language))
     return texts

@@ -207,6 +207,7 @@ def test_collect_speakable_texts_ignores_stats_and_empty_cells(isolated_csv_dir:
         {
             "definition": ["znieważać"],
             "word": ["insult"],
+            "example_sentence": ["He {insults} them."],
             "correct_answers": [0],
             "good_answers_in_a_row": [False],
             "good_answer": [False],
@@ -222,6 +223,7 @@ def test_collect_speakable_texts_ignores_stats_and_empty_cells(isolated_csv_dir:
 
     assert ("analyse", "en") in texts
     assert ("insult", "en") in texts
+    assert ("He insults them.", "en") in texts
     assert ("znieważać", "en") in texts
     assert ("pretty", "en") in texts
     assert ("unused", "en") in texts

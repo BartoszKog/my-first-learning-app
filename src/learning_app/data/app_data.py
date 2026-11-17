@@ -16,6 +16,7 @@ import pandas as pd
 from learning_app.data.constants import (
     CARD_ID_COLUMN,
     CHECKS_COLUMN,
+    EXAMPLE_SENTENCE_COLUMN,
     FilesColumns,
     PartsOfSpeech,
     SetSortMode,
@@ -30,8 +31,10 @@ _SET_OVERRIDE_COLUMNS = [
     FilesColumns.SPEAKERS_WORD_FORMATIONS.value,
     FilesColumns.SPEAKERS_WORD.value,
     FilesColumns.SPEAKERS_DEFINITION.value,
+    FilesColumns.SPEAKERS_EXAMPLE.value,
     FilesColumns.RETRY_UNTIL_CORRECT.value,
     FilesColumns.QUEUE_SIZE.value,
+    FilesColumns.EXAMPLE_MODE.value,
 ]
 
 _CATALOG_COLUMN_ORDER = [
@@ -516,6 +519,7 @@ def create_empty_set(kind: str) -> pd.DataFrame:
     column_types_definitions = {
         WordDefinitions.DEFINITION.value: str,
         WordDefinitions.WORD.value: str,
+        EXAMPLE_SENTENCE_COLUMN: str,
         StatsColumns.CORRECT_ANSWERS.value: int,
         StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: bool,
         StatsColumns.GOOD_ANSWER.value: bool,
@@ -542,6 +546,7 @@ def create_empty_set(kind: str) -> pd.DataFrame:
         df = pd.DataFrame({
             WordDefinitions.DEFINITION.value: [],
             WordDefinitions.WORD.value: [],
+            EXAMPLE_SENTENCE_COLUMN: [],
             StatsColumns.CORRECT_ANSWERS.value: [],
             StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: [],
             StatsColumns.GOOD_ANSWER.value: [],

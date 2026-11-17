@@ -19,12 +19,14 @@ def restore_tts_preferences():
     formations = TtsPreferences.speakers_word_formations
     word = TtsPreferences.speakers_word
     definition = TtsPreferences.speakers_definition
+    example = TtsPreferences.speakers_example
     yield
     TtsPreferences.language = language
     TtsPreferences.auto_speak_definitions = auto_speak
     TtsPreferences.speakers_word_formations = formations
     TtsPreferences.speakers_word = word
     TtsPreferences.speakers_definition = definition
+    TtsPreferences.speakers_example = example
 
 
 def _speaker_icon_count(card: ft.Container) -> int:
@@ -45,6 +47,7 @@ def test_tts_preferences_default_to_english_and_auto_speak_on():
     assert TtsPreferences.speakers_word_formations is True
     assert TtsPreferences.speakers_word is True
     assert TtsPreferences.speakers_definition is False
+    assert TtsPreferences.speakers_example is True
     assert "pl" in LANGUAGE_CODES
     assert "en" in LANGUAGE_CODES
 
@@ -70,6 +73,9 @@ def test_parse_speaker_switches_use_documented_defaults(restore_tts_preferences)
     assert TtsPreferences.parse_speakers_definition(None) is False
     assert TtsPreferences.parse_speakers_definition("true") is True
     assert TtsPreferences.parse_speakers_definition("false") is False
+    assert TtsPreferences.parse_speakers_example(None) is True
+    assert TtsPreferences.parse_speakers_example("false") is False
+    assert TtsPreferences.parse_speakers_example("off") is False
 
 
 def test_settings_includes_tts_section(restore_tts_preferences):
@@ -80,6 +86,7 @@ def test_settings_includes_tts_section(restore_tts_preferences):
     TtsPreferences.speakers_word_formations = True
     TtsPreferences.speakers_word = True
     TtsPreferences.speakers_definition = False
+    TtsPreferences.speakers_example = True
     screen = SettingsControl(SimpleNamespace())
 
     assert screen.tts_heading.value == "Text to speech"
@@ -91,6 +98,7 @@ def test_settings_includes_tts_section(restore_tts_preferences):
     assert screen.tts_speakers_word_formations_switch.value is True
     assert screen.tts_speakers_word_switch.value is True
     assert screen.tts_speakers_definition_switch.value is False
+    assert screen.tts_speakers_example_switch.value is True
     assert screen.tts_speakers_heading.value == "Word list speakers"
     assert "set word list cards" in screen.tts_speakers_description.value
     assert screen.tts_speakers_formations_group.controls == [
@@ -104,6 +112,7 @@ def test_settings_includes_tts_section(restore_tts_preferences):
         screen.tts_speakers_definitions_description,
         screen.tts_speakers_word_row,
         screen.tts_speakers_definition_row,
+        screen.tts_speakers_example_row,
         screen.tts_speakers_definition_hint,
         screen.tts_speakers_definitions_preview,
     ]
@@ -126,9 +135,9 @@ def test_settings_includes_tts_section(restore_tts_preferences):
         row.controls[0].value
         for row in screen.tts_speakers_definitions_preview.content.controls
     ]
-    assert definition_labels == ["Definition ", "Word        "]
+    assert definition_labels == ["Definition ", "Word        ", "Example    "]
     assert _speaker_icon_count(screen.tts_speakers_formations_preview) == 3
-    assert _speaker_icon_count(screen.tts_speakers_definitions_preview) == 1
+    assert _speaker_icon_count(screen.tts_speakers_definitions_preview) == 2
     assert screen.tts_section.controls == [
         screen.tts_heading,
         screen.tts_description,
@@ -172,6 +181,7 @@ def test_settings_speaker_switches_update_runtime_flags(restore_tts_preferences)
     TtsPreferences.speakers_word_formations = True
     TtsPreferences.speakers_word = True
     TtsPreferences.speakers_definition = False
+    TtsPreferences.speakers_example = True
     page = SimpleNamespace(run_task=lambda *args, **kwargs: None)
     screen = SettingsControl(page)
 
@@ -187,9 +197,14 @@ def test_settings_speaker_switches_update_runtime_flags(restore_tts_preferences)
     screen.on_tts_speakers_definition_change(
         SimpleNamespace(control=screen.tts_speakers_definition_switch)
     )
+    screen.tts_speakers_example_switch.value = False
+    screen.on_tts_speakers_example_change(
+        SimpleNamespace(control=screen.tts_speakers_example_switch)
+    )
 
     assert TtsPreferences.speakers_word_formations is False
     assert TtsPreferences.speakers_word is False
     assert TtsPreferences.speakers_definition is True
+    assert TtsPreferences.speakers_example is False
     assert _speaker_icon_count(screen.tts_speakers_formations_preview) == 0
     assert _speaker_icon_count(screen.tts_speakers_definitions_preview) == 1

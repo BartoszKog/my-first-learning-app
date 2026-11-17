@@ -7,6 +7,7 @@ AUTO_SPEAK_DEFINITIONS_KEY = "tts_auto_speak_definitions"
 SPEAKERS_WORD_FORMATIONS_KEY = "tts_speakers_word_formations"
 SPEAKERS_WORD_KEY = "tts_speakers_word"
 SPEAKERS_DEFINITION_KEY = "tts_speakers_definition"
+SPEAKERS_EXAMPLE_KEY = "tts_speakers_example"
 DEFAULT_LANGUAGE = "en"
 
 TTS_LANGUAGES: tuple[tuple[str, str], ...] = (
@@ -40,18 +41,22 @@ class TtsPreferences:
             the word field.
         speakers_definition: When ``True``, definition-list cards show a
             speaker on the definition field.
+        speakers_example: When ``True``, definition-list cards show a speaker
+            on the example sentence.
     """
 
     DEFAULT_AUTO_SPEAK_DEFINITIONS = True
     DEFAULT_SPEAKERS_WORD_FORMATIONS = True
     DEFAULT_SPEAKERS_WORD = True
     DEFAULT_SPEAKERS_DEFINITION = False
+    DEFAULT_SPEAKERS_EXAMPLE = True
 
     language: str = DEFAULT_LANGUAGE
     auto_speak_definitions: bool = DEFAULT_AUTO_SPEAK_DEFINITIONS
     speakers_word_formations: bool = DEFAULT_SPEAKERS_WORD_FORMATIONS
     speakers_word: bool = DEFAULT_SPEAKERS_WORD
     speakers_definition: bool = DEFAULT_SPEAKERS_DEFINITION
+    speakers_example: bool = DEFAULT_SPEAKERS_EXAMPLE
 
     @classmethod
     def normalize_language(cls, language: object) -> str:
@@ -81,6 +86,11 @@ class TtsPreferences:
         return cls._parse_bool(raw, default=False)
 
     @classmethod
+    def parse_speakers_example(cls, raw: object) -> bool:
+        """Parse example-sentence speaker switch; missing or unknown means on."""
+        return cls._parse_bool(raw, default=True)
+
+    @classmethod
     def _parse_bool(cls, raw: object, *, default: bool) -> bool:
         if raw is None:
             return default
@@ -93,8 +103,8 @@ class TtsPreferences:
     async def load_from_preferences(cls) -> None:
         """Load language, auto-speak, and list-speaker flags from storage.
 
-        Missing keys are seeded with English, auto-speak on, word-formation
-        and word speakers on, and definition speakers off.
+        Missing keys are seeded with English, auto-speak on, word-formation,
+        word, and example speakers on, and definition speakers off.
         """
         storage = get_shared_preferences()
         if not await storage.contains_key(LANGUAGE_KEY):
@@ -107,6 +117,8 @@ class TtsPreferences:
             await storage.set(SPEAKERS_WORD_KEY, "true")
         if not await storage.contains_key(SPEAKERS_DEFINITION_KEY):
             await storage.set(SPEAKERS_DEFINITION_KEY, "false")
+        if not await storage.contains_key(SPEAKERS_EXAMPLE_KEY):
+            await storage.set(SPEAKERS_EXAMPLE_KEY, "true")
         cls.language = cls.normalize_language(await storage.get(LANGUAGE_KEY))
         cls.auto_speak_definitions = cls.parse_auto_speak(
             await storage.get(AUTO_SPEAK_DEFINITIONS_KEY)
@@ -119,6 +131,9 @@ class TtsPreferences:
         )
         cls.speakers_definition = cls.parse_speakers_definition(
             await storage.get(SPEAKERS_DEFINITION_KEY)
+        )
+        cls.speakers_example = cls.parse_speakers_example(
+            await storage.get(SPEAKERS_EXAMPLE_KEY)
         )
 
     @classmethod
@@ -161,4 +176,13 @@ class TtsPreferences:
         await get_shared_preferences().set(
             SPEAKERS_DEFINITION_KEY,
             "true" if cls.speakers_definition else "false",
+        )
+
+    @classmethod
+    async def save_speakers_example(cls, enabled: bool) -> None:
+        """Persist and apply speakers on definition-list example sentences."""
+        cls.speakers_example = bool(enabled)
+        await get_shared_preferences().set(
+            SPEAKERS_EXAMPLE_KEY,
+            "true" if cls.speakers_example else "false",
         )

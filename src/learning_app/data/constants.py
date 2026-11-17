@@ -63,6 +63,7 @@ class FilesColumns(Enum):
     SPEAKERS_WORD_FORMATIONS = "speakers_word_formations"
     SPEAKERS_WORD = "speakers_word"
     SPEAKERS_DEFINITION = "speakers_definition"
+    SPEAKERS_EXAMPLE = "speakers_example"
     RETRY_UNTIL_CORRECT = "retry_until_correct"
     QUEUE_SIZE = "queue_size"
     EXAMPLE_MODE = "example_mode"

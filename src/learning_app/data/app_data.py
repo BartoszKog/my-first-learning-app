@@ -31,6 +31,7 @@ _SET_OVERRIDE_COLUMNS = [
     FilesColumns.SPEAKERS_WORD_FORMATIONS.value,
     FilesColumns.SPEAKERS_WORD.value,
     FilesColumns.SPEAKERS_DEFINITION.value,
+    FilesColumns.SPEAKERS_EXAMPLE.value,
     FilesColumns.RETRY_UNTIL_CORRECT.value,
     FilesColumns.QUEUE_SIZE.value,
     FilesColumns.EXAMPLE_MODE.value,

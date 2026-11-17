@@ -143,6 +143,38 @@ def test_after_check_does_not_accept_gap_answers(
     assert screen._get_check_button_text() == "Try again"
 
 
+@pytest.mark.parametrize("typed", ["keep in line", "keeps, in line", "keep in; line"])
+def test_after_check_retype_accepts_gap_answers(
+    isolated_csv_dir, restore_flags, silent_flet_updates, typed
+):
+    screen = _start("after_check")
+    _check(screen, "nope")
+    screen.on_check_click(SimpleNamespace())
+
+    assert _shown_text(screen) == "I _____ him _____."
+    _check(screen, typed)
+
+    assert screen._get_check_button_text() == "Next"
+    assert screen.word.value == "keep SB in line"
+    assert _shown_text(screen) == "I keep him in line."
+
+
+def test_after_check_second_retype_accepts_gap_answers(
+    isolated_csv_dir, restore_flags, silent_flet_updates
+):
+    screen = _start("after_check")
+    _check(screen, "nope")
+    screen.on_check_click(SimpleNamespace())
+    _check(screen, "nope")
+    assert screen._get_check_button_text() == "Try again"
+
+    screen.on_check_click(SimpleNamespace())
+    _check(screen, "keep in line")
+
+    assert screen._get_check_button_text() == "Next"
+    assert screen.word.value == "keep SB in line"
+
+
 def test_card_without_example_shows_nothing_in_hint(
     isolated_csv_dir, restore_flags, silent_flet_updates
 ):

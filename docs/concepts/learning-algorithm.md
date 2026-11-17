@@ -161,11 +161,19 @@ example shows nothing.
 A filled gap shows its first `/` form. Try again restores the blank gaps
 (`_____`) for both `hint` and `after_check`. The next Check fills them again.
 
-In `hint` mode a Check is also correct when the typed text is every gap in
-order, separated by spaces, commas, or semicolons. For
-`I {keep} him {in line}.` that is `keep in line` or `keep, in line`. Each gap
-accepts any of its `/` forms. The field then shows the card's `word`, and the
-statistics are the same as for typing the word.
+A Check is also correct when the blank gaps are on screen and the typed text
+is every gap in order, separated by spaces, commas, or semicolons. That is
+before Check in `hint`, and on the retype in `after_check` when
+`retry_until_correct` is on. The first Check in `after_check` still requires
+the word, because the gaps stay hidden until Try again. For
+`I {keep} him {in line}.` the gap answer is `keep in line` or `keep, in line`.
+Each gap accepts any of its `/` forms. The field then shows the card's `word`.
+A correct first Check records the same statistics as typing the word. A
+correct retype does not write statistics again.
+
+The word list shows that filled sentence on a definition card whenever the
+card has an example. Its speaker is on by default and can be turned off in
+Settings or in that set's settings.
 
 ## Progress helpers
 

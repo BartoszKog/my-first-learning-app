@@ -156,7 +156,7 @@ set therefore does not come back from a leftover CSV on the next start.
 
 ## Per-set settings {#per-set-settings}
 
-Eight nullable columns on `learning_set` store one set's learning and speech
+Nullable columns on `learning_set` store one set's learning and speech
 choices. `NULL` inherits the matching app setting. A stored value is that
 set's own choice, including `false`. Columns that belong to the other set kind
 stay `NULL` and are ignored. `uses_app_defaults` is derived, not stored.
@@ -168,6 +168,7 @@ stay `NULL` and are ignored. `uses_app_defaults` is derived, not stored.
 | `speakers_word_formations` | `words` | `TtsPreferences.speakers_word_formations` |
 | `speakers_word` | `definitions` | `TtsPreferences.speakers_word` |
 | `speakers_definition` | `definitions` | `TtsPreferences.speakers_definition` |
+| `speakers_example` | `definitions` | `TtsPreferences.speakers_example` |
 | `retry_until_correct` | both kinds | `LearnPreferences.retry_until_correct` |
 | `queue_size` | both kinds | the queue size for that kind on `LearnPreferences` |
 | `example_mode` | `definitions` | `LearnPreferences.example_mode` |
@@ -175,7 +176,7 @@ stay `NULL` and are ignored. `uses_app_defaults` is derived, not stored.
 `data/set_settings.py` (`effective_set_settings`) fills the blanks.
 `read_override_cells` still returns `""` for `NULL` and `"true"` / `"false"` /
 text / an integer as text, so callers keep the old cell-shaped API.
-`add_new_file` and demo install leave all eight columns `NULL`. Home **Set
+`add_new_file` and demo install leave the override columns `NULL`. Home **Set
 settings** and the learn-menu settings button open `/set/settings`, where
 **Use app settings** writes the current app values or clears the columns
 again. `set_default_progress` does not touch them. Settings **Restore

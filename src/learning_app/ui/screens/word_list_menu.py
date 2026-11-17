@@ -3,7 +3,13 @@ from typing import Dict
 import flet as ft
 
 from learning_app.data.app_data import AppData, get_kind_of_file_and_validate, set_default_progress
-from learning_app.data.constants import PartsOfSpeech, StatsColumns, WordDefinitions
+from learning_app.data.constants import (
+    EXAMPLE_SENTENCE_COLUMN,
+    PartsOfSpeech,
+    StatsColumns,
+    WordDefinitions,
+)
+from learning_app.data.example_sentence import display_form, filled_sentence, preview_parts
 from learning_app.data.set_settings import EffectiveSetSettings, effective_set_settings
 from learning_app.tts import TtsError, TtsNetworkError
 from learning_app.ui.app_session import AppSession
@@ -31,6 +37,8 @@ COLORS_CHECKS = {
 }
 
 _LABEL_COLOR = ft.Colors.BLUE_GREY_500
+_GAP_COLOR_DARK = ft.Colors.TEAL_200
+_GAP_COLOR_LIGHT = ft.Colors.BLUE_ACCENT_700
 _SPEAKER_RESERVE_PX = 40
 _WORD_FORMATION_COLUMNS = frozenset(member.value for member in PartsOfSpeech)
 _DEFINITION_CONTENT_COLUMNS = frozenset(member.value for member in WordDefinitions)
@@ -47,7 +55,44 @@ def _speaker_enabled_for(column: str, settings: EffectiveSetSettings) -> bool:
         return settings.speakers_word
     if column == WordDefinitions.DEFINITION.value:
         return settings.speakers_definition
+    if column == EXAMPLE_SENTENCE_COLUMN:
+        return settings.speakers_example
     return False
+
+
+def _example_spans(sentence: str, char_threshold: float) -> list[ft.TextSpan]:
+    """Filled example, with each answer in its own span.
+
+    Wrapping replaces a space with a newline and keeps the same length, so
+    the gap marks still line up with the wrapped text.
+    """
+    pieces: list[tuple[str, bool]] = []
+    for piece in preview_parts(sentence):
+        if piece.is_gap:
+            pieces.append((display_form(piece.text), True))
+        elif piece.text:
+            pieces.append((piece.text, False))
+    plain = "".join(text for text, _is_gap in pieces)
+    wrapped = _wrap_space_cell(plain, char_threshold)
+    if len(wrapped) != len(plain):
+        return [ft.TextSpan(text=wrapped)]
+    mask: list[bool] = []
+    for text, is_gap in pieces:
+        mask.extend([is_gap] * len(text))
+    color = _GAP_COLOR_DARK if AppTheme.is_dark_mode() else _GAP_COLOR_LIGHT
+    gap_style = ft.TextStyle(weight=ft.FontWeight.BOLD, color=color)
+    spans: list[ft.TextSpan] = []
+    start = 0
+    for index in range(1, len(wrapped) + 1):
+        if index == len(wrapped) or mask[index] != mask[start]:
+            spans.append(
+                ft.TextSpan(
+                    text=wrapped[start:index],
+                    style=gap_style if mask[start] else None,
+                )
+            )
+            start = index
+    return spans
 
 
 def _wrap_slash_cell(text: str, char_threshold: float) -> str:
@@ -154,6 +199,7 @@ class WordContainer(ft.Container):
             PartsOfSpeech.ADVERB.value: "Adverb    ",
             WordDefinitions.DEFINITION.value: "Definition ",
             WordDefinitions.WORD.value: "Word        ",
+            EXAMPLE_SENTENCE_COLUMN: "Example    ",
         }
 
         Column_with_words = ft.Column()
@@ -162,20 +208,31 @@ class WordContainer(ft.Container):
             if word in stats_columns or word not in dict_index_names:
                 continue
             original = words_row[word]
+            spoken = original
+            if word == EXAMPLE_SENTENCE_COLUMN:
+                spoken = filled_sentence(str(original))
+            if _is_blank_cell(spoken):
+                continue
             show_speaker = (
                 self._settings is not None
-                and not _is_blank_cell(original)
                 and _speaker_enabled_for(word, self._settings)
             )
             wrap_width = width - _SPEAKER_RESERVE_PX if show_speaker else width
             char_threshold = 20 / 250 * wrap_width
-            if word in _DEFINITION_CONTENT_COLUMNS:
-                display = _wrap_space_cell(original, char_threshold)
+            if word == EXAMPLE_SENTENCE_COLUMN:
+                value = ft.Text(
+                    spans=_example_spans(str(original), char_threshold),
+                    expand=True,
+                )
             else:
-                display = _wrap_slash_cell(original, char_threshold)
+                if word in _DEFINITION_CONTENT_COLUMNS:
+                    display = _wrap_space_cell(spoken, char_threshold)
+                else:
+                    display = _wrap_slash_cell(spoken, char_threshold)
+                value = ft.Text(display, expand=True)
             row_controls = [
                 ft.Text(dict_index_names[word], color=_LABEL_COLOR),
-                ft.Text(display, expand=True),
+                value,
             ]
             if show_speaker:
                 row_controls.append(
@@ -193,7 +250,7 @@ class WordContainer(ft.Container):
                             max_height=18,
                         ),
                         tooltip="Pronounce",
-                        on_click=self._make_speak_handler(original),
+                        on_click=self._make_speak_handler(spoken),
                     )
                 )
             Column_with_words.controls.append(

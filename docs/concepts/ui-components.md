@@ -85,7 +85,9 @@ pronunciation as the speaker button (only while the word is revealed).
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
 the learn menu list; it is a screen helper, not under `components/`. Its
 settings button opens `/set/settings` for this set. Speaker buttons on the
-list follow the set's effective speaker flags.
+list follow the set's effective speaker flags. A definition card also shows
+its example with the gaps filled when the card has one. The example speaker
+follows `speakers_example` and reads that filled sentence.
 
 **Ctrl+Enter** activates the primary action on these screens: **Start** on the
 word list, and **Check** / **Try again** / **Next** during a learn session.

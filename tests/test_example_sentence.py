@@ -7,6 +7,7 @@ from learning_app.data.example_sentence import (
     cloze_sentence,
     display_form,
     example_sentence_error,
+    filled_sentence,
     gap_answers,
     matches_gap_answers,
     normalize_example_sentence,
@@ -109,3 +110,9 @@ def test_each_gap_accepts_its_slash_forms():
 def test_blank_or_broken_sentence_matches_nothing():
     assert not matches_gap_answers("keep", "")
     assert not matches_gap_answers("keep", "I {keep him.")
+
+
+def test_filled_sentence_uses_the_first_slash_form():
+    assert filled_sentence("I {keep/keeps} him {in line}.") == "I keep him in line."
+    assert filled_sentence("") == ""
+    assert filled_sentence("I {keep him.") == ""

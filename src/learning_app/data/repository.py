@@ -92,6 +92,7 @@ def ensure_db() -> None:
     SQLModel.metadata.create_all(engine)
     _ensure_example_sentence_column(engine)
     _ensure_example_mode_column(engine)
+    _ensure_speakers_example_column(engine)
     _migrate_csv_files(engine)
     _ready_path = path
 
@@ -618,6 +619,18 @@ def _ensure_example_sentence_column(engine: Engine) -> None:
         )
 
 
+def _ensure_speakers_example_column(engine: Engine) -> None:
+    """Add the nullable ``speakers_example`` override to an older set table."""
+    with engine.begin() as connection:
+        rows = connection.exec_driver_sql("PRAGMA table_info(learning_set)").fetchall()
+        names = {row[1] for row in rows}
+        if not names or FilesColumns.SPEAKERS_EXAMPLE.value in names:
+            return
+        connection.exec_driver_sql(
+            "ALTER TABLE learning_set ADD COLUMN speakers_example BOOLEAN"
+        )
+
+
 def _ensure_example_mode_column(engine: Engine) -> None:
     """Add the nullable ``example_mode`` override to an older ``learning_set`` table."""
     with engine.begin() as connection:
@@ -696,6 +709,7 @@ def _clear_override_columns(learning_set: LearningSet) -> None:
     learning_set.speakers_word_formations = None
     learning_set.speakers_word = None
     learning_set.speakers_definition = None
+    learning_set.speakers_example = None
     learning_set.retry_until_correct = None
     learning_set.queue_size = None
     learning_set.example_mode = None
@@ -795,6 +809,11 @@ def _import_catalog_row(engine, catalog_row, frame, basename, kind, db_override_
             speakers_definition=db_override_from_text(
                 Columns.SPEAKERS_DEFINITION.value,
                 override_cell_text(catalog_row.get(Columns.SPEAKERS_DEFINITION.value)),
+                kind,
+            ),
+            speakers_example=db_override_from_text(
+                Columns.SPEAKERS_EXAMPLE.value,
+                override_cell_text(catalog_row.get(Columns.SPEAKERS_EXAMPLE.value)),
                 kind,
             ),
             retry_until_correct=db_override_from_text(

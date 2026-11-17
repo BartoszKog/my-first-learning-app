@@ -18,6 +18,7 @@ from learning_app.ui.tts_preferences import (
     DEFAULT_LANGUAGE,
     LANGUAGE_KEY,
     SPEAKERS_DEFINITION_KEY,
+    SPEAKERS_EXAMPLE_KEY,
     SPEAKERS_WORD_FORMATIONS_KEY,
     SPEAKERS_WORD_KEY,
     TtsPreferences,
@@ -56,6 +57,7 @@ def restore_settings_preferences():
     formations = TtsPreferences.speakers_word_formations
     word = TtsPreferences.speakers_word
     definition = TtsPreferences.speakers_definition
+    example = TtsPreferences.speakers_example
     retry = LearnPreferences.retry_until_correct
     words_queue = LearnPreferences.word_formations_queue_size
     definitions_queue = LearnPreferences.definitions_queue_size
@@ -71,6 +73,7 @@ def restore_settings_preferences():
     TtsPreferences.speakers_word_formations = formations
     TtsPreferences.speakers_word = word
     TtsPreferences.speakers_definition = definition
+    TtsPreferences.speakers_example = example
     LearnPreferences.retry_until_correct = retry
     LearnPreferences.word_formations_queue_size = words_queue
     LearnPreferences.definitions_queue_size = definitions_queue
@@ -111,6 +114,7 @@ def _apply_saved_defaults() -> None:
     )
     TtsPreferences.speakers_word = TtsPreferences.DEFAULT_SPEAKERS_WORD
     TtsPreferences.speakers_definition = TtsPreferences.DEFAULT_SPEAKERS_DEFINITION
+    TtsPreferences.speakers_example = TtsPreferences.DEFAULT_SPEAKERS_EXAMPLE
     LearnPreferences.retry_until_correct = LearnPreferences.RETRY_UNTIL_CORRECT_DEFAULT
     LearnPreferences.word_formations_queue_size = (
         LearnPreferences.WORD_FORMATIONS_QUEUE_DEFAULT
@@ -130,6 +134,7 @@ def _apply_custom_settings() -> None:
     TtsPreferences.speakers_word_formations = False
     TtsPreferences.speakers_word = False
     TtsPreferences.speakers_definition = True
+    TtsPreferences.speakers_example = False
     LearnPreferences.retry_until_correct = False
     LearnPreferences.word_formations_queue_size = 8
     LearnPreferences.definitions_queue_size = 14
@@ -247,6 +252,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert TtsPreferences.speakers_word_formations is True
     assert TtsPreferences.speakers_word is True
     assert TtsPreferences.speakers_definition is False
+    assert TtsPreferences.speakers_example is True
     assert LearnPreferences.retry_until_correct is True
     assert (
         LearnPreferences.word_formations_queue_size
@@ -263,6 +269,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.tts_speakers_word_formations_switch.value is True
     assert screen.tts_speakers_word_switch.value is True
     assert screen.tts_speakers_definition_switch.value is False
+    assert screen.tts_speakers_example_switch.value is True
     assert screen.retry_until_correct_switch.value is True
     assert LearnPreferences.example_mode == "after_check"
     assert screen.example_mode_dropdown.value == "after_check"
@@ -271,7 +278,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.definitions_queue_slider.slider.value == 10
     assert screen.definitions_queue_slider.label.value == "Definitions: 10"
     assert _speaker_icon_count(screen.tts_speakers_formations_preview) == 3
-    assert _speaker_icon_count(screen.tts_speakers_definitions_preview) == 1
+    assert _speaker_icon_count(screen.tts_speakers_definitions_preview) == 2
     assert page.theme_mode == ft.ThemeMode.DARK
     assert page.bgcolor == color
     assert view.bgcolor == color
@@ -287,6 +294,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
         SPEAKERS_WORD_FORMATIONS_KEY: "true",
         SPEAKERS_WORD_KEY: "true",
         SPEAKERS_DEFINITION_KEY: "false",
+        SPEAKERS_EXAMPLE_KEY: "true",
         RETRY_UNTIL_CORRECT_KEY: "true",
         WORD_FORMATIONS_QUEUE_SIZE_KEY: "5",
         DEFINITIONS_QUEUE_SIZE_KEY: "10",
@@ -318,6 +326,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert TtsPreferences.speakers_word_formations is False
     assert TtsPreferences.speakers_word is False
     assert TtsPreferences.speakers_definition is True
+    assert TtsPreferences.speakers_example is False
     assert LearnPreferences.retry_until_correct is False
     assert LearnPreferences.word_formations_queue_size == 8
     assert LearnPreferences.definitions_queue_size == 14
@@ -328,6 +337,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.tts_speakers_word_formations_switch.value is False
     assert screen.tts_speakers_word_switch.value is False
     assert screen.tts_speakers_definition_switch.value is True
+    assert screen.tts_speakers_example_switch.value is False
     assert screen.retry_until_correct_switch.value is False
     assert LearnPreferences.example_mode == "hint"
     assert screen.example_mode_dropdown.value == "hint"
@@ -351,6 +361,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
         SPEAKERS_WORD_FORMATIONS_KEY: "false",
         SPEAKERS_WORD_KEY: "false",
         SPEAKERS_DEFINITION_KEY: "true",
+        SPEAKERS_EXAMPLE_KEY: "false",
         RETRY_UNTIL_CORRECT_KEY: "false",
         WORD_FORMATIONS_QUEUE_SIZE_KEY: "8",
         DEFINITIONS_QUEUE_SIZE_KEY: "14",
@@ -382,6 +393,7 @@ async def test_restore_defaults_when_already_default_has_no_undo(
         "formations": TtsPreferences.speakers_word_formations,
         "word": TtsPreferences.speakers_word,
         "definition": TtsPreferences.speakers_definition,
+        "example": TtsPreferences.speakers_example,
         "retry": LearnPreferences.retry_until_correct,
         "words_queue": LearnPreferences.word_formations_queue_size,
         "definitions_queue": LearnPreferences.definitions_queue_size,
@@ -402,6 +414,7 @@ async def test_restore_defaults_when_already_default_has_no_undo(
     assert TtsPreferences.speakers_word_formations == before["formations"]
     assert TtsPreferences.speakers_word == before["word"]
     assert TtsPreferences.speakers_definition == before["definition"]
+    assert TtsPreferences.speakers_example == before["example"]
     assert LearnPreferences.retry_until_correct == before["retry"]
     assert LearnPreferences.word_formations_queue_size == before["words_queue"]
     assert LearnPreferences.definitions_queue_size == before["definitions_queue"]

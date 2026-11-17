@@ -78,7 +78,10 @@ def _formations_preview_rows(*, show_speaker: bool) -> list[ft.Row]:
 
 
 def _definitions_preview_rows(
-    *, show_word_speaker: bool, show_definition_speaker: bool
+    *,
+    show_word_speaker: bool,
+    show_definition_speaker: bool,
+    show_example_speaker: bool,
 ) -> list[ft.Row]:
     return [
         _preview_field_row(
@@ -88,6 +91,11 @@ def _definitions_preview_rows(
         ),
         _preview_field_row(
             "Word        ", "apple", show_speaker=show_word_speaker
+        ),
+        _preview_field_row(
+            "Example    ",
+            "I eat an apple.",
+            show_speaker=show_example_speaker,
         ),
     ]
 
@@ -260,6 +268,7 @@ class _SettingsSnapshot:
     speakers_word_formations: bool
     speakers_word: bool
     speakers_definition: bool
+    speakers_example: bool
     retry_until_correct: bool
     word_formations_queue_size: int
     definitions_queue_size: int
@@ -279,6 +288,7 @@ def _capture_settings() -> _SettingsSnapshot:
         speakers_word_formations=bool(TtsPreferences.speakers_word_formations),
         speakers_word=bool(TtsPreferences.speakers_word),
         speakers_definition=bool(TtsPreferences.speakers_definition),
+        speakers_example=bool(TtsPreferences.speakers_example),
         retry_until_correct=bool(LearnPreferences.retry_until_correct),
         word_formations_queue_size=int(LearnPreferences.word_formations_queue_size),
         definitions_queue_size=int(LearnPreferences.definitions_queue_size),
@@ -300,6 +310,7 @@ def _default_settings() -> _SettingsSnapshot:
         speakers_word_formations=TtsPreferences.DEFAULT_SPEAKERS_WORD_FORMATIONS,
         speakers_word=TtsPreferences.DEFAULT_SPEAKERS_WORD,
         speakers_definition=TtsPreferences.DEFAULT_SPEAKERS_DEFINITION,
+        speakers_example=TtsPreferences.DEFAULT_SPEAKERS_EXAMPLE,
         retry_until_correct=LearnPreferences.RETRY_UNTIL_CORRECT_DEFAULT,
         word_formations_queue_size=LearnPreferences.WORD_FORMATIONS_QUEUE_DEFAULT,
         definitions_queue_size=LearnPreferences.DEFINITIONS_QUEUE_DEFAULT,
@@ -502,7 +513,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             width=self._content_width,
         )
         self.tts_speakers_definitions_description = ft.Text(
-            "Word and Definition are the two fields on definition cards.",
+            "Word, Definition, and Example are the fields on definition cards.",
             size=13,
             width=self._content_width,
         )
@@ -526,6 +537,16 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             [self.tts_speakers_definition_switch],
             alignment=ft.MainAxisAlignment.START,
         )
+        self.tts_speakers_example_switch = ft.Switch(
+            label=" Example speakers",
+            label_text_style=ft.TextStyle(size=16),
+            value=TtsPreferences.speakers_example,
+            on_change=self.on_tts_speakers_example_change,
+        )
+        self.tts_speakers_example_row = ft.Row(
+            [self.tts_speakers_example_switch],
+            alignment=ft.MainAxisAlignment.START,
+        )
         self.tts_speakers_definition_hint = ft.Text(
             "Definitions may be written in a different language than the one "
             "you are learning. Pronunciation uses the set language, which "
@@ -544,6 +565,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
                 self.tts_speakers_definitions_description,
                 self.tts_speakers_word_row,
                 self.tts_speakers_definition_row,
+                self.tts_speakers_example_row,
                 self.tts_speakers_definition_hint,
                 self.tts_speakers_definitions_preview,
             ],
@@ -606,7 +628,9 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             "When a definition card shows its example. Definition sets only. "
             "After Check shows the full sentence once you answer. Hint shows "
             "it with blank gaps before you answer, and typing the gap words in "
-            "order also counts as correct. A set can change this from its menu "
+            "order also counts as correct. With Retype until correct, After "
+            "Check shows those blank gaps on the retype, and the gap words "
+            "count there too. A set can change this from its menu "
             "(Set settings).",
             size=14,
             width=self._content_width,
@@ -761,6 +785,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             _definitions_preview_rows(
                 show_word_speaker=TtsPreferences.speakers_word,
                 show_definition_speaker=TtsPreferences.speakers_definition,
+                show_example_speaker=TtsPreferences.speakers_example,
             )
         )
         if control_is_on_page(self.tts_speakers_formations_preview):
@@ -811,6 +836,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
             self.tts_speakers_word_formations_row,
             self.tts_speakers_word_row,
             self.tts_speakers_definition_row,
+            self.tts_speakers_example_row,
             self.retry_until_correct_row,
             self.tts_language_dropdown,
             self.tts_section_divider,
@@ -884,6 +910,14 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         page = self._get_page()
         if page is not None:
             page.run_task(TtsPreferences.save_speakers_definition, enabled)
+        self._refresh_speakers_preview()
+
+    def on_tts_speakers_example_change(self, e):
+        enabled = bool(e.control.value)
+        TtsPreferences.speakers_example = enabled
+        page = self._get_page()
+        if page is not None:
+            page.run_task(TtsPreferences.save_speakers_example, enabled)
         self._refresh_speakers_preview()
 
     def on_retry_until_correct_change(self, e):
@@ -964,6 +998,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         )
         await TtsPreferences.save_speakers_word(snapshot.speakers_word)
         await TtsPreferences.save_speakers_definition(snapshot.speakers_definition)
+        await TtsPreferences.save_speakers_example(snapshot.speakers_example)
         await LearnPreferences.save_retry_until_correct(snapshot.retry_until_correct)
         await LearnPreferences.save_example_mode(snapshot.example_mode)
         await LearnPreferences.save_word_formations_queue_size(
@@ -1020,6 +1055,7 @@ class SettingsControl(RoutableScreenMixin, ft.Column):
         )
         self.tts_speakers_word_switch.value = TtsPreferences.speakers_word
         self.tts_speakers_definition_switch.value = TtsPreferences.speakers_definition
+        self.tts_speakers_example_switch.value = TtsPreferences.speakers_example
         self.retry_until_correct_switch.value = LearnPreferences.retry_until_correct
         self.example_mode_dropdown.value = LearnPreferences.example_mode
         words = self.word_formations_queue_slider

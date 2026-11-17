@@ -140,6 +140,7 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         self.speakers_word_formations_switch = None
         self.speakers_word_switch = None
         self.speakers_definition_switch = None
+        self.speakers_example_switch = None
 
         option_rows: list[ft.Control] = []
         if self.kind == "words":
@@ -169,11 +170,18 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
                 use_app,
                 self.on_speakers_definition_change,
             )
+            self.speakers_example_switch = self._switch(
+                " Example speakers",
+                settings.speakers_example,
+                use_app,
+                self.on_speakers_example_change,
+            )
             option_rows.extend(
                 [
                     self._switch_row(self.auto_speak_switch),
                     self._switch_row(self.speakers_word_switch),
                     self._switch_row(self.speakers_definition_switch),
+                    self._switch_row(self.speakers_example_switch),
                 ]
             )
         self.option_rows = option_rows
@@ -390,6 +398,9 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
     def on_speakers_definition_change(self, e):
         self._save_bool(FilesColumns.SPEAKERS_DEFINITION.value, e.control.value)
 
+    def on_speakers_example_change(self, e):
+        self._save_bool(FilesColumns.SPEAKERS_EXAMPLE.value, e.control.value)
+
     def on_retry_change(self, e):
         self._save_bool(FilesColumns.RETRY_UNTIL_CORRECT.value, e.control.value)
 
@@ -431,6 +442,11 @@ class SetSettingsMenu(RoutableScreenMixin, ft.Column):
         self._set_switch(
             self.speakers_definition_switch,
             settings.speakers_definition,
+            use_app,
+        )
+        self._set_switch(
+            self.speakers_example_switch,
+            settings.speakers_example,
             use_app,
         )
         self._set_switch(self.retry_switch, settings.retry_until_correct, use_app)

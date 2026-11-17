@@ -38,8 +38,11 @@ class WordDefinitionField(BaseWordField):
     the optional ``WordListMenu`` when ``session`` is ``False``. A card's
     example sentence follows the set's ``example_mode``: hidden, shown after
     Check, or shown with blank gaps before Check. Try again restores those
-    blank gaps for ``"hint"`` and ``"after_check"``. In ``"hint"`` mode the
-    gap texts typed in order also count as a correct answer.
+    blank gaps for ``"hint"`` and ``"after_check"``. Typing the gap texts in
+    order counts as a correct answer while those blanks are on screen: before
+    Check in ``"hint"``, and on the retype in ``"after_check"`` when retype
+    until correct is on. The first Check in ``"after_check"`` still requires
+    the word, because the gaps stay hidden until then.
     """
 
     def __init__(self, file_name, page=None, width=300, session=False):
@@ -63,6 +66,7 @@ class WordDefinitionField(BaseWordField):
         )
         self._example = ""
         self._example_mode = "off"
+        self._blank_gaps_shown = False
         self.word = WordField(label="", width=field_width)
         self.word.text_size = 30
         self.word.text_align = ft.TextAlign.CENTER
@@ -116,7 +120,7 @@ class WordDefinitionField(BaseWordField):
     def compare_all_words(self):
         good_word = self.words.get_current_row()[WordDefinitions.WORD.value]
         typed = self.word.get_value() or ""
-        gaps_filled = self._example_mode == "hint" and matches_gap_answers(typed, self._example)
+        gaps_filled = self._blank_gaps_shown and matches_gap_answers(typed, self._example)
         if self.word.contain_word(good_word) or gaps_filled:
             self.word.indicate_good_answer(good_word)
             return True
@@ -154,6 +158,7 @@ class WordDefinitionField(BaseWordField):
         )
         show_filled = filled and self._example_mode in {"hint", "after_check"}
         shown = self._example != "" and (show_blanks or show_filled)
+        self._blank_gaps_shown = shown and show_blanks
         self.exampleText.visible = shown
         if not shown:
             self.exampleText.spans = []

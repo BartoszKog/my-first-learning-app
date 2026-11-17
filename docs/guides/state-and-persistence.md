@@ -232,9 +232,10 @@ or rewritten — see [Data and storage](../architecture/data-and-storage.md#tts-
 | `tts_speakers_word_formations` | `"true"` or `"false"`; speakers on word-formation list fields |
 | `tts_speakers_word` | `"true"` or `"false"`; speakers on definition-list word fields |
 | `tts_speakers_definition` | `"true"` or `"false"`; speakers on definition-list definition fields |
+| `tts_speakers_example` | `"true"` or `"false"`; speakers on definition-list example sentences |
 
 Missing keys are seeded in `TtsPreferences.load_from_preferences()` (English,
-auto-speak on, word-formation and word speakers on, definition speakers off).
+auto-speak on, word-formation, word, and example speakers on, definition speakers off).
 
 ### Related
 

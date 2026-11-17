@@ -148,6 +148,7 @@ def test_ensure_db_adds_example_mode_to_an_existing_set_table(isolated_csv_dir: 
             row[1] for row in connection.exec_driver_sql("PRAGMA table_info(learning_set)")
         ]
     assert names.count("example_mode") == 1
+    assert names.count("speakers_example") == 1
 
 
 def test_demo_definition_sets_have_valid_examples():

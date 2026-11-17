@@ -143,6 +143,24 @@ def display_form(gap_text: str) -> str:
     return forms[0] if forms else gap_text
 
 
+def filled_sentence(text: str) -> str:
+    """Return the sentence with each gap replaced by its display form.
+
+    Args:
+        text: Example sentence.
+
+    Returns:
+        The filled sentence. A blank or invalid sentence returns ``""``.
+    """
+    if text.strip() == "":
+        return ""
+    try:
+        pieces = _checked_pieces(text)
+    except ExampleSentenceError:
+        return ""
+    return "".join(display_form(piece.text) if piece.is_gap else piece.text for piece in pieces)
+
+
 def matches_gap_answers(typed: str, text: str) -> bool:
     """Return whether ``typed`` fills every gap of ``text`` in order.
 

@@ -158,6 +158,8 @@ example shows nothing.
 | `after_check` (default) | hidden | full sentence, answers highlighted |
 | `hint` | sentence with each gap as `_____` | full sentence, answers highlighted |
 
+Each pair is one blank `_____`, so `{precious time}` is a single blank.
+
 A filled gap shows its first `/` form. Try again restores the blank gaps
 (`_____`) for both `hint` and `after_check`. The next Check fills them again.
 

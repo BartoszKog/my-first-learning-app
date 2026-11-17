@@ -119,6 +119,10 @@ for **Save** (same paths as those buttons, including the unsaved-changes
 dialog on back); the buttons show shortcut tooltips. Prefer extending
 `EditCardBase` over copying field layout into a new screen.
 
+`EditCardDefinitions` adds an example field. The help text asks for 1 to 4
+`{}` with a word or phrase inside. The preview highlights each gap. A blank
+field means the card has no example.
+
 ## Search control
 
 | Class | Source | Role |

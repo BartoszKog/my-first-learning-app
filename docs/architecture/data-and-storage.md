@@ -243,6 +243,9 @@ Content columns (`WordDefinitions`): `definition`, `word`. Optional
 Import accepts a definitions file that omits the column. A non-empty cell
 must contain one to four non-nested gaps, with some sentence text outside
 the braces. `/` inside one gap is another accepted form of that same gap.
+One `{}` is one gap. Put a single word or a whole phrase inside it
+(`{on purpose}`, `{in line}`). Add another pair when ordinary sentence words
+sit between the answers (`I {keep} him {in line}.`).
 
 ### Statistics
 

@@ -19,6 +19,7 @@ body and fails if it is missing.
 - Example field on the definition edit card, with a preview that highlights the gaps
 
 ### Changed
+- Progress bars count a card whose last answer was correct but is not Known yet as half a word (was a quarter). Checked cards with a wrong last answer stay at a quarter
 - CSV is the import, export, and demo-template format. Home, create, edit, learn, reset, and delete read and write the database
 - Tile use count is the old catalog balance plus later visits. Opening a set records a visit and does not increment that balance
 - Document the SQLite store, visit log, `checks`, and the CSV migration

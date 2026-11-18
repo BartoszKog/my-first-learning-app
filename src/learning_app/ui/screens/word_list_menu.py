@@ -2,7 +2,12 @@ from typing import Dict
 
 import flet as ft
 
-from learning_app.data.app_data import AppData, get_kind_of_file_and_validate, set_default_progress
+from learning_app.data.app_data import (
+    PROGRESS_UNITS_PER_WORD,
+    AppData,
+    get_kind_of_file_and_validate,
+    set_default_progress,
+)
 from learning_app.data.constants import (
     EXAMPLE_SENTENCE_COLUMN,
     PartsOfSpeech,
@@ -360,10 +365,10 @@ class WordListMenu(ft.Column):
         )
 
         self.bp = ProgressBar(
-            qty=self.words.number_of_all_words() * 4,
-            start=self.words.number_of_known_words() * 4 + self.words.number_of_learning_words() * 1,  # multiply by weights
+            qty=self.words.max_progress_points(),
+            start=self.words.progress_points(),
             word="Progress",
-            div_qty=4,
+            div_qty=PROGRESS_UNITS_PER_WORD,
             width=width,
         )
 
@@ -479,7 +484,7 @@ class WordListMenu(ft.Column):
         return False
 
     def __update_bp(self):
-        self.bp.set_certain_qty(self.words.number_of_known_words() * 4 + self.words.number_of_learning_words() * 1)
+        self.bp.set_certain_qty(self.words.progress_points())
         self.update()
 
     def did_mount(self):

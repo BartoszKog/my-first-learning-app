@@ -184,14 +184,18 @@ Settings or in that set's settings.
 | `number_of_known_words()` | Count Known rows (`1/1/0`) |
 | `number_of_learning_words()` | Count rows still in the learning mix |
 | `number_of_all_words()` | Total rows in the loaded set |
+| `progress_points()` / `max_progress_points()` | Weighted learn-menu bar value and its maximum, in quarter-word units |
 | `are_all_words_learned()` | `True` when known count equals total |
 | `get_set_learn_progress(file_name)` | Module helper: `(units, max_units)` in quarter-word weights for Home tiles and the learn-menu bar |
 | `refresh()` | Reload the set from the database into `words` after an external reset |
 | `set_default_progress(file_name)` | Module helper: wipe card stats, including `checks`; visits stay |
 
-`get_set_learn_progress` does not start a learn session. Known rows count as
-`1`, rows still in the mix as `0.25`, and unverified `0/0/0` as `0`, stored
-as `known * 4 + learning` over `total * 4`. Home `ContentTile` bars use this
+`get_set_learn_progress` does not start a learn session. Both it and
+`progress_points()` call `count_progress_units`: Known `1/1/0` rows count as
+`1`, rows whose last answer was correct but are not Known yet (`1/0/0`,
+`1/0/1`, `1/1/1`) as `0.5`, other checked rows (`0/0/1`) as `0.25`, and
+unverified `0/0/0` as `0`, stored as `known * 4 + almost_known * 2 + checked`
+over `total * 4`. A wrong answer on an almost-known row lowers the bar. Home `ContentTile` bars use this
 helper; returning to Home refreshes the tile list so the strip matches the database.
 
 Learn UI uses `are_all_words_learned()` before starting a session and may offer

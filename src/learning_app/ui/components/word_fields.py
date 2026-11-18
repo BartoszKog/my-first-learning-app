@@ -51,12 +51,9 @@ class WordFields(BaseWordField):
         self.active_controls = [
             self.pb,
             ft.Row([self.Word, self.checkButton], alignment=ft.MainAxisAlignment.CENTER),
-            self.verbWord,
-            self.nounPersonWord,
-            self.nounThingWord,
-            self.adjWord,
-            self.advWord,
         ]
+        for word_field in self.dict_word_fields.values():
+            self.active_controls.extend([word_field, word_field.feedback])
 
         self.menu_control = WordListMenu(file_name, on_back=self.back, width=width)
         self.controls = [self.menu_control] if not session else []
@@ -68,6 +65,7 @@ class WordFields(BaseWordField):
         field_width = learn_words_field_width(metrics.form_width, self._get_page())
         for word_field in self.dict_word_fields.values():
             word_field.width = field_width
+            word_field.feedback.width = field_width
         self.pb.width = field_width
         if self.menu_control in self.controls:
             self.menu_control.apply_layout(metrics)

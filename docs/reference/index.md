@@ -50,6 +50,7 @@ to confirm types, parameters, and return values.
 | [Set settings](set_settings.md) | `data/set_settings.py` | Per-set learning and TTS overrides on the set row. | Reading or storing one set's language, speakers, retry, or queue size. | [Per-set settings](../architecture/data-and-storage.md#per-set-settings) |
 | [Constants](constants.md) | `data/constants.py` | Column enums, `checks`, `card_id`, `MAX_ROWS`, import messages. | Matching CSV schemas or import error text. | [Data and storage](../architecture/data-and-storage.md), [Import and export](../guides/import-export.md) |
 | [CSV processor](csv_processor.md) | `data/csv_processor.py` | Validate an import and save it into the database. | Importing a set. Leftover `files.csv` repair stays here too. | [Import and export](../guides/import-export.md) |
+| [Answer diff](answer_diff.md) | `data/answer_diff.py` | Wrong, missing, and matching letter runs of a typed answer. | Changing the marks shown under a field after a wrong Check. | [UI components](../concepts/ui-components.md) |
 | [Demo sets](demo_sets.md) | `data/demo_sets.py` | Bundled demos, reserved names, install into the database. | Adding sample sets or protecting demo basenames. | [Data and storage](../architecture/data-and-storage.md#demo-sets) |
 | [TTS](tts.md) | `tts/` | Providers, MP3 cache, live phrases, and `TtsService`. | Synthesizing audio, swapping providers, or pruning the cache. | [Data and storage](../architecture/data-and-storage.md#tts-cache), [App session](app_session.md) |
 

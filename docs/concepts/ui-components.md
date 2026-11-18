@@ -73,6 +73,15 @@ override uses `LearnPreferences`. Extra attempts do not call the answer
 helpers. On word-formation retries, `WordFields.prepare_retry` keeps green
 fields filled and only resets missed forms.
 
+A wrong Check replaces the typed text with the stored answer. When the field
+was not blank, `WordField.feedback` (a `Text` each screen places right under
+its field) shows `Your answer:` with the typed letters. Wrong letters are red
+and struck through, and missing letters are inserted in green and
+underlined. The diff comes from `answer_diff.diff_answer` against the closest
+slash alternative. Text too different from the answer is shown without marks.
+`reset`, `disable`, and a correct answer hide it, so Try again and Next start
+clean.
+
 `WordDefinitionField` adds a speaker button to the right of Check. It stays
 disabled until Check reveals the word, then `AppSession.speak` plays the
 **word** column (not the definition) in the set's effective language. An

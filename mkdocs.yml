@@ -149,5 +149,6 @@ nav:
           - Set settings: reference/set_settings.md
           - Constants: reference/constants.md
           - CSV processor: reference/csv_processor.md
+          - Answer diff: reference/answer_diff.md
           - Demo sets: reference/demo_sets.md
           - TTS: reference/tts.md

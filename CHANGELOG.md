@@ -17,6 +17,7 @@ body and fails if it is missing.
 - Optional example sentence on definition cards. One `{}` is one gap and can hold a word or a phrase (`{on purpose}`); another pair is for sentence words between the answers (`I {keep} him {in line}.`). A sentence can hold up to four gaps, and `/` inside a gap is another accepted form
 - Definition learn mode shows that example after Check (default), as one `_____` per gap before Check (Hint), or not at all (Off). Typing the gap texts in order counts as correct while the blanks are on screen. The word list shows the filled sentence and can speak it
 - Example field on the definition edit card, with a preview that highlights the gaps
+- After a wrong Check, the typed answer appears under the field with wrong letters struck through in red and missing letters inserted in green. Blank fields show nothing
 
 ### Changed
 - CSV is the import, export, and demo-template format. Home, create, edit, learn, reset, and delete read and write the database

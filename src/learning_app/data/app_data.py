@@ -377,14 +377,47 @@ def set_default_progress(file_name: str) -> None:
     reset_card_progress(file_name)
 
 
+PROGRESS_UNITS_PER_WORD = 4
+
+
+def count_progress_units(data: pd.DataFrame) -> int:
+    """Return weighted progress of ``data`` in quarter-word units.
+
+    Known ``1/1/0`` rows count as ``1``, rows whose last answer was correct
+    but are not Known yet (``1/0/0``, ``1/0/1``, ``1/1/1``) count as ``0.5``,
+    other checked rows (``0/0/1``) count as ``0.25``, and unverified
+    ``0/0/0`` rows count as ``0``. The maximum is
+    ``len(data) * PROGRESS_UNITS_PER_WORD``.
+
+    Args:
+        data: Set rows with the statistics columns.
+
+    Returns:
+        ``known * 4 + almost_known * 2 + checked * 1``.
+    """
+    good_answer = data[StatsColumns.GOOD_ANSWER.value] == True
+    known_mask = (
+        good_answer
+        & (data[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == True)
+        & (data[StatsColumns.WORD_TO_LEARN.value] == False)
+    )
+    unverified_mask = (
+        (data[StatsColumns.GOOD_ANSWER.value] == False)
+        & (data[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == False)
+        & (data[StatsColumns.WORD_TO_LEARN.value] == False)
+    )
+    known = int(known_mask.sum())
+    almost_known = int((good_answer & ~known_mask).sum())
+    checked = len(data) - known - almost_known - int(unverified_mask.sum())
+    return known * 4 + almost_known * 2 + checked
+
+
 def get_set_learn_progress(file_name: str) -> tuple[int, int]:
     """Return weighted learn progress without starting a learn session.
 
-    Matches the learn-menu bar: Known rows count as ``1``, rows still in the
-    learning mix (``Learned`` / queued) count as ``0.25``, and unverified
-    ``0/0/0`` rows count as ``0``. Values are stored in quarters so callers
-    can use ``units / max_units`` the same way ``WordListMenu`` does
-    (``known * 4 + learning * 1`` over ``total * 4``).
+    Uses the same weights as the learn-menu bar (see
+    ``count_progress_units``), in quarter-word units over
+    ``total * PROGRESS_UNITS_PER_WORD``.
 
     Missing files or unreadable tables return ``(0, 0)``.
 
@@ -406,21 +439,9 @@ def get_set_learn_progress(file_name: str) -> tuple[int, int]:
         StatsColumns.WORD_TO_LEARN.value,
     )
     if total == 0 or not all(col in data.columns for col in required):
-        return 0, int(total) * 4
+        return 0, int(total) * PROGRESS_UNITS_PER_WORD
 
-    known_mask = (
-        (data[StatsColumns.GOOD_ANSWER.value] == True)
-        & (data[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == True)
-        & (data[StatsColumns.WORD_TO_LEARN.value] == False)
-    )
-    unverified_mask = (
-        (data[StatsColumns.GOOD_ANSWER.value] == False)
-        & (data[StatsColumns.GOOD_ANSWERS_IN_A_ROW.value] == False)
-        & (data[StatsColumns.WORD_TO_LEARN.value] == False)
-    )
-    known = int(known_mask.sum())
-    learning = total - known - int(unverified_mask.sum())
-    return known * 4 + learning, total * 4
+    return count_progress_units(data), total * PROGRESS_UNITS_PER_WORD
 
 
 def delate_set(file_name: str, file_not_exist: bool = False) -> None:
@@ -808,6 +829,14 @@ class AppData:
     def number_of_all_words(self) -> int:
         """Return the total number of rows in the loaded set."""
         return len(self.words)
+
+    def progress_points(self) -> int:
+        """Return weighted progress in quarter-word units (see ``count_progress_units``)."""
+        return count_progress_units(self.words)
+
+    def max_progress_points(self) -> int:
+        """Return the progress value of a fully Known set."""
+        return self.number_of_all_words() * PROGRESS_UNITS_PER_WORD
 
     def are_all_words_learned(self) -> bool:
         """Return whether every row is in the fully learned state."""

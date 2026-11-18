@@ -50,7 +50,7 @@ def test_get_set_learn_progress_counts_known_rows(isolated_csv_dir: Path):
     assert get_set_learn_progress("sample_words.csv") == (5, 12)
 
 
-def test_get_set_learn_progress_learned_counts_as_quarter(isolated_csv_dir: Path):
+def test_get_set_learn_progress_learned_counts_as_half(isolated_csv_dir: Path):
     df = pd.concat(
         [
             create_empty_set("words"),
@@ -67,8 +67,22 @@ def test_get_set_learn_progress_learned_counts_as_quarter(isolated_csv_dir: Path
     )
     save_set(df, "learned_words.csv")
 
-    # Two Learned (0.25 each) + two unverified → 2/16
-    assert get_set_learn_progress("learned_words.csv") == (2, 16)
+    # Two Learned (0.5 each) + two unverified → 4/16
+    assert get_set_learn_progress("learned_words.csv") == (4, 16)
+
+
+def test_get_set_learn_progress_correct_after_wrong_counts_as_half(isolated_csv_dir: Path):
+    row = _words_row(to_learn=True)
+    row[StatsColumns.GOOD_ANSWER.value] = True
+    row[StatsColumns.CORRECT_ANSWERS.value] = 1
+    df = pd.concat(
+        [create_empty_set("words"), pd.DataFrame([row, _words_row(to_learn=True)])],
+        ignore_index=True,
+    )
+    save_set(df, "relearned_words.csv")
+
+    # 1/0/1 (0.5) + 0/0/1 (0.25) → 3/8
+    assert get_set_learn_progress("relearned_words.csv") == (3, 8)
 
 
 def test_get_set_learn_progress_all_known_is_complete(isolated_csv_dir: Path):

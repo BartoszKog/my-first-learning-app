@@ -28,6 +28,18 @@ BORDERS = {
     "Known": ft.Border.all(1.5, ft.Colors.GREEN_ACCENT_700),
 }
 
+
+def _status_border(status: str) -> ft.Border:
+    """Return a new status border at the active theme width.
+
+    Cards must not share the ``BORDERS`` objects. Those templates stay at the
+    dark-mode width, and mutating them only showed up the next time a card
+    was built.
+    """
+    width = 1.5 if AppTheme.is_dark_mode() else 3
+    return ft.Border.all(width, BORDERS[status].top.color)
+
+
 COLORS_CHECKS = {
     "All": ft.Colors.RED_ACCENT_700,
     "Previous session": ft.Colors.YELLOW_700,
@@ -172,13 +184,13 @@ class WordContainer(ft.Container):
 
         if self.to_learn:
             # indicating by gray border
-            self.border = BORDERS["To learn"]
+            self.border = _status_border("To learn")
         elif self.known:
             # indicating by green border
-            self.border = BORDERS["Known"]
+            self.border = _status_border("Known")
         else:
             # indicating by orange border learned words
-            self.border = BORDERS["Learned"]
+            self.border = _status_border("Learned")
 
         # dropping NaN values
         words_row = words_row.dropna()
@@ -303,19 +315,6 @@ class WordContainer(ft.Container):
 
     def was_in_previous_session(self):
         return self.in_previous_session
-
-    def __change_border_width(self, width):
-        self.border.top.width = width
-        self.border.bottom.width = width
-        self.border.left.width = width
-        self.border.right.width = width
-
-    def did_mount(self):
-        # changing the border width based on the theme mode
-        if AppTheme.is_dark_mode():
-            self.__change_border_width(1.5)
-        else:
-            self.__change_border_width(3)
 
 
 class WordListMenu(ft.Column):

@@ -21,7 +21,7 @@ class WordField(ft.TextField):
         self.label = label
         self.width = width
         self.read_only = read_only
-        self.width_border_indicator = 1
+        self.width_border_indicator = 1 if AppTheme.is_dark_mode() else 3
         self.default_border = self.border
 
         if autofocus:
@@ -116,13 +116,6 @@ class WordField(ft.TextField):
             return False
         value = self.value
         return value is None or str(value).strip() == ""
-
-    def did_mount(self):
-        # Set border width, based on the theme mode.
-        if AppTheme.is_dark_mode():
-            self.width_border_indicator = 1
-        else:
-            self.width_border_indicator = 3
 
 
 class ProgressBar(ft.Column):

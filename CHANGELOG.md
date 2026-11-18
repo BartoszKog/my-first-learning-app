@@ -19,6 +19,7 @@ body and fails if it is missing.
 - Example field on the definition edit card, with a preview that highlights the gaps
 
 ### Changed
+- Delete and Set default progress confirmations name the set. The title is teal, without quotation marks, and the sentence still says whether the set is words or definitions
 - With Retype until correct on, the learn-session bar counts a card answered wrong only after Next, not on the first Check
 - Progress bars count a card whose last answer was correct but is not Known yet as half a word (was a quarter). Checked cards with a wrong last answer stay at a quarter
 - CSV is the import, export, and demo-template format. Home, create, edit, learn, reset, and delete read and write the database

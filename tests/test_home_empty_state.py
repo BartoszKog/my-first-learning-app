@@ -332,3 +332,49 @@ def test_second_demo_install_matches_catalog_without_ghost_tiles():
         BodyRegistry._home = previous_home
         BodyRegistry._export = previous_export
         AppChrome._appbar, AppChrome._bottom_appbar = previous_chrome
+
+
+def _span_text(span) -> str:
+    return span.text or ""
+
+
+def _assert_named_set_dialog(dialog, title: str, prefix: str, set_title: str, kind: str):
+    dialog_title = dialog.title.value if isinstance(dialog.title, ft.Text) else dialog.title
+    spans = dialog.content.spans
+    assert dialog_title == title
+    assert [_span_text(span) for span in spans] == [
+        prefix,
+        set_title,
+        f" (set of {kind})?",
+    ]
+    assert spans[1].style.color == ft.Colors.TEAL
+    assert spans[0].style is None
+    assert spans[2].style is None
+    sentence = "".join(_span_text(span) for span in spans)
+    assert '"' not in sentence
+    assert "'" not in sentence
+
+
+def test_delete_and_reset_dialogs_color_the_set_title(tile_page):
+    _add_user_set()
+    tile = ContentTile("Animals_words.csv", "Animals", "Pets")
+    event = SimpleNamespace(page=tile_page)
+
+    tile.show_delete_dialog(event)
+    tile.show_set_default_progress_dialog(event)
+
+    assert len(tile_page.dialogs) == 2
+    _assert_named_set_dialog(
+        tile_page.dialogs[0],
+        "Confirm Delete",
+        "Are you sure you want to delete ",
+        "Animals",
+        "words",
+    )
+    _assert_named_set_dialog(
+        tile_page.dialogs[1],
+        "Set Default Progress",
+        "Are you sure you want to set default progress for ",
+        "Animals",
+        "words",
+    )

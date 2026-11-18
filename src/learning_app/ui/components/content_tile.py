@@ -166,11 +166,21 @@ class ContentTile(ft.Card):
         )
         e.page.show_dialog(dialog)
 
+    def _set_action_content(self, prefix: str) -> ft.Text:
+        """Confirmation sentence with the set title in teal and the set kind."""
+        return ft.Text(
+            spans=[
+                ft.TextSpan(text=prefix),
+                ft.TextSpan(text=self.title, style=ft.TextStyle(color=ft.Colors.TEAL)),
+                ft.TextSpan(text=f" (set of {self.kind})?"),
+            ]
+        )
+
     def show_delete_dialog(self, e):
         create_alert_dialog(
             page=e.page,
             title="Confirm Delete",
-            content="Are you sure you want to delete this set of " + self.kind + "?",
+            content=self._set_action_content("Are you sure you want to delete "),
             close_button_text="Cancel",
             action_button_text="Delete",
             action_function=self.delete_item,
@@ -189,7 +199,7 @@ class ContentTile(ft.Card):
         create_alert_dialog(
             page=e.page,
             title="Set Default Progress",
-            content="Are you sure you want to set default progress for this set of " + self.kind + "?",
+            content=self._set_action_content("Are you sure you want to set default progress for "),
             close_button_text="Cancel",
             action_button_text="Set",
             action_function=self.set_default_progress,

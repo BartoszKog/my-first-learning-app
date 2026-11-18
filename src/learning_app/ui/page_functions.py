@@ -45,7 +45,8 @@ def create_alert_dialog(
     Parameters:
         page (ft.Page): The page where the dialog should be displayed.
         title (str): The title text of the alert dialog.
-        content (str): The main content text of the alert dialog.
+        content (str | ft.Control): The dialog body. A string is wrapped in
+            ``ft.Text``. A control is shown as-is, so callers can pass rich text.
         close_button_text (str, optional): The text for the close/cancel button. Defaults to "OK".
         action_button_text (str, optional): The text for the optional primary action button.
             Required if action_function is provided.
@@ -112,7 +113,7 @@ def create_alert_dialog(
 
     alert_dialog = ft.AlertDialog(
         title=ft.Text(title),
-        content=ft.Text(content),
+        content=content if isinstance(content, ft.Control) else ft.Text(content),
         actions=actions,
         actions_alignment=ft.MainAxisAlignment.END,
         on_dismiss=dismiss_action,

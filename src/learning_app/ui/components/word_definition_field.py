@@ -98,6 +98,7 @@ class WordDefinitionField(BaseWordField):
             self.definitionLabel,
             self.exampleText,
             self.word,
+            self.word.feedback,
             self.check_row,
         ]
 
@@ -110,6 +111,7 @@ class WordDefinitionField(BaseWordField):
         self._form_width = metrics.form_width
         field_width = learn_definition_field_width(metrics.form_width, self._get_page())
         self.word.width = field_width
+        self.word.feedback.width = field_width
         self.exampleText.width = field_width
         self.pb.width = field_width
         if self.menu_control in self.controls:

@@ -1,13 +1,20 @@
 import flet as ft
 
+from learning_app.data.answer_diff import CLOSE_MATCH_RATIO, diff_answer
 from learning_app.ui.app_theme import AppTheme
+
+_FEEDBACK_PREFIX = "Your answer: "
 
 
 class WordField(ft.TextField):
     """Styled text field for learn and edit forms.
 
     Supports read-only display, good/bad answer borders, and slash-separated
-    alternate answers via ``contain_word``.
+    alternate answers via ``contain_word``. ``feedback`` is a separate
+    ``ft.Text`` the screen places under the field. After a wrong, non-blank
+    answer it shows the typed text with wrong letters struck through and
+    missing letters inserted. The owning screen updates it with its own
+    ``update``.
 
     Args:
         label: Field label.
@@ -23,6 +30,12 @@ class WordField(ft.TextField):
         self.read_only = read_only
         self.width_border_indicator = 1 if AppTheme.is_dark_mode() else 3
         self.default_border = self.border
+        self.feedback = ft.Text(
+            size=14,
+            text_align=ft.TextAlign.CENTER,
+            width=width,
+            visible=False,
+        )
 
         if autofocus:
             self.autofocus = True
@@ -60,10 +73,12 @@ class WordField(ft.TextField):
         self.value = ""
         self.disabled = False
         self.read_only = False
+        self.hide_feedback()
         self.update()
 
     def disable(self):
         self.disabled = True
+        self.hide_feedback()
         self.update()
 
     def make_read_only(self):
@@ -91,14 +106,50 @@ class WordField(ft.TextField):
         return all(piece in stored for piece in pieces)
 
     def indicate_good_answer(self, word: str):
+        self.hide_feedback()
         self.set_green_border()
         self.make_read_only()
         self.set_value(word)
 
     def indicate_bad_answer(self, word: str):
+        typed = self.get_value() or ""
+        self._show_feedback(typed, "" if word is None else str(word))
         self.set_red_border()
         self.make_read_only()
         self.set_value(word)
+
+    def hide_feedback(self):
+        self.feedback.visible = False
+        self.feedback.value = ""
+        self.feedback.spans = []
+
+    def _show_feedback(self, typed: str, expected: str):
+        typed = typed.strip()
+        if not typed:
+            self.hide_feedback()
+            return
+        pieces, ratio = diff_answer(typed, expected)
+        self.feedback.visible = True
+        if ratio < CLOSE_MATCH_RATIO:
+            self.feedback.value = _FEEDBACK_PREFIX + typed
+            self.feedback.spans = []
+            return
+        dark = AppTheme.is_dark_mode()
+        wrong_style = ft.TextStyle(
+            color=ft.Colors.RED_300 if dark else ft.Colors.RED_700,
+            decoration=ft.TextDecoration.LINE_THROUGH,
+            decoration_color=ft.Colors.RED_300 if dark else ft.Colors.RED_700,
+        )
+        missing_style = ft.TextStyle(
+            color=ft.Colors.GREEN_300 if dark else ft.Colors.GREEN_700,
+            weight=ft.FontWeight.BOLD,
+            decoration=ft.TextDecoration.UNDERLINE,
+        )
+        styles = {"wrong": wrong_style, "missing": missing_style}
+        spans = [ft.TextSpan(text=_FEEDBACK_PREFIX, style=ft.TextStyle(color=ft.Colors.ON_SURFACE_VARIANT))]
+        spans.extend(ft.TextSpan(text=piece.text, style=styles.get(piece.kind)) for piece in pieces)
+        self.feedback.value = ""
+        self.feedback.spans = spans
 
     def is_indicated_correct(self) -> bool:
         """Return whether this field is locked after a correct Check."""

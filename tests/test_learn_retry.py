@@ -103,7 +103,7 @@ def test_wrong_check_with_retry_on_shows_try_again(
     assert screen._speak_unlocked is True
     assert bad_calls == [True]
     assert good_calls == []
-    assert screen.pb.current_qty == 1
+    assert screen.pb.current_qty == 0
     stats = _stats_row(file_name)
     assert bool(stats[StatsColumns.GOOD_ANSWER.value]) is False
     assert bool(stats[StatsColumns.WORD_TO_LEARN.value]) is True
@@ -139,7 +139,7 @@ def test_retry_wrong_check_does_not_change_stats(
     assert screen._get_check_button_text() == "Try again"
     assert bad_calls == [True]
     assert good_calls == []
-    assert screen.pb.current_qty == 1
+    assert screen.pb.current_qty == 0
     stats = _stats_row(file_name)
     assert int(stats[StatsColumns.CORRECT_ANSWERS.value]) == 0
     assert bool(stats[StatsColumns.GOOD_ANSWER.value]) is False
@@ -170,6 +170,46 @@ def test_correct_retry_shows_next_without_good_stats(
     assert bool(stats[StatsColumns.WORD_TO_LEARN.value]) is True
 
 
+def test_retry_progress_increases_only_after_next(
+    isolated_csv_dir, restore_flags, silent_flet_updates
+):
+    generate_empty_files_data()
+    file_name = "retry_progress_definitions.csv"
+    save_set(
+        pd.DataFrame(
+            {
+                WordDefinitions.DEFINITION.value: ["a path", "a road"],
+                WordDefinitions.WORD.value: ["way", "way"],
+                StatsColumns.CORRECT_ANSWERS.value: [0, 0],
+                StatsColumns.GOOD_ANSWERS_IN_A_ROW.value: [False, False],
+                StatsColumns.GOOD_ANSWER.value: [False, False],
+                StatsColumns.WORD_TO_LEARN.value: [False, False],
+            }
+        ),
+        file_name,
+    )
+    LearnPreferences.retry_until_correct = True
+    screen = _start_definition_session(file_name)
+    screen.word.value = "nope"
+    screen.on_check_click(SimpleNamespace())
+    screen.on_check_click(SimpleNamespace())
+    screen.word.value = "way"
+    screen.on_check_click(SimpleNamespace())
+
+    assert screen._get_check_button_text() == "Next"
+    assert screen.pb.current_qty == 0
+
+    screen.on_check_click(SimpleNamespace())
+
+    assert screen._get_check_button_text() == "Check"
+    assert screen.pb.current_qty == 1
+
+    screen.word.value = "way"
+    screen.on_check_click(SimpleNamespace())
+
+    assert screen.pb.current_qty == 2
+
+
 def test_retry_off_still_goes_next_after_wrong(
     isolated_csv_dir, restore_flags, silent_flet_updates
 ):
@@ -181,6 +221,7 @@ def test_retry_off_still_goes_next_after_wrong(
 
     assert screen._get_check_button_text() == "Next"
     assert screen._retrying_after_wrong is False
+    assert screen.pb.current_qty == 1
     stats = _stats_row(file_name)
     assert bool(stats[StatsColumns.WORD_TO_LEARN.value]) is True
 

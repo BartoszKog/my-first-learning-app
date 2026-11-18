@@ -35,6 +35,7 @@ class BaseWordField(ft.Column):
         self.session = session
         self._session_active = False
         self._retrying_after_wrong = False
+        self._progress_pending = False
         self._ctrl_enter_registered = False
         self.lock = threading.Lock()
 
@@ -156,6 +157,7 @@ class BaseWordField(ft.Column):
             self.update()
             self.pb.reset()
             self._retrying_after_wrong = False
+            self._progress_pending = False
             self._set_check_button_text("Check")
             length = self.words.draw_index_group(save_indexes_in_class_art=True)
             self.pb.set_max_qty(length)
@@ -184,15 +186,20 @@ class BaseWordField(ft.Column):
                         self.words.bad_answer_at_current_row()
                         if effective_set_settings(self.file_name).retry_until_correct:
                             self._retrying_after_wrong = True
+                            self._progress_pending = True
                             self._set_check_button_text("Try again")
                         else:
                             self._set_check_button_text("Next")
-                    self.pb.increase()
+                    if not self._progress_pending:
+                        self.pb.increase()
                 self.checkButton.disabled = False
                 self.update()
             elif button_text == "Next":
                 self.checkButton.disabled = True
                 self.update()
+                if self._progress_pending:
+                    self._progress_pending = False
+                    self.pb.increase()
                 self._retrying_after_wrong = False
                 self._set_check_button_text("Check")
                 self.set_next_word()

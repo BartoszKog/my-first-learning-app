@@ -136,6 +136,9 @@ column is `NULL`. When it is on:
    `correct_answers` or flip `G/S/W` again.
 4. A correct retype unlocks Next. The queue then advances without a second
    stats write for that card.
+5. The session progress bar counts that card when Next is pressed, not on
+   the first wrong Check. Cards answered on the first Check, and every card
+   when retry is off, count on Check.
 
 On word-formation sets, `WordFields.prepare_retry` keeps already-green fields
 filled so only missed forms need typing again. Definitions reset the word

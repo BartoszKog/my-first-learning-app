@@ -39,7 +39,7 @@ class LearnPreferences:
     DEFINITIONS_QUEUE_MAX = 15
     DEFINITIONS_QUEUE_DEFAULT = 10
     EXAMPLE_MODES = ("off", "after_check", "hint")
-    EXAMPLE_MODE_DEFAULT = "after_check"
+    EXAMPLE_MODE_DEFAULT = "hint"
 
     retry_until_correct: bool = RETRY_UNTIL_CORRECT_DEFAULT
     word_formations_queue_size: int = WORD_FORMATIONS_QUEUE_DEFAULT
@@ -48,7 +48,7 @@ class LearnPreferences:
 
     @classmethod
     def parse_example_mode(cls, raw: object) -> str:
-        """Parse a stored example mode; missing or unknown means after Check."""
+        """Parse a stored example mode; missing or unknown means Hint."""
         if raw is None:
             return cls.EXAMPLE_MODE_DEFAULT
         text = str(raw).strip().lower()
@@ -113,7 +113,7 @@ class LearnPreferences:
         """Load learn settings from ``SharedPreferences``.
 
         Missing keys are seeded with retry enabled, the default queue sizes,
-        and examples shown after Check. Unparseable queue sizes become the
+        and examples shown as Hint. Unparseable queue sizes become the
         default; values outside the slider range are clamped.
         """
         storage = get_shared_preferences()

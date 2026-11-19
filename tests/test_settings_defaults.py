@@ -138,7 +138,7 @@ def _apply_custom_settings() -> None:
     LearnPreferences.retry_until_correct = False
     LearnPreferences.word_formations_queue_size = 8
     LearnPreferences.definitions_queue_size = 14
-    LearnPreferences.example_mode = "hint"
+    LearnPreferences.example_mode = "after_check"
 
 
 def _page(theme_mode):
@@ -271,8 +271,8 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.tts_speakers_definition_switch.value is False
     assert screen.tts_speakers_example_switch.value is True
     assert screen.retry_until_correct_switch.value is True
-    assert LearnPreferences.example_mode == "after_check"
-    assert screen.example_mode_dropdown.value == "after_check"
+    assert LearnPreferences.example_mode == "hint"
+    assert screen.example_mode_dropdown.value == "hint"
     assert screen.word_formations_queue_slider.slider.value == 5
     assert screen.word_formations_queue_slider.label.value == "Word formations: 5"
     assert screen.definitions_queue_slider.slider.value == 10
@@ -298,7 +298,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
         RETRY_UNTIL_CORRECT_KEY: "true",
         WORD_FORMATIONS_QUEUE_SIZE_KEY: "5",
         DEFINITIONS_QUEUE_SIZE_KEY: "10",
-        EXAMPLE_MODE_KEY: "after_check",
+        EXAMPLE_MODE_KEY: "hint",
     }
 
     assert len(page.dialogs) == 1
@@ -339,8 +339,8 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
     assert screen.tts_speakers_definition_switch.value is True
     assert screen.tts_speakers_example_switch.value is False
     assert screen.retry_until_correct_switch.value is False
-    assert LearnPreferences.example_mode == "hint"
-    assert screen.example_mode_dropdown.value == "hint"
+    assert LearnPreferences.example_mode == "after_check"
+    assert screen.example_mode_dropdown.value == "after_check"
     assert screen.word_formations_queue_slider.slider.value == 8
     assert screen.word_formations_queue_slider.label.value == "Word formations: 8"
     assert screen.definitions_queue_slider.slider.value == 14
@@ -365,7 +365,7 @@ async def test_restore_defaults_resets_preferences_and_undo_restores_snapshot(
         RETRY_UNTIL_CORRECT_KEY: "false",
         WORD_FORMATIONS_QUEUE_SIZE_KEY: "8",
         DEFINITIONS_QUEUE_SIZE_KEY: "14",
-        EXAMPLE_MODE_KEY: "hint",
+        EXAMPLE_MODE_KEY: "after_check",
     }
     assert demo_calls == []
 

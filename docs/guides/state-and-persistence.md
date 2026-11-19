@@ -268,11 +268,11 @@ queue size for the next group. Queue rules remain on `AppData` — see
 | `learn_retry_until_correct` | `"true"` or `"false"`; stay on a card until Check is correct |
 | `learn_word_formations_queue_size` | integer string; max practice-queue size for word formations (3–10, default 5) |
 | `learn_definitions_queue_size` | integer string; max practice-queue size for definitions (4–15, default 10) |
-| `learn_example_mode` | `"off"`, `"after_check"` (default), or `"hint"`; when a definition card shows its example sentence |
+| `learn_example_mode` | `"off"`, `"after_check"`, or `"hint"` (default); when a definition card shows its example sentence |
 
 Missing keys are seeded in `LearnPreferences.load_from_preferences()` (retry
-on, word formations 5, definitions 10, examples after Check). An unknown
-example mode becomes `after_check`. A queue size that cannot be read as
+on, word formations 5, definitions 10, examples as Hint). An unknown
+example mode becomes `hint`. A queue size that cannot be read as
 an integer becomes that default. A stored integer outside the range is
 clamped to the minimum or maximum.
 

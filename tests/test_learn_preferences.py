@@ -63,11 +63,12 @@ def test_parse_queue_sizes_default_and_clamp():
     assert LearnPreferences.parse_definitions_queue_size(15) == 15
 
 
-def test_parse_example_mode_defaults_to_after_check():
-    assert LearnPreferences.EXAMPLE_MODE_DEFAULT == "after_check"
-    assert LearnPreferences.parse_example_mode(None) == "after_check"
-    assert LearnPreferences.parse_example_mode("nope") == "after_check"
+def test_parse_example_mode_defaults_to_hint():
+    assert LearnPreferences.EXAMPLE_MODE_DEFAULT == "hint"
+    assert LearnPreferences.parse_example_mode(None) == "hint"
+    assert LearnPreferences.parse_example_mode("nope") == "hint"
     assert LearnPreferences.parse_example_mode(" Hint ") == "hint"
+    assert LearnPreferences.parse_example_mode("after_check") == "after_check"
     assert LearnPreferences.parse_example_mode("off") == "off"
 
 

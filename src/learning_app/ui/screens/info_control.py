@@ -69,7 +69,7 @@ These files contain definitions and their corresponding words:
 - `word`: corresponding word
 - `example_sentence` (optional): an example with each answer inside braces, such as `Please {{turn}} the lights {{off}}.` A gap can be one word or a phrase, as in `{{on purpose}}`. Use another pair when sentence words sit between the answers, as in `I {{keep}} him {{in line}}.` Use `{{keep/keeps}}` when one gap accepts more than one form. Leave the cell empty when the card has no example. One sentence can contain up to four gaps. Before you answer, each pair is one blank `_____`.
 
-By default the example appears after Check. Hint shows it earlier, with one `_____` per pair of braces, and typing the gap texts in order also counts as correct while those blanks are on screen. Change this in Settings or in that set's settings.
+By default the example appears as Hint before Check, with one `_____` per pair of braces, and typing the gap texts in order also counts as correct while those blanks are on screen. Switch to after Check, or turn this off, in Settings or in that set's settings.
 
 ### File Size Limitation
 Each learning set cannot contain more than {MAX_ROWS} items. Files with more rows than this limit cannot be imported, and you cannot create sets larger than this value.

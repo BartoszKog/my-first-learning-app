@@ -158,8 +158,8 @@ example shows nothing.
 | Mode | Before Check | After Check |
 | --- | --- | --- |
 | `off` | hidden | hidden |
-| `after_check` (default) | hidden | full sentence, answers highlighted |
-| `hint` | sentence with each gap as `_____` | full sentence, answers highlighted |
+| `after_check` | hidden | full sentence, answers highlighted |
+| `hint` (default) | sentence with each gap as `_____` | full sentence, answers highlighted |
 
 Each pair is one blank `_____`, so `{precious time}` is a single blank.
 

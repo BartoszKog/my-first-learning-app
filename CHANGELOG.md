@@ -15,11 +15,12 @@ body and fails if it is missing.
 - Local SQLite store (`learning.sqlite`) for sets, cards, per-set overrides, and a visit log opened from the learn screen; graded Checks update that card and the open visit
 - One-time startup copy of existing `files.csv` sets into the database, without importing the same file again or bringing a deleted set back
 - Optional example sentence on definition cards. One `{}` is one gap and can hold a word or a phrase (`{on purpose}`); another pair is for sentence words between the answers (`I {keep} him {in line}.`). A sentence can hold up to four gaps, and `/` inside a gap is another accepted form
-- Definition learn mode shows that example after Check (default), as one `_____` per gap before Check (Hint), or not at all (Off). Typing the gap texts in order counts as correct while the blanks are on screen. The word list shows the filled sentence and can speak it
+- Definition learn mode shows that example as Hint by default (one `_____` per gap before Check), after Check, or not at all (Off). Typing the gap texts in order counts as correct while the blanks are on screen. The word list shows the filled sentence and can speak it
 - Example field on the definition edit card, with a preview that highlights the gaps
 - After a wrong Check, the typed answer appears under the field with wrong letters struck through in red and missing letters inserted in green. Blank fields show nothing
 
 ### Changed
+- Default **Example sentences** mode to Hint for new installs and Restore defaults (existing saved preference is unchanged)
 - Delete and Set default progress confirmations name the set. The title is teal, without quotation marks, and the sentence still says whether the set is words or definitions
 - With Retype until correct on, the learn-session bar counts a card answered wrong only after Next, not on the first Check
 - Progress bars count a card whose last answer was correct but is not Known yet as half a word (was a quarter). Checked cards with a wrong last answer stay at a quarter

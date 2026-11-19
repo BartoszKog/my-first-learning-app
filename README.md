@@ -144,7 +144,7 @@ Contain definitions and their corresponding words:
 - Words marked as "learned" will appear less frequently
 - The app automatically prioritizes words you find challenging
 - For definitions with multiple correct answers or word forms, you can use the slash symbol (/) to separate them. For example: "go/goes/went". During a learning session, entering any one of these words will be marked as correct.
-- By default a definition example appears after Check. Hint shows it earlier, with one `_____` per pair of braces, and typing the gap texts in order also counts as correct while those blanks are on screen. Turn this off, or switch to Hint, in Settings or in that set's settings.
+- By default a definition example appears as Hint before Check, with one `_____` per pair of braces, and typing the gap texts in order also counts as correct while those blanks are on screen. Switch to after Check, or turn this off, in Settings or in that set's settings.
 
 ## 🔧 Technologies
 

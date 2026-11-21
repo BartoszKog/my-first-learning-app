@@ -189,11 +189,12 @@ def test_definition_learn_places_speaker_right_of_check(isolated_csv_dir):
     )
     screen = WordDefinitionField("live_definitions.csv", session=True)
 
-    left, check, right = screen.check_row.controls
-    assert left.expand is True
-    assert check is screen.checkButton
-    assert right.expand is True
-    assert right.controls == [screen.speakButton]
+    assert screen.check_row.controls == [
+        screen._speak_balance,
+        screen.checkButton,
+        screen.speakButton,
+    ]
+    assert screen._speak_balance.opacity == 0
     assert screen.speakButton.disabled is True
     assert screen._speak_unlocked is False
 

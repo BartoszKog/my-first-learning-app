@@ -81,23 +81,19 @@ class WordDefinitionField(BaseWordField):
             on_click=self.on_speak_click,
             disabled=True,
         )
+        # Same footprint as speak so Check stays centered while speak sits
+        # immediately to its right (not stretched to the field edge).
+        self._speak_balance = ft.IconButton(
+            icon=ft.Icons.VOLUME_UP,
+            disabled=True,
+            opacity=0,
+        )
         self._speak_unlocked = False
         self._ctrl_s_registered = False
-        # Equal side slots keep Check on the true center; speak sits in the
-        # right slot without shifting the primary button.
         self.check_row = ft.Row(
-            controls=[
-                ft.Container(expand=True),
-                self.checkButton,
-                ft.Row(
-                    controls=[self.speakButton],
-                    alignment=ft.MainAxisAlignment.END,
-                    expand=True,
-                ),
-            ],
+            controls=[self._speak_balance, self.checkButton, self.speakButton],
             alignment=ft.MainAxisAlignment.CENTER,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            width=field_width,
         )
         self.pb = ProgressBar(width=field_width)
 
@@ -124,7 +120,6 @@ class WordDefinitionField(BaseWordField):
         self.word.width = field_width
         self.word.feedback.width = field_width
         self.exampleText.width = field_width
-        self.check_row.width = field_width
         self.pb.width = field_width
         if self.menu_control in self.controls:
             self.menu_control.apply_layout(metrics)

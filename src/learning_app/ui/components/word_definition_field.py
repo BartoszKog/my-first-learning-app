@@ -81,10 +81,17 @@ class WordDefinitionField(BaseWordField):
             on_click=self.on_speak_click,
             disabled=True,
         )
+        # Same footprint as speak so Check stays centered while speak sits
+        # immediately to its right (not stretched to the field edge).
+        self._speak_balance = ft.IconButton(
+            icon=ft.Icons.VOLUME_UP,
+            disabled=True,
+            opacity=0,
+        )
         self._speak_unlocked = False
         self._ctrl_s_registered = False
         self.check_row = ft.Row(
-            controls=[self.checkButton, self.speakButton],
+            controls=[self._speak_balance, self.checkButton, self.speakButton],
             alignment=ft.MainAxisAlignment.CENTER,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )

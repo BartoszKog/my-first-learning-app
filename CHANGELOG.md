@@ -18,6 +18,7 @@ body and fails if it is missing.
 - Definition learn mode shows that example as Hint by default (one `_____` per gap before Check), after Check, or not at all (Off). Typing the gap texts in order counts as correct while the blanks are on screen. The word list shows the filled sentence and can speak it
 - Example field on the definition edit card, with a preview that highlights the gaps
 - After a wrong Check, the typed answer appears under the field with wrong letters struck through in red and missing letters inserted in green. Blank fields show nothing
+- **Hardest** filter chip on the word list (after Previous session), showing every card with at least one mistake (`checks - correct_answers >= 1`, including Known cards) sorted by most mistakes first and then lower accuracy, with a muted mistake/accuracy footer (`3 mistakes · 40% correct`) in that view only and a `No mistakes yet.` message when none qualify
 
 ### Changed
 - Default **Example sentences** mode to Hint for new installs and Restore defaults (existing saved preference is unchanged)

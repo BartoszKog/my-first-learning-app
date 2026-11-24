@@ -1,6 +1,7 @@
 from typing import Dict
 
 import flet as ft
+import pandas as pd
 
 from learning_app.data.app_data import (
     PROGRESS_UNITS_PER_WORD,
@@ -9,6 +10,8 @@ from learning_app.data.app_data import (
     set_default_progress,
 )
 from learning_app.data.constants import (
+    CARD_ID_COLUMN,
+    CHECKS_COLUMN,
     EXAMPLE_SENTENCE_COLUMN,
     PartsOfSpeech,
     StatsColumns,
@@ -45,9 +48,13 @@ def _status_border(status: str) -> ft.Border:
     return ft.Border.all(width, BORDERS[status].top.color)
 
 
+_HARDEST_LABEL = "Hardest"
+_EMPTY_HARDEST_MESSAGE = "No mistakes yet."
+
 COLORS_CHECKS = {
     "All": ft.Colors.RED_ACCENT_700,
     "Previous session": ft.Colors.YELLOW_700,
+    _HARDEST_LABEL: ft.Colors.PURPLE_ACCENT_200,
     "To learn": ft.Colors.LIGHT_BLUE_200,
     "Learned": ft.Colors.ORANGE_500,
     "Known": ft.Colors.GREEN_ACCENT_700,
@@ -63,6 +70,47 @@ _DEFINITION_CONTENT_COLUMNS = frozenset(member.value for member in WordDefinitio
 
 def _is_blank_cell(value) -> bool:
     return value is None or str(value).strip() in ("", "nan")
+
+
+def _non_negative_int(row: pd.Series, column: str) -> int:
+    if column not in row.index:
+        return 0
+    value = row[column]
+    if value is None:
+        return 0
+    try:
+        if pd.isna(value):
+            return 0
+        return max(int(value), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _card_mistake_stats(row: pd.Series) -> tuple[int, int, int]:
+    """Return ``(mistakes, correct, checks)`` clamped to non-negative ints."""
+    checks = _non_negative_int(row, CHECKS_COLUMN)
+    correct = _non_negative_int(row, StatsColumns.CORRECT_ANSWERS.value)
+    mistakes = max(checks - correct, 0)
+    return mistakes, correct, checks
+
+
+def _format_mistake_footer(mistakes: int, checks: int) -> str:
+    noun = "mistake" if mistakes == 1 else "mistakes"
+    effective_correct = max(checks - mistakes, 0)
+    pct = round(effective_correct / checks * 100) if checks > 0 else 0
+    return f"{mistakes} {noun} · {pct}% correct"
+
+
+def _hardest_rows(words: pd.DataFrame) -> list[tuple[object, pd.Series]]:
+    ranked: list[tuple[tuple[int, float], object, pd.Series]] = []
+    for index, row in words.iterrows():
+        mistakes, _correct, checks = _card_mistake_stats(row)
+        if mistakes < 1:
+            continue
+        accuracy = max(checks - mistakes, 0) / checks
+        ranked.append(((-mistakes, accuracy), index, row))
+    ranked.sort(key=lambda item: item[0])
+    return [(index, row) for _key, index, row in ranked]
 
 
 def _speaker_enabled_for(column: str, settings: EffectiveSetSettings) -> bool:
@@ -141,7 +189,14 @@ def _wrap_space_cell(text: str, char_threshold: float) -> str:
 
 
 class WordContainer(ft.Container):
-    def __init__(self, words_row, width, was_in_previous_session=False, settings: EffectiveSetSettings | None = None):
+    def __init__(
+        self,
+        words_row,
+        width,
+        was_in_previous_session=False,
+        settings: EffectiveSetSettings | None = None,
+        show_mistake_stats: bool = False,
+    ):
         super().__init__()
         # checking if the row have correct columns
         stats_columns = [
@@ -197,11 +252,14 @@ class WordContainer(ft.Container):
             # indicating by orange border learned words
             self.border = _status_border("Learned")
 
+        mistakes, _correct, checks = _card_mistake_stats(words_row)
+
         # dropping NaN values
         words_row = words_row.dropna()
 
+        non_content_columns = set(stats_columns) | {CHECKS_COLUMN, CARD_ID_COLUMN}
         for _col in list(words_row.index):
-            if _col in stats_columns:
+            if _col in non_content_columns:
                 continue
             _val = words_row[_col]
             if not isinstance(_val, str):
@@ -278,6 +336,18 @@ class WordContainer(ft.Container):
                 )
             )
 
+        if show_mistake_stats and mistakes > 0:
+            Column_with_words.controls.append(
+                ft.Container(
+                    content=ft.Text(
+                        _format_mistake_footer(mistakes, checks),
+                        size=12,
+                        color=_LABEL_COLOR,
+                    ),
+                    padding=ft.Padding.only(top=4),
+                )
+            )
+
         self.content = Column_with_words
 
     def _make_speak_handler(self, text: str):
@@ -335,7 +405,14 @@ class WordListMenu(ft.Column):
         self.words = AppData(file_name)
         self.dict_filter_chips: Dict[str, ft.Chip] = {}
 
-        labels_chips = ["All", "Previous session", "Learned", "To learn", "Known"]
+        labels_chips = [
+            "All",
+            "Previous session",
+            _HARDEST_LABEL,
+            "Learned",
+            "To learn",
+            "Known",
+        ]
 
         def chip_selected(e):
             # unselecting other chips
@@ -453,11 +530,39 @@ class WordListMenu(ft.Column):
         for label, chip in self.dict_filter_chips.items():
             if chip.selected:
                 self.__add_words_to_list_view(label)
-        self.update()
+        if control_is_on_page(self):
+            self.update()
 
     def __add_words_to_list_view(self, label):
         self.words.refresh()
         settings = effective_set_settings(self.file_name)
+        if label == _HARDEST_LABEL:
+            hardest = _hardest_rows(self.words.words)
+            if not hardest:
+                self.lv.controls.append(
+                    ft.Container(
+                        content=ft.Text(
+                            _EMPTY_HARDEST_MESSAGE,
+                            size=14,
+                            color=_LABEL_COLOR,
+                            text_align=ft.TextAlign.CENTER,
+                        ),
+                        alignment=ft.Alignment.CENTER,
+                        padding=ft.Padding.only(top=24),
+                    )
+                )
+                return
+            for index, row in hardest:
+                wc = WordContainer(
+                    row,
+                    width=self._content_width,
+                    was_in_previous_session=self.words.was_this_index_drawn(index),
+                    settings=settings,
+                    show_mistake_stats=True,
+                )
+                self.lv.controls.append(wc)
+            return
+
         for row in self.words.words.iterrows():
             is_in_previous_session = self.words.was_this_index_drawn(row[0])
             wc = WordContainer(
@@ -484,7 +589,8 @@ class WordListMenu(ft.Column):
 
     def __update_bp(self):
         self.bp.set_certain_qty(self.words.progress_points())
-        self.update()
+        if control_is_on_page(self):
+            self.update()
 
     def did_mount(self):
         self.apply_layout()

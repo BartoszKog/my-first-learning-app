@@ -26,8 +26,9 @@ when a learn session starts; they do not reimplement queue rules.
 
 Each set row stores four columns from `StatsColumns`. `checks` counts graded
 Checks on that card (bad answers are `checks - correct_answers`). The queue
-and the progress bar do not read it. Both answer helpers increment it, then
-write that card and the open visit when one exists.
+and the progress bar do not read it; `WordListMenu`'s **Hardest** chip uses
+`checks` and `correct_answers` to rank cards with mistakes. Both answer helpers
+increment it, then write that card and the open visit when one exists.
 
 | Column | Type | Meaning in the algorithm |
 | --- | --- | --- |
@@ -35,7 +36,7 @@ write that card and the open visit when one exists.
 | `good_answer` | bool | Whether the latest answer was correct |
 | `good_answers_in_a_row` | bool | Whether consecutive correct answers have been confirmed |
 | `word_to_learn` | bool | Whether the row is prioritized for practice |
-| `checks` | int | Graded Checks. Not used to choose the next group |
+| `checks` | int | Graded Checks. Not used to choose the next group; read by `WordListMenu`'s **Hardest** chip |
 
 Developers often write the three booleans as `good_answer` /
 `good_answers_in_a_row` / `word_to_learn`, abbreviated `G/S/W` or as a

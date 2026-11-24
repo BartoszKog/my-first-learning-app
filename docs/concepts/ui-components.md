@@ -93,7 +93,13 @@ pronunciation as the speaker button (only while the word is revealed).
 
 `WordListMenu` in `ui/screens/word_list_menu.py` sits beside these controls for
 the learn menu list; it is a screen helper, not under `components/`. Its
-settings button opens `/set/settings` for this set. Speaker buttons on the
+settings button opens `/set/settings` for this set. Filter chips (`All`,
+`Previous session`, `Hardest`, `Learned`, `To learn`, `Known`) slice the list
+without changing what **Start** practices. **Hardest** includes every card with
+at least one mistake (`checks - correct_answers >= 1`, including `Known` cards),
+sorted by most mistakes first and then lower accuracy (`correct_answers /
+checks`), shows a muted mistake/accuracy footer on cards in that view only, and
+displays `No mistakes yet.` when none qualify. Speaker buttons on the
 list follow the set's effective speaker flags. A definition card also shows
 its example with the gaps filled when the card has one. The example speaker
 follows `speakers_example` and reads that filled sentence.
